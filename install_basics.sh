@@ -15,11 +15,9 @@ APT_GET_FLAGS=-qq
 ADD_APT_REPOSITORY_FLAGS=-y
 
 ### General paths
-if [ "$RAI_ROOT" != "$PWD" ]; then
-    sed -i "/\b\RAI_ROOT\\b/d" $HOME/.bashrc
-    printf 'export RAI_ROOT='$PWD'\n' >> $HOME/.bashrc
-    RAI_ROOT="$PWD"
-fi
+sed -i '/RAI_ROOT/d' $HOME/.bashrc
+printf 'export RAI_ROOT='$PWD'\n' >> $HOME/.bashrc
+RAI_ROOT="$PWD"
 
 cd "$RAI_ROOT"
 

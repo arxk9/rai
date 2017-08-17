@@ -15,8 +15,8 @@ add_executable(testRAIGraphics test.cpp ${SRCfiles})
 link_directories(/usr/lib)
 
 INCLUDE(FindPkgConfig)
-
-target_link_libraries(testRAIGraphics glut GLU GL GLEW SDL2 assimp SOIL glog freeimage ${RAI_Link} pthread)
+message("rai link is graph is ${RAI_Link}")
+target_link_libraries(testRAIGraphics glut GLU GL GLEW SDL2 assimp SOIL glog freeimage ${RAI_Link} pthread ${RAI_TARGET})
 
 add_library(rai_graphics ${SRCfiles})
 set(RAI_Graphics ${RAI_Graphics} rai_graphics glut GLU GL GLEW SDL2 assimp SOIL glog freeimage pthread PARENT_SCOPE)

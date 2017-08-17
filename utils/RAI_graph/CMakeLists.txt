@@ -14,4 +14,12 @@ add_library(rai_graph src/gnuplotter.cpp)
 
 # Build usage examples
 add_executable(plotting_examples src/plotting_examples.cpp)
-target_link_libraries(plotting_examples rai_graph ${RAI_LINK})
+target_link_libraries(plotting_examples rai_graph ${RAI_Link})
+
+install(TARGETS rai_graph
+        EXPORT RAITargets
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
+        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib
+        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/include"
+        COMPONENT bin)

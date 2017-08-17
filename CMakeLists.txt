@@ -11,14 +11,12 @@ link_directories(/usr/lib)
 link_directories(/usr/lib/x86_64-linux-gnu/)
 
 project(RAI)
-set(RAI_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
+set(RAI_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 ###############################
 ########## Packages ###########
 ###############################
-find_package(Boost 1.54.0 COMPONENTS filesystem system program_options date_time REQUIRED)
-
 #OpenMP
 find_package(OpenMP REQUIRED)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -28,13 +26,12 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}
 ################################
 ######## build options #########
 ################################
-option(VIS_ON "Toggle the visualizer." OFF)
 option(BUILD_TEST "building test files" OFF)
 
 ################################
 ####### Common Libraries #######
 ################################
-set(RAI_Link ${RAI_Link} boost_system boost_filesystem boost_iostreams glog gflags)
+set(RAI_Link glog gflags)
 
 ################################
 #### function approximators ####
@@ -70,4 +67,39 @@ endif ()
 ################################
 ########## Application #########
 ################################
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/applications/${RAI_APP})
+if (NOT ${RAI_APP} STREQUAL "")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/applications/${RAI_APP})
+endif()
+
+
+################################
+######## package config ########
+################################
+set(INSTALL_CMAKE_DIR ${CMAKE_BINARY_DIR}/lib/CMake/RAI CACHE PATH "Installation directory for CMake files")
+set(INSTALL_INCLUDE_DIR RAI/include CACHE PATH "Installation directory for header files")
+
+# Add all targets to the build-tree export set
+export(TARGETS rai_logger rai_timer rai_graph FILE "${PROJECT_BINARY_DIR}/RAI_Targets.cmake")
+
+# Export the package for use from the build-tree
+# (this registers the build-tree with a global CMake-registry)
+export(PACKAGE RAI)
+
+# ... for the build tree
+set(CONF_INCLUDE_DIRS "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/include" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/common" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/graphics")
+configure_file(RAIConfig.cmake.in "${PROJECT_BINARY_DIR}/RAIConfig.cmake" @ONLY)
+
+# ... for the install tree
+set(CONF_INCLUDE_DIRS "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/include" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/common" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/graphics")
+configure_file(RAIConfig.cmake.in "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/RAIConfig.cmake" @ONLY)
+
+# ... for both
+configure_file(RAIConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/RAIConfigVersion.cmake" @ONLY)
+
+install(FILES
+        "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/RAIConfig.cmake"
+        "${PROJECT_BINARY_DIR}/RAIConfigVersion.cmake"
+        DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+
+# Install the export set for use with the install-tree
+install(EXPORT RAITargets DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
