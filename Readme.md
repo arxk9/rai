@@ -32,7 +32,7 @@ Then run *install_tensorflow.sh*
 # 5. To cite RAI
 Please cite the following paper
 
-"@article{hwangbo2017control,
+"@journal{hwangbo2017control,
 title={Control of a Quadrotor with Reinforcement Learning}, author={Hwangbo, Jemin and Sa, Inkyu and Siegwart, Roland and Hutter, Marco}, journal={IEEE Robotics and Automation Letters}, year={2017}, publisher={IEEE} }
 Next"
 
