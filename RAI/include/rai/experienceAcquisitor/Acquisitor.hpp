@@ -1,0 +1,31 @@
+//
+// Created by jhwangbo on 3/23/17.
+//
+
+#ifndef RAI_ACQUISITOR_HPP
+#define RAI_ACQUISITOR_HPP
+
+namespace RAI {
+namespace ExpAcq {
+
+template <typename Dtype, int StateDim, int ActionDim>
+class Acquisitor {
+
+ public:
+  double stepsTaken(){
+    return double(stepsTaken_);
+  }
+
+  void incrementSteps(unsigned increment){
+    stepsTaken_ += increment;
+  }
+
+ protected:
+  unsigned long stepsTaken_ = 0;
+
+};
+
+}
+}
+
+#endif //RAI_ACQUISITOR_HPP

@@ -1,0 +1,16 @@
+__pycache__/
+build
+physicsEngine/irrlicht-1.8.3
+physicsEngine/chrono
+deepLearning/cuda
+deepLearning/tensorflow
+cmake-build-debug*
+cmake-build-release*
+cmake-build-default
+/.cproject
+/.project
+.idea
+.settings
+*.log
+*~
+*.orig

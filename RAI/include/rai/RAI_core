@@ -1,0 +1,44 @@
+//
+// Created by jhwangbo on 11.11.16.
+//
+
+#ifndef RAI_CORE_HPP
+#define RAI_CORE_HPP
+#include <sys/stat.h>
+#include <iostream>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include "RAI_timer/RAI_timer_ToInclude.hpp"
+#include "RAI_logger/include/RAI_logger/RAI_logger_ToInclude.hpp"
+#include "RAI_graph/include/gnuplot_wrapper/gnuplotter.hpp"
+#include <glog/logging.h>
+#include <omp.h>
+#include "RAI_Tensor.hpp"
+
+std::string RAI_LOG_PATH; /// logging directory
+std::string RAI_ROOT_PATH; /// the main RAI directory
+
+using RAI::Utils::graph;
+using RAI::Utils::logger;
+using RAI::Utils::timer;
+
+
+inline int RAI_init(){
+  RAI_LOG_PATH = std::string("/logsNplots/" + timer->getCurrentDataAndTime());
+  RAI_LOG_PATH = std::string(std::getenv("RAI_ROOT")) + RAI_LOG_PATH;
+  RAI_ROOT_PATH = std::string(std::getenv("RAI_ROOT"));
+  mkdir(RAI_LOG_PATH.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  std::ostringstream glogPath;
+  glogPath << RAI_LOG_PATH << "/";
+  FLAGS_log_dir = glogPath.str();
+  std::cout<<"logging directory: "<<glogPath.str()<<std::endl;
+  google::SetLogDestination(google::INFO,FLAGS_log_dir.c_str() );
+  google::InitGoogleLogging("debug");
+  graph->setLogPath(RAI_LOG_PATH);
+  logger->setLogPath(RAI_LOG_PATH);
+  timer->setLogPath(RAI_LOG_PATH);
+}
+
+
+
+#endif //RAI_RAI_UTILS_HPP
