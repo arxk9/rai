@@ -13,5 +13,3 @@ target_link_libraries(poleBal_DDPG ${RAI_Link})
 
 target_include_directories(poleBal_DDPG_simp PUBLIC ${SFML_INCLUDE_DIR})
 target_link_libraries(poleBal_DDPG_simp ${SFML_LIBRARIES} ${RAI_Link})
-
-file(COPY "${PROJECT_SOURCE_DIR}/RAI/taskModules/poleBalancing/TensorflowPB_Pole" DESTINATION ${CMAKE_BINARY_DIR}/applications/examples/poleBalwithDDPG)

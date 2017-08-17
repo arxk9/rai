@@ -6,6 +6,8 @@
 What is RAI?
 ===============================
 
+RAI is currently in beta testing stage. Feel free to contact jhwangbo@ethz.ch for suggesting possible improvements.
+
 RAI is a C++ framework to develop and benchmark learning algorithms.
 It is designed for reinforcement tasks with robotic applications in mind.
 It only works in Linux systems and we do not have a plan to support Windows yet.

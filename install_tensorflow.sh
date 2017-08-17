@@ -47,7 +47,7 @@ cd ./deepLearning
 sudo rm -rf tensorflow
 git clone https://github.com/tensorflow/tensorflow.git
 cd tensorflow
-git checkout r1.2
+git checkout r1.3
 echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
 sudo ./configure
 
