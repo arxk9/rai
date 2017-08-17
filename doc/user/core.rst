@@ -2,6 +2,8 @@
 Core
 ========================
 
+RAI is currently in beta testing stage. Feel free to contact jhwangbo@ethz.ch for suggesting possible improvements.
+
 The core of RAI is simply a collection of classes needed for learning. They are grouped into the following 6 categories
 
 * function
