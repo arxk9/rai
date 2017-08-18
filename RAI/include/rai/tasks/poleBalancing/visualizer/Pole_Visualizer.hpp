@@ -1,7 +1,7 @@
 
 #include "RAI_graphics.hpp"
 #include "obj/Mesh.hpp"
-#include "math/RAI_math.hpp"
+#include "rai/common/math/RAI_math.hpp"
 #include "obj/Cylinder.hpp"
 #include "obj/Sphere.hpp"
 

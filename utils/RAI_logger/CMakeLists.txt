@@ -14,3 +14,6 @@ if(BUILD_TEST)
   add_executable(logging_examples src/logging_examples.cpp)
   target_link_libraries(logging_examples rai_logger glog)
 endif()
+
+install(DIRECTORY include DESTINATION ${CMAKE_BINARY_DIR}/include/RAI_logger)
+install(TARGETS rai_logger EXPORT RAITargets DESTINATION ${CMAKE_BINARY_DIR}/lib)

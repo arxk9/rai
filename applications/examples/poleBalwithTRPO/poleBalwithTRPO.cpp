@@ -151,6 +151,7 @@ int main(int argc, char *argv[]) {
 
     if ( iterationNumber % loggingInterval == 0 ) {
       algorithm.setVisualizationLevel(0);
+      taskVector[0]->disableRecording();
       graph->figure(1, figurePropertiesEVP);
       graph->appendData(1, logger->getData("Nominal performance", 0),
                         logger->getData("Nominal performance", 1),

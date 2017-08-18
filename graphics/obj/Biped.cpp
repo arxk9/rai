@@ -3,9 +3,9 @@
 //
 
 
-#include <math/RAI_math.hpp>
+#include <rai/common/math/RAI_math.hpp>
 #include "Biped.hpp"
-#include "TypeDef.hpp"
+#include "rai/common/TypeDef.hpp"
 
 namespace RAI {
 namespace Graphics {

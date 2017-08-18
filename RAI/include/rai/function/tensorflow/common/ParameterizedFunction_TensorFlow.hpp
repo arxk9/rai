@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include "rai/function/common/ParameterizedFunction.hpp"
-#include "tensorflowWrapper/TensorFlowNeuralNetwork.hpp"
+#include "TensorFlowNeuralNetwork.hpp"
 #include <cstdlib>
 #include <stdio.h>
 #include <stdlib.h>

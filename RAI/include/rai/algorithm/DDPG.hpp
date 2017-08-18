@@ -29,9 +29,9 @@
 #include "rai/function/common/Qfunction.hpp"
 
 // common
-#include "enumeration.hpp"
-#include "math/inverseUsingCholesky.hpp"
-#include "math/ConjugateGradient.hpp"
+#include "rai/common/enumeration.hpp"
+#include "rai/common/math/inverseUsingCholesky.hpp"
+#include "rai/common/math/ConjugateGradient.hpp"
 #include "math.h"
 #include "rai/RAI_core"
 

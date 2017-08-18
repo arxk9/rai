@@ -15,17 +15,20 @@ APT_GET_FLAGS=-qq
 ADD_APT_REPOSITORY_FLAGS=-y
 
 ### General paths
-if [ "$RAI_ROOT" != "$PWD" ]; then
-    sed -i "/\b\RAI_ROOT\\b/d" $HOME/.bashrc
-    printf 'export RAI_ROOT='$PWD'\n' >> $HOME/.bashrc
-    RAI_ROOT="$PWD"
-fi
+sed -i '/RAI_ROOT/d' $HOME/.bashrc
+printf 'export RAI_ROOT='$PWD'\n' >> $HOME/.bashrc
+RAI_ROOT="$PWD"
 
 cd "$RAI_ROOT"
 
 ### adding ppa's
 # compilers
 sudo add-apt-repository $ADD_APT_REPOSITORY_FLAGS ppa:ubuntu-toolchain-r/test
+#bazel
+echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+#python
+sudo add-apt-repository $ADD_APT_REPOSITORY_FLAGS ppa:fkrull/deadsnakes
 
 ## update
 sudo apt-get update
@@ -37,9 +40,6 @@ sudo apt-get install $APT_GET_FLAGS wget curl
 sudo mkdir -p /etc/pki/tls/certs
 sudo cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
 
-#bazel
-echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
-curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 
 # basics
 sudo apt-get install $APT_GET_FLAGS gcc-6 g++-6 libeigen3-dev libtinyxml-dev autoconf automake libtool curl make g++ unzip
@@ -56,7 +56,7 @@ sudo apt-get install $APT_GET_FLAGS libboost-all-dev
 ## Bazel
 sudo apt-get install $APT_GET_FLAGS software-properties-common
 sudo apt-get install $APT_GET_FLAGS golang
-sudo apt-get update && sudo apt-get install $APT_GET_FLAGS bazel
+sudo apt-get install $APT_GET_FLAGS bazel
 sudo apt-get upgrade bazel
 
 ## Cmake 3
@@ -71,8 +71,6 @@ sudo apt-get install $APT_GET_FLAGS swig
 ## Setting up python and virtualenv
 
 # python 3.5
-sudo add-apt-repository $ADD_APT_REPOSITORY_FLAGS ppa:fkrull/deadsnakes
-sudo apt-get update
 sudo apt-get install $APT_GET_FLAGS python3.5-dev
 
 # Installing pip

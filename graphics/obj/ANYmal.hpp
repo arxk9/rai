@@ -5,7 +5,7 @@
 #ifndef RAI_ANYMAL_HPP
 #define RAI_ANYMAL_HPP
 
-#include <TypeDef.hpp>
+#include <rai/common/TypeDef.hpp>
 #include "SuperObject.hpp"
 #include "Mesh.hpp"
 

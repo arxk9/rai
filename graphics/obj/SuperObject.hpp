@@ -8,7 +8,7 @@
 #include "Object.hpp"
 #include "../imp/shader.hpp"
 #include "../imp/shader_basic.h"
-#include "TypeDef.hpp"
+#include "rai/common/TypeDef.hpp"
 
 namespace RAI {
 namespace Graphics {

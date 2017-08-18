@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+
+Name: RAI
+Description: A reinforcement learning library for robotics
+Requires:
+Version:
+Libs: -L@RAI_LIB_DIR@ -lrai -Wl,-rpath @RAI_LIB_DIR@
+Cflags: -I@RAI_INCLUDE_DIR@
+

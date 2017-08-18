@@ -9,14 +9,14 @@
 #include <stdlib.h>
 #include <iostream>
 #include <boost/bind.hpp>
-#include <math/RAI_math.hpp>
+#include <rai/common/math/RAI_math.hpp>
 #include <math.h>
 #include "Eigen/Core"
 #include "UnilateralContact.hpp"
-#include "math/inverseUsingCholesky.hpp"
-#include "math/RandomNumberGenerator.hpp"
-#include "math/GoldenSectionMethod.hpp"
-#include "math/RAI_math.hpp"
+#include "rai/common/math/inverseUsingCholesky.hpp"
+#include "rai/common/math/RandomNumberGenerator.hpp"
+#include "rai/common/math/GoldenSectionMethod.hpp"
+#include "rai/common/math/RAI_math.hpp"
 
 namespace RAI {
 namespace Dynamics {

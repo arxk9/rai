@@ -8,7 +8,7 @@
 #include "Object.hpp"
 #include <vector>
 #include "math.h"
-#include "TypeDef.hpp"
+#include "rai/common/TypeDef.hpp"
 
 namespace RAI {
 namespace Graphics {

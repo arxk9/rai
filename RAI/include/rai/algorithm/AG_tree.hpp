@@ -20,7 +20,7 @@
 #include "rai/RAI_core"
 #include <vector>
 #include <stdlib.h>
-#include "VectorHelper.hpp"
+#include "rai/common/VectorHelper.hpp"
 
 // Neural network
 //function approximations
@@ -34,9 +34,9 @@
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor.hpp"
 
 // common
-#include "enumeration.hpp"
-#include "math/inverseUsingCholesky.hpp"
-#include "math/ConjugateGradient.hpp"
+#include "rai/common/enumeration.hpp"
+#include "rai/common/math/inverseUsingCholesky.hpp"
+#include "rai/common/math/ConjugateGradient.hpp"
 #include "rai/RAI_core"
 #include "CMAES.hpp"
 
