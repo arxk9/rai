@@ -11,13 +11,16 @@ file(GLOB SRCfiles
 
 find_package( Eigen3 REQUIRED )
 include_directories( ${EIGEN3_INCLUDE_DIR} )
-add_executable(testRAIGraphics test.cpp ${SRCfiles})
 link_directories(/usr/lib)
 
 INCLUDE(FindPkgConfig)
-message("rai link is graph is ${RAI_Link}")
-target_link_libraries(testRAIGraphics glut GLU GL GLEW SDL2 assimp SOIL glog freeimage ${RAI_Link} pthread ${RAI_TARGET})
 
 add_library(rai_graphics ${SRCfiles})
-set(RAI_Graphics ${RAI_Graphics} rai_graphics glut GLU GL GLEW SDL2 assimp SOIL glog freeimage pthread PARENT_SCOPE)
+set(RAI_Graphics rai_graphics glut GLU GL GLEW SDL2 assimp SOIL glog freeimage pthread)
+add_executable(testRAIGraphics test.cpp)
+target_link_libraries(testRAIGraphics ${RAI_Graphics})
 
+install(DIRECTORY obj imp DESTINATION ${CMAKE_BINARY_DIR}/include)
+install(FILES RAI_graphics.hpp RAI_keyboard.hpp DESTINATION ${CMAKE_BINARY_DIR}/include)
+install(TARGETS rai_graphics EXPORT RAITargets DESTINATION ${CMAKE_BINARY_DIR}/lib)
+set(RAI_LINK ${RAI_Graphics} ${RAI_LINK} PARENT_SCOPE)

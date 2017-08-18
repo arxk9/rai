@@ -15,8 +15,5 @@ if(BUILD_TEST)
   target_link_libraries(logging_examples rai_logger glog)
 endif()
 
-install(TARGETS rai_logger
-        # IMPORTANT: Add the bar executable to the "export-set"
-        EXPORT RAITargets
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin)
+install(DIRECTORY include DESTINATION ${CMAKE_BINARY_DIR}/include/RAI_logger)
+install(TARGETS rai_logger EXPORT RAITargets DESTINATION ${CMAKE_BINARY_DIR}/lib)

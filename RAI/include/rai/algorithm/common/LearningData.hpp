@@ -12,7 +12,7 @@
 #include <rai/RAI_core>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/function/common/StochasticPolicy.hpp>
-#include <VectorHelper.hpp>
+#include <rai/common/VectorHelper.hpp>
 
 namespace RAI {
 namespace Algorithm {

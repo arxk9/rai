@@ -6,7 +6,7 @@
 #define QLEARNING_NORMALDISTRIBUTIONNOISE_HPP
 
 #include "Noise.hpp"
-#include "math/RandomNumberGenerator.hpp"
+#include "rai/common/math/RandomNumberGenerator.hpp"
 #include <Eigen/Cholesky>
 
 namespace RAI {

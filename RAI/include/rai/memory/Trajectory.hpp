@@ -8,7 +8,7 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include "enumeration.hpp"
+#include "rai/common/enumeration.hpp"
 #include "rai/function/common/ValueFunction.hpp"
 
 namespace RAI {

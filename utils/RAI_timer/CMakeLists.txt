@@ -10,8 +10,5 @@ include_directories(include)
 # Export the plotter library
 add_library(rai_timer RAI_timer.cpp)
 
-install(TARGETS rai_timer
-        # IMPORTANT: Add the bar executable to the "export-set"
-        EXPORT RAITargets
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin)
+install(FILES RAI_timer_ToInclude.hpp RAI_timer.hpp RAI_timer_items.hpp DESTINATION ${CMAKE_BINARY_DIR}/include/RAI_timer)
+install(TARGETS rai_timer EXPORT RAITargets DESTINATION ${CMAKE_BINARY_DIR}/lib)

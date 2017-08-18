@@ -19,14 +19,14 @@
 #include <math.h>
 #include "rai/RAI_core"
 #include <vector>
-#include <math/RAI_math.hpp>
+#include <rai/common/math/RAI_math.hpp>
 
 // Neural network
 //function approximations
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/ValueFunction.hpp"
 #include "rai/function/common/StochasticPolicy.hpp"
-#include "VectorHelper.hpp"
+#include "rai/common/VectorHelper.hpp"
 
 // memory
 #include "rai/memory/Trajectory.hpp"
@@ -37,9 +37,9 @@
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 
 // common
-#include "enumeration.hpp"
-#include "math/inverseUsingCholesky.hpp"
-#include "math/ConjugateGradient.hpp"
+#include "rai/common/enumeration.hpp"
+#include "rai/common/math/inverseUsingCholesky.hpp"
+#include "rai/common/math/ConjugateGradient.hpp"
 #include "math.h"
 #include "rai/RAI_core"
 

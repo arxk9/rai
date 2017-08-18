@@ -30,7 +30,7 @@
 #include <Eigen/SVD>
 
 // enumeration
-#include "enumeration.hpp"
+#include "rai/common/enumeration.hpp"
 
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"

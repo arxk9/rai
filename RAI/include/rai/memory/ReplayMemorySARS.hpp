@@ -13,9 +13,9 @@
 #include <Eigen/Core>
 #include <mutex>
 #include <algorithm>
-#include "math/RandomNumberGenerator.hpp"
+#include "rai/common/math/RandomNumberGenerator.hpp"
 #include "glog/logging.h"
-#include "enumeration.hpp"
+#include "rai/common/enumeration.hpp"
 
 namespace RAI {
 namespace Memory {

@@ -8,7 +8,7 @@
 
 #include "tensorflow/core/public/session.h"
 #include "tensorflow/core/framework/op_kernel.h"
-#include "VectorHelper.hpp"
+#include "rai/common/VectorHelper.hpp"
 #include "rai/RAI_Tensor.hpp"
 
 # pragma once

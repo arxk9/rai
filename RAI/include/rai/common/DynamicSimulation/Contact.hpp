@@ -1,7 +1,7 @@
 //
 // Created by jhwangbo on 03.03.17.
 //
-#include "TypeDef.hpp"
+#include "rai/common/TypeDef.hpp"
 
 #ifndef RAI_CONTACT_HPP
 #define RAI_CONTACT_HPP

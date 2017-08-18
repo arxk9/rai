@@ -9,8 +9,23 @@ set(CMAKE_CXX_FLAGS "-Wl,--no-as-needed -fopenmp -O3 -w -funroll-loops")
 link_directories(/usr/local/lib)
 link_directories(/usr/lib)
 link_directories(/usr/lib/x86_64-linux-gnu/)
+include(CheckCXXCompilerFlag)
+include(GNUInstallDirs)
 
 project(RAI)
+
+##############################
+############ Path ############
+##############################
+set(CMAKEPACKAGE_INSTALL_DIR
+        "/${CMAKE_INSTALL_DATADIR}/RAI/cmake"
+        CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where RAIConfig.cmake is installed"
+        )
+
+set(PKGCONFIG_INSTALL_DIR
+        "/${CMAKE_INSTALL_DATADIR}/pkgconfig"
+        CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where RAI.pc is installed"
+        )
 
 set(RAI_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -31,7 +46,7 @@ option(BUILD_TEST "building test files" OFF)
 ################################
 ####### Common Libraries #######
 ################################
-set(RAI_Link glog gflags)
+set(RAI_LINK glog gflags CACHE INTERNAL "")
 
 ################################
 #### function approximators ####
@@ -41,9 +56,8 @@ include_directories(${TENSORFLOW_INCLUDE_DIRS})
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tensorflowDependencies" ${CMAKE_MODULE_PATH})
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/deepLearning/tensorflowWrapper/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/deepLearning/tensorflow/bazel-genfiles/)
-set(RAI_Link ${RAI_Link} ${TENSORFLOW_LIBRARIES} ${TENSORFLOW_SHARED_LIBRARY})
+set(RAI_LINK ${RAI_LINK} ${TENSORFLOW_LIBRARIES} ${TENSORFLOW_SHARED_LIBRARY})
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tensorflowDependencies" ${CMAKE_MODULE_PATH})
 
 ################################
@@ -53,6 +67,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/RAI/include)
 include_directories(utils)
 include_directories(common)
 include_directories(graphics)
+set(RAI_LINK rai_logger rai_timer rai_graph ${RAI_LINK})
 
 ################################
 ####### sub directories ########
@@ -69,37 +84,24 @@ endif ()
 ################################
 if (NOT ${RAI_APP} STREQUAL "")
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/applications/${RAI_APP})
-endif()
-
+endif ()
 
 ################################
 ######## package config ########
 ################################
-set(INSTALL_CMAKE_DIR ${CMAKE_BINARY_DIR}/lib/CMake/RAI CACHE PATH "Installation directory for CMake files")
-set(INSTALL_INCLUDE_DIR RAI/include CACHE PATH "Installation directory for header files")
+install(EXPORT RAITargets DESTINATION ${CMAKE_BINARY_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/RAI/include DESTINATION ${CMAKE_BINARY_DIR})
+include(CMakePackageConfigHelpers)
 
-# Add all targets to the build-tree export set
-export(TARGETS rai_logger rai_timer rai_graph FILE "${PROJECT_BINARY_DIR}/RAI_Targets.cmake")
+set(RAI_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include CACHE PATH "rai include directory")
+set(RAI_INCLUDE_DIR ${RAI_INCLUDE_DIR} ${TENSORFLOW_INCLUDE_DIRS})
+message("RAI_INCLUDE_DIR ${RAI_INCLUDE_DIR}")
+set(RAI_LIB_DIR ${CMAKE_BINARY_DIR}/lib CACHE PATH "rai lib directory")
 
-# Export the package for use from the build-tree
-# (this registers the build-tree with a global CMake-registry)
-export(PACKAGE RAI)
-
-# ... for the build tree
-set(CONF_INCLUDE_DIRS "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/include" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/common" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/graphics")
-configure_file(RAIConfig.cmake.in "${PROJECT_BINARY_DIR}/RAIConfig.cmake" @ONLY)
-
-# ... for the install tree
-set(CONF_INCLUDE_DIRS "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/include" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/common" "\${CMAKE_CURRENT_SOURCE_DIR}/RAI/graphics")
-configure_file(RAIConfig.cmake.in "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/RAIConfig.cmake" @ONLY)
-
-# ... for both
-configure_file(RAIConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/RAIConfigVersion.cmake" @ONLY)
-
-install(FILES
-        "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/RAIConfig.cmake"
-        "${PROJECT_BINARY_DIR}/RAIConfigVersion.cmake"
-        DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
-
-# Install the export set for use with the install-tree
-install(EXPORT RAITargets DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RAIConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/RAIConfig.cmake @ONLY
+        )
+configure_file(RAI.pc.in RAI.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/RAI.pc
+        DESTINATION ${CMAKE_INSTALL_PREFIX}${PKGCONFIG_INSTALL_DIR}
+        )

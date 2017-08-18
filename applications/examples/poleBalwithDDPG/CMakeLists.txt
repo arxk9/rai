@@ -9,7 +9,7 @@ add_executable(poleBal_DDPG_simp
         simplifiedVersion.cpp)
 
 target_include_directories(poleBal_DDPG PUBLIC)
-target_link_libraries(poleBal_DDPG ${RAI_Link})
+target_link_libraries(poleBal_DDPG ${RAI_LINK})
 
-target_include_directories(poleBal_DDPG_simp PUBLIC ${SFML_INCLUDE_DIR})
-target_link_libraries(poleBal_DDPG_simp ${SFML_LIBRARIES} ${RAI_Link})
+target_include_directories(poleBal_DDPG_simp PUBLIC)
+target_link_libraries(poleBal_DDPG_simp ${RAI_LINK})
