@@ -18,10 +18,9 @@ project(RAI)
 ############ Path ############
 ##############################
 set(CMAKEPACKAGE_INSTALL_DIR
-        "/${CMAKE_INSTALL_DATADIR}/RAI/cmake"
+        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/RAI/cmake"
         CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where RAIConfig.cmake is installed"
         )
-
 set(PKGCONFIG_INSTALL_DIR
         "/${CMAKE_INSTALL_DATADIR}/pkgconfig"
         CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where RAI.pc is installed"
@@ -89,19 +88,23 @@ endif ()
 ################################
 ######## package config ########
 ################################
-install(EXPORT RAITargets DESTINATION ${CMAKE_BINARY_DIR})
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/RAI/include DESTINATION ${CMAKE_BINARY_DIR})
 include(CMakePackageConfigHelpers)
 
+install(EXPORT RAITargets DESTINATION ${CMAKEPACKAGE_INSTALL_DIR})
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/RAI/include DESTINATION ${CMAKE_BINARY_DIR})
 set(RAI_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include CACHE PATH "rai include directory")
 set(RAI_INCLUDE_DIR ${RAI_INCLUDE_DIR} ${TENSORFLOW_INCLUDE_DIRS})
-message("RAI_INCLUDE_DIR ${RAI_INCLUDE_DIR}")
 set(RAI_LIB_DIR ${CMAKE_BINARY_DIR}/lib CACHE PATH "rai lib directory")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RAIConfig.cmake.in
         ${CMAKE_CURRENT_BINARY_DIR}/RAIConfig.cmake @ONLY
         )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/RAIConfig.cmake
+        DESTINATION ${CMAKEPACKAGE_INSTALL_DIR}
+        )
+
 configure_file(RAI.pc.in RAI.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/RAI.pc
-        DESTINATION ${CMAKE_INSTALL_PREFIX}${PKGCONFIG_INSTALL_DIR}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
         )
