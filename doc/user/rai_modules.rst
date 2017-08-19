@@ -43,6 +43,7 @@ Here “backProp” is nested inside the “V func learning”. RAI_Timer keeps 
 
 It is important that the hierarchy is always consistent. For example, if “backProp” loop is introduced outside of “V func learning” in the later part of the code, the RAI_Graph will fail to produce a meaning pie chart.
 
+**You must not use timer in multi-treaded part of the code**. This means no timer in :code:`ExperienceAcquisitor`, :code:`Task` and :code:`Noise`.
 If you do not want to log the computation costs of the certain parts of the code, simply use::
 
     timer->disable();
