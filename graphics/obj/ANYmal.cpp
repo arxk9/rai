@@ -10,23 +10,23 @@ namespace Graphics {
 namespace Obj {
 
 ANYmal::ANYmal():
-    base(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_base_1_2.dae", 0.001),
-    hip_lf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_hip.dae", 0.001),
-    hip_rf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_hip.dae", 0.001),
-    hip_lh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_hip.dae", 0.001),
-    hip_rh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_hip.dae", 0.001),
-    thigh_lf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_thigh.dae", 0.001),
-    thigh_rf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_thigh.dae", 0.001),
-    thigh_lh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_thigh.dae", 0.001),
-    thigh_rh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_thigh.dae", 0.001),
-    shank_lf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_shank_2_LF.dae", 0.001),
-    shank_rf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_shank_2_RF.dae", 0.001),
-    shank_lh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_shank_2_LH.dae", 0.001),
-    shank_rh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_shank_2_RH.dae", 0.001),
-    foot_lf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_optoforce.dae", 0.001),
-    foot_rf(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_optoforce.dae", 0.001),
-    foot_lh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_optoforce.dae", 0.001),
-    foot_rh(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/QuadrupedLocomotion/cadModel/anymal/anymal_optoforce.dae", 0.001){
+    base(std::string(getenv("RAI_ROOT"))     + "/graphics/obj/ANYmal/anymal_base_1_2.dae", 0.001),
+    hip_lf(std::string(getenv("RAI_ROOT"))   + "/graphics/obj/ANYmal/anymal_hip.dae", 0.001),
+    hip_rf(std::string(getenv("RAI_ROOT"))   + "/graphics/obj/ANYmal/anymal_hip.dae", 0.001),
+    hip_lh(std::string(getenv("RAI_ROOT"))   + "/graphics/obj/ANYmal/anymal_hip.dae", 0.001),
+    hip_rh(std::string(getenv("RAI_ROOT"))   + "/graphics/obj/ANYmal/anymal_hip.dae", 0.001),
+    thigh_lf(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_thigh.dae", 0.001),
+    thigh_rf(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_thigh.dae", 0.001),
+    thigh_lh(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_thigh.dae", 0.001),
+    thigh_rh(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_thigh.dae", 0.001),
+    shank_lf(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_shank_2_LF.dae", 0.001),
+    shank_rf(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_shank_2_RF.dae", 0.001),
+    shank_lh(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_shank_2_LH.dae", 0.001),
+    shank_rh(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_shank_2_RH.dae", 0.001),
+    foot_lf(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
+    foot_rf(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
+    foot_lh(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
+    foot_rh(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001){
   objs.push_back(&base);
 
   objs.push_back(&hip_lf);
