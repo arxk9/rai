@@ -55,10 +55,19 @@ sudo apt-get install $APT_GET_FLAGS libboost-all-dev
 sudo apt-get install $APT_GET_FLAGS software-properties-common
 sudo apt-get install $APT_GET_FLAGS golang
 
+if [[ `lsb_release -rs` == "14.04" ]]
+then
+	echo "testing"
+elif [[ `lsb_release -rs` == "16.04" ]]
+then
+	echo "16.04"
+else
+	echo "unsupported version"
+	exit
+fi
+
 #bazel
-sudo apt-get install openjdk-8-jdk
-sudo add-apt-repository ppa:webupd8team/java
-sudo apt-get update && sudo apt-get install oracle-java8-installer
+sudo apt-get install $APT_GET_FLAGS openjdk-8-jdk
 echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
 curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 sudo apt-get update
