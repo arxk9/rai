@@ -2,10 +2,6 @@
 // Created by jhwangbo on 10/08/17.
 //
 
-//
-// Created by joonho on 03.04.17.
-//
-
 
 #include <rai/RAI_core>
 

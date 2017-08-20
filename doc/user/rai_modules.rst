@@ -95,7 +95,6 @@ RAI_Graph only supports maximum 6 figures per process.
 
 Graphics
 ========================
-
 RAI_Graphics is based on OpenGL, SDL and GLSL.
 It is efficient in displaying large meshes since all meshes are saved in the GPU memory and the GLSL shader does all the processing (transformation and shading) in GPU.
 It also offers very simple interface and automatic video recording.
