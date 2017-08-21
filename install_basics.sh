@@ -61,7 +61,7 @@ echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | 
 curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install $APT_GET_FLAGS bazel
-sudo apt-get upgrade bazel
+sudo apt-get upgrade $APT_GET_FLAGS bazel
 
 ## Cmake 3
 wget https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.sh
@@ -85,7 +85,7 @@ pip3 install --upgrade pip
 sudo apt-get install $APT_GET_FLAGS python-virtualenv
 
 # Installing virtualenvwrapper
-pip3 install $APT_GET_FLAGS virtualenvwrapper
+sudo -H pip3 install $APT_GET_FLAGS virtualenvwrapper
 printf 'source virtualenvwrapper.sh\n' >> $HOME/.bashrc
 source ~/.bashrc
 
