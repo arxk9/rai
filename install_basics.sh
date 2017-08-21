@@ -79,13 +79,16 @@ sudo apt-get install $APT_GET_FLAGS python3.5-dev
 
 # Installing pip
 sudo apt-get install $APT_GET_FLAGS python3-pip
-pip3 install --upgrade pip
+pip install --upgrade pip
 
 # Installing virtualenv
 sudo apt-get install $APT_GET_FLAGS python-virtualenv
 
 # Installing virtualenvwrapper
-sudo -H pip3 install $APT_GET_FLAGS virtualenvwrapper
+sudo -H pip install $APT_GET_FLAGS virtualenvwrapper
+sed -i '/VIRTUALENVWRAPPER_PYTHON/d' $HOME/.bashrc
+printf 'VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3\n' >> $HOME/.bashrc
+sed -i '/source virtualenvwrapper.sh/d' $HOME/.bashrc
 printf 'source virtualenvwrapper.sh\n' >> $HOME/.bashrc
 source ~/.bashrc
 
@@ -104,6 +107,7 @@ sudo apt-get install $APT_GET_FLAGS liburdfdom-dev
 
 # INSTALL rbdl
 cd $RAI_ROOT/..
+rm -rf rbdl
 sudo apt-get install $APT_GET_FLAGS mercurial
 hg clone ssh://hg@bitbucket.org/rbdl/rbdl
 cd rbdl/
@@ -113,8 +117,8 @@ mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release ../ && make -j && s
 cd $RAI_ROOT/doc
 mkvirtualenv sphinx
 workon sphinx
-pip3 install sphinx sphinx-autobuild
-pip3 install sphinx_rtd_theme
+pip install sphinx sphinx-autobuild
+pip install sphinx_rtd_theme
 make html
 deactivate
 
