@@ -1,5 +1,9 @@
 #!/bin/bash
 
+### General configuration of bash and flags for apt-get and add-apt-repository
+set -e
+set -o xtrace
+
 APT_GET_FLAGS=-qq
 ADD_APT_REPOSITORY_FLAGS=-y
 
@@ -8,24 +12,15 @@ ADD_APT_REPOSITORY_FLAGS=-y
 ### Do not change NVidia version since cuda installer will automatically update it to what it needs
 ### CudNN by downloading CudNN file and copy paste it to cp cuda/include/* usr/local/cuda/include/ and cp cuda/lib64/* usr/local/cuda/lib64/
 
-set -e
-set -o xtrace
-
 #sudo add-apt-repository ppa:fkrull/deadsnakes
 #sudo apt-get update
 #sudo apt-get install python3.5
 
 sudo apt-get install python3-setuptools
-#sudo easy_install3 pip
 
 # Setting WORKON_HOME
-sed -i "/export WORKON_HOME=/d" ~/.bashrc
-echo "export WORKON_HOME=~/.virtualenvs" >> ~/.bashrc
 export WORKON_HOME=~/.virtualenvs
 mkdir -p $WORKON_HOME
-
-sed -i "/source .*virtualenvwrapper/d" ~/.bashrc
-echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.bashrc
 source /usr/local/bin/virtualenvwrapper.sh
 
 # Generate virtualenv for tensorflow (called tensorflow)
@@ -39,7 +34,7 @@ workon $VIRTUALENV_NAME
 # Installing python-dev
 sudo apt-get install $APT_GET_FLAGS python-dev
 
-pip3 install numpy
+sudo -H pip3 install numpy
 
 ##### now run configure
 cd "$RAI_ROOT"
