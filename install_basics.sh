@@ -55,17 +55,6 @@ sudo apt-get install $APT_GET_FLAGS libboost-all-dev
 sudo apt-get install $APT_GET_FLAGS software-properties-common
 sudo apt-get install $APT_GET_FLAGS golang
 
-if [[ `lsb_release -rs` == "14.04" ]]
-then
-	echo "testing"
-elif [[ `lsb_release -rs` == "16.04" ]]
-then
-	echo "16.04"
-else
-	echo "unsupported version"
-	exit
-fi
-
 #bazel
 sudo apt-get install $APT_GET_FLAGS openjdk-8-jdk
 echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
@@ -89,13 +78,16 @@ sudo apt-get install $APT_GET_FLAGS swig
 sudo apt-get install $APT_GET_FLAGS python3.5-dev
 
 # Installing pip
-sudo apt-get install $APT_GET_FLAGS python-pip
+sudo apt-get install $APT_GET_FLAGS python3-pip
+pip3 install --upgrade pip
 
 # Installing virtualenv
 sudo apt-get install $APT_GET_FLAGS python-virtualenv
 
 # Installing virtualenvwrapper
-sudo pip install $APT_GET_FLAGS virtualenvwrapper
+pip3 install $APT_GET_FLAGS virtualenvwrapper
+printf 'source virtualenvwrapper.sh\n' >> $HOME/.bashrc
+source ~/.bashrc
 
 ### graphic
 # 3D rendering
@@ -121,8 +113,8 @@ mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release ../ && make -j && s
 cd $RAI_ROOT/doc
 mkvirtualenv sphinx
 workon sphinx
-pip install sphinx sphinx-autobuild
-pip install sphinx_rtd_theme
+pip3 install sphinx sphinx-autobuild
+pip3 install sphinx_rtd_theme
 make html
 deactivate
 
