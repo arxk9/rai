@@ -78,14 +78,15 @@ sudo apt-get install $APT_GET_FLAGS swig
 sudo apt-get install $APT_GET_FLAGS python3.5-dev
 
 # Installing pip
-sudo apt-get install $APT_GET_FLAGS python3-pip
+sudo apt-get install $APT_GET_FLAGS python-pip
 pip3 install --upgrade pip
 
 # Installing virtualenv
 sudo apt-get install $APT_GET_FLAGS python3-virtualenv
+sudo apt-get install python3-setuptools
 
 # Installing virtualenvwrapper
-sudo apt-get install $APT_GET_FLAGS virtualenvwrapper
+sudo pip install virtualenvwrapper
 sed -i '/VIRTUALENVWRAPPER_PYTHON/d' $HOME/.bashrc
 printf 'VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3\n' >> $HOME/.bashrc
 sed -i '/WORKON_HOME/d' $HOME/.bashrc

@@ -16,12 +16,10 @@ ADD_APT_REPOSITORY_FLAGS=-y
 #sudo apt-get update
 #sudo apt-get install python3.5
 
-sudo apt-get install python3-setuptools
 
 # Setting WORKON_HOME
-export WORKON_HOME=~/.virtualenvs
-mkdir -p $WORKON_HOME
-source /usr/local/bin/virtualenvwrapper.sh
+source ~/.bashrc
+source virtualenvwrapper.sh
 
 # Generate virtualenv for tensorflow (called tensorflow)
 VIRTUALENV_NAME=tensorflow
