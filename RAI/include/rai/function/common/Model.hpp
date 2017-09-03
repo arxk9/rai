@@ -4,7 +4,7 @@
 
 #ifndef RAI_MODEL_HPP
 #define RAI_MODEL_HPP
-#include "common/ParameterizedFunction_TensorFlow.hpp"
+#include "rai/function/tensorflow/common/ParameterizedFunction_TensorFlow.hpp"
 
 namespace RAI {
 namespace FuncApprox {

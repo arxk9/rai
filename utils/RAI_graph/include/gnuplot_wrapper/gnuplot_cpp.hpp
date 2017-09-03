@@ -54,6 +54,9 @@ enum class OutputFormat {
 
 struct FigProp2D {
  public:
+  FigProp2D(std::string xlabel_, std::string ylabel_, std::string title_) {
+    xlabel = xlabel_; ylabel = ylabel_; title = title_;
+  }
   std::string xlabel = "", ylabel = "", title = "", size = "600,400";
 };
 
@@ -69,6 +72,9 @@ rgb 34,35,36; "AFM hot (black-red-yellow-white)"
 */
 struct FigProp3D {
  public:
+  FigProp3D(std::string xlabel_, std::string ylabel_, std::string zlabel_, std::string title_) {
+    xlabel = xlabel_; ylabel = ylabel_; title = title_; zlabel = zlabel_;
+  }
   std::string xlabel = "x axis", ylabel = "y axis", zlabel = "z axis", title = "No title", palette = "rgb 33,13,10",
       gridLineColor = "black", size = "600,400";
   DisplayType3D displayType = DisplayType3D::heatMap2D;

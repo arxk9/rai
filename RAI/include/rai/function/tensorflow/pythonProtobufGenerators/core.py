@@ -144,7 +144,7 @@ def infimum_loss_opt(dtype, target, value, optimizer):
     train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)
 
 
-def square_loss_opt(dtype, target, value, optimizer):
+def square_loss_opt(dtype, target, value, optimizer, extraCost=0):
     loss = tf.reduce_mean(tf.square(target - value), name='loss')
     learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
     train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)

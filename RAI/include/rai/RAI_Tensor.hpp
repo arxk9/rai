@@ -143,6 +143,10 @@ class Tensor {
     return namedTensor_.second;
   }
 
+  std::vector<tensorflow::Tensor>& output() {
+    return vecTens;
+  }
+
   ///////////////////////////////
   ////////// operators //////////
   ///////////////////////////////
@@ -170,6 +174,10 @@ class Tensor {
     << eMat.cols();
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * size_);
   }
+
+  Dtype* operator[](int x) {
+    return vecTens[x].flat<Dtype>().data();
+  };
 
   ///////////////////////////////
   /////////// generic ///////////
@@ -277,6 +285,7 @@ class Tensor {
   tensorflow::TensorShape dim_inv_; /// tensorflow dimension
   long int size_;
   Eigen::DSizes<Eigen::DenseIndex, NDim> esizes_;
+  std::vector<tensorflow::Tensor> vecTens;
 
 };
 

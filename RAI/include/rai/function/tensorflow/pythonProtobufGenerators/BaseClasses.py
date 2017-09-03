@@ -42,6 +42,8 @@ class ParameterizedFunction:
         interpolateAP_op = tf.group(*interpolate_ap_op_list, name='interpolateAP')
         interpolateLP_op = tf.group(*interpolate_lp_op_list, name='interpolateLP')
 
+        self.extraCost = tf.zeros([], dtype=dtype)
+
 
 # this class contains various methods used for learning
 class SpecializedFunction(ParameterizedFunction):

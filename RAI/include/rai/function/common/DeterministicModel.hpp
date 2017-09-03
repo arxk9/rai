@@ -14,10 +14,10 @@ template<typename Dtype, int stateDim, int actionDim>
 class DeterministicModel : public virtual Model<Dtype, stateDim, actionDim> {
  public:
 
-  typedef Eigen::Matrix<Dtype, stateDim, 1> State;
-  typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
-  typedef Eigen::Matrix<Dtype, actionDim, 1> Action;
-  typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
+  typedef Eigen::Matrix<Dtype, stateDim, 1> Input;
+  typedef Eigen::Matrix<Dtype, stateDim, -1> InputBatch;
+  typedef Eigen::Matrix<Dtype, actionDim, 1> Output;
+  typedef Eigen::Matrix<Dtype, actionDim, -1> OutputBatch;
 
 };
 

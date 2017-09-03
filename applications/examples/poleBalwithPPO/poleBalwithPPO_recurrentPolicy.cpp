@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Function approximations //////////
   Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-  Policy_TensorFlow policy("cpu,0", "GRUNet", "relu 3 32 32 1", 0.001);
+  Policy_TensorFlow policy("cpu", "GRUNet", "relu 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;

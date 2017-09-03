@@ -189,6 +189,12 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
     return tf_;
   }
 
+  void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
+                                              const std::vector<std::string> &outputTensorNames,
+                                              const std::vector<std::string> &targetNodeNames, std::vector<tensorflow::Tensor> &outputs) {
+    tf_->run(inputs, outputTensorNames, targetNodeNames, outputs);
+  }
+
   virtual TensorFlowNeuralNetwork<Dtype> const *getTensorFlowWrapper() const {
     return dynamic_cast<TensorFlowNeuralNetwork<Dtype> const *>(tf_);
   }
