@@ -88,41 +88,17 @@ int main(int argc, char *argv[]) {
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
-  RAI::Utils::Graph::FigProp2D figurePropertiesEVP;
-  figurePropertiesEVP.title = "Number of Steps Taken vs Performance";
-  figurePropertiesEVP.xlabel = "N. Steps Taken";
-  figurePropertiesEVP.ylabel = "Performance";
-
-  RAI::Utils::Graph::FigProp2D figurePropertieskl;
-  figurePropertieskl.title = "Number of Steps Taken vs KlD";
-  figurePropertieskl.xlabel = "N. Steps Taken";
-  figurePropertieskl.ylabel = "KlD";
-
-  RAI::Utils::Graph::FigProp2D figurePropertiescoef;
-  figurePropertiescoef.title = "Number of Steps Taken vs Kl_coeff";
-  figurePropertiescoef.xlabel = "N. Steps Taken";
-  figurePropertiescoef.ylabel = "Kl_coeff";
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVGradient;
-  figurePropertiesSVGradient.title = "Qfunction training data";
-  figurePropertiesSVGradient.xlabel = "angle";
-  figurePropertiesSVGradient.ylabel = "angular velocity";
-  figurePropertiesSVGradient.zlabel = "value";
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVC;
-  figurePropertiesSVC.title = "V function";
-  figurePropertiesSVC.xlabel = "angle";
-  figurePropertiesSVC.ylabel = "angular velocity";
-  figurePropertiesSVC.zlabel = "value";
+  RAI::Utils::Graph::FigProp2D
+      figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
+  RAI::Utils::Graph::FigProp2D figurePropertiesSur("N. Steps Taken", "loss", "Number of Steps Taken vs Surrogate loss");
+  RAI::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "V function");
   figurePropertiesSVC.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVA;
-  figurePropertiesSVA.title = "Policy";
-  figurePropertiesSVA.xlabel = "angle";
-  figurePropertiesSVA.ylabel = "angular velocity";
-  figurePropertiesSVA.zlabel = "action";
+  RAI::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
   figurePropertiesSVA.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-
+  RAI::Utils::Graph::FigProp2D figurePropertieskl("N. Steps Taken", "KlD", "Number of Steps Taken vs KlD");
+  RAI::Utils::Graph::FigProp2D figurePropertiescoef("N. Steps Taken", "Kl_coeff", "Number of Steps Taken vs Kl_coeff");
+  RAI::Utils::Graph::FigProp3D
+      figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
   RAI::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
@@ -149,37 +125,48 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  constexpr int loggingInterval = 10;
   ////////////////////////// Learning /////////////////////////////////
 
-  for (int iterationNumber = 0; iterationNumber < 250; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 20; iterationNumber++) {
 
+    if (iterationNumber % loggingInterval == 0) {
+      algorithm.setVisualizationLevel(1);
+      taskVector[0]->enableVideoRecording();
+    }
+    LOG(INFO) << iterationNumber << "th Iteration";
     algorithm.runOneLoop(5000);
-    graph->figure(1, figurePropertiesEVP);
-    graph->appendData(1, logger->getData("Nominal performance", 0),
-                      logger->getData("Nominal performance", 1),
-                      logger->getDataSize("Nominal performance"),
-                      RAI::Utils::Graph::PlotMethods2D::linespoints,
-                      "performance",
-                      "lw 2 lc 4 pi 1 pt 5 ps 1");
-    graph->drawFigure(1);
 
-    policy.forward(state_plot, action_plot);
-    Vfunction.forward(state_plot, value_plot);
-        graph->figure(2, figurePropertieskl);
-    graph->appendData(2, logger->getData("klD", 0),
-                      logger->getData("klD", 1),
-                      logger->getDataSize("klD"),
-                      RAI::Utils::Graph::PlotMethods2D::linespoints,
-                      "klD",
-                      "lw 2 lc 4 pi 1 pt 5 ps 1");
-    graph->drawFigure(2);
+    if (iterationNumber % loggingInterval == 0) {
+      algorithm.setVisualizationLevel(0);
+      taskVector[0]->disableRecording();
+      graph->figure(1, figurePropertiesEVP);
+      graph->appendData(1, logger->getData("Nominal performance", 0),
+                        logger->getData("Nominal performance", 1),
+                        logger->getDataSize("Nominal performance"),
+                        RAI::Utils::Graph::PlotMethods2D::linespoints,
+                        "performance",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(1);
 
-    graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
-                       minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
-    graph->drawFigure(4);
-    graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
-                       minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
-    graph->drawFigure(5);
+      policy.forward(state_plot, action_plot);
+      Vfunction.forward(state_plot, value_plot);
+      graph->figure(2, figurePropertieskl);
+      graph->appendData(2, logger->getData("klD", 0),
+                        logger->getData("klD", 1),
+                        logger->getDataSize("klD"),
+                        RAI::Utils::Graph::PlotMethods2D::linespoints,
+                        "klD",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(2);
+
+      graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
+      graph->drawFigure(4);
+      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
+      graph->drawFigure(5);
+    }
   }
 
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");

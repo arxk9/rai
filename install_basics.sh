@@ -25,6 +25,7 @@ printf 'export RAI_ROOT='$PWD'\n' >> $HOME/.bashrc
 RAI_ROOT="$PWD"
 
 cd "$RAI_ROOT"
+mkdir -p dependencies
 
 ### adding ppa's
 # compilers
@@ -124,19 +125,18 @@ else
 fi
 
 # plotting
-
 if [ "$yrelease" -eq "16" ]; then
     sudo apt-get install $APT_GET_FLAGS gnuplot5
 else 
     if [ "$yrelease" -eq "14" ]; then
-     cd $RAI_ROOT
-     mkdir dependencies && cd dependencies
+     cd $RAI_ROOT/dependencies
      sudo apt-get install libqt4-dev
      wget https://downloads.sourceforge.net/project/gnuplot/gnuplot/5.0.5/gnuplot-5.0.5.tar.gz
      tar -xvzf gnuplot-5.0.5.tar.gz
      rm gnuplot-5.0.5.tar.gz
      cd gnuplot-5.0.5/
-     ./configure --prefix=/usr --disable-wxwidgets --with-qt && sudo make all -j && sudo make install
+     ./configure --prefix=/usr --disable-wxwidgets --with-pdf --with-qt  && sudo make all -j && sudo make install
+     cd $RAI_ROOT
     fi
 fi
 
@@ -147,7 +147,7 @@ sudo apt-get install $APT_GET_FLAGS libbox2d-dev
 sudo apt-get install $APT_GET_FLAGS liburdfdom-dev
 
 # INSTALL rbdl
-cd $RAI_ROOT/dependencies/
+cd $RAI_ROOT/dependencies
 rm -rf rbdl
 sudo apt-get install $APT_GET_FLAGS mercurial
 hg clone https://bitbucket.org/rbdl/rbdl

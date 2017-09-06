@@ -55,10 +55,10 @@ int main(int argc, char *argv[]) {
   omp_set_num_threads(nThread);
 
   ////////////////////////// Define task ////////////////////////////
-  std::vector<Task> taskVec(nThread,Task(Task::fixed, Task::easy) );
-  std::vector<RAI::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector;
+  std::vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
+  std::vector<RAI::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
 
-  for (auto& task : taskVec) {
+  for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
     task.setRealTimeFactor(1.5);
@@ -69,9 +69,9 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Define Noise Model //////////////////////
   Dtype Stdev = 1;
 
-  std::vector<Noise> noiseVec(nThread, Noise(NoiseCovariance::Identity()*Stdev));
+  std::vector<Noise> noiseVec(nThread, Noise(NoiseCovariance::Identity() * Stdev));
   std::vector<Noise *> noiseVector;
-  for(auto& noise : noiseVec)
+  for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
@@ -87,30 +87,13 @@ int main(int argc, char *argv[]) {
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
-  RAI::Utils::Graph::FigProp2D figurePropertiesEVP;
-  figurePropertiesEVP.title = "Number of Steps Taken vs Performance";
-  figurePropertiesEVP.xlabel = "N. Steps Taken";
-  figurePropertiesEVP.ylabel = "Performance";
-
-  RAI::Utils::Graph::FigProp2D figurePropertiesSur;
-  figurePropertiesSur.title = "Number of Steps Taken vs Surrogate loss";
-  figurePropertiesSur.xlabel = "N. Steps Taken";
-  figurePropertiesSur.ylabel = "loss";
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVC;
-  figurePropertiesSVC.title = "V function";
-  figurePropertiesSVC.xlabel = "angle";
-  figurePropertiesSVC.ylabel = "angular velocity";
-  figurePropertiesSVC.zlabel = "value";
+  RAI::Utils::Graph::FigProp2D
+      figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
+  RAI::Utils::Graph::FigProp2D figurePropertiesSur("N. Steps Taken", "loss", "Number of Steps Taken vs Surrogate loss");
+  RAI::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "V function");
   figurePropertiesSVC.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVA;
-  figurePropertiesSVA.title = "Policy";
-  figurePropertiesSVA.xlabel = "angle";
-  figurePropertiesSVA.ylabel = "angular velocity";
-  figurePropertiesSVA.zlabel = "action";
+  RAI::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
   figurePropertiesSVA.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-
   RAI::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
@@ -142,7 +125,7 @@ int main(int argc, char *argv[]) {
 
   for (int iterationNumber = 0; iterationNumber < 60; iterationNumber++) {
 
-    if ( iterationNumber % loggingInterval == 0 ) {
+    if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
@@ -150,7 +133,7 @@ int main(int argc, char *argv[]) {
     LOG(INFO) << iterationNumber << "th Iteration";
     algorithm.runOneLoop(2000);
 
-    if ( iterationNumber % loggingInterval == 0 ) {
+    if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
       graph->figure(1, figurePropertiesEVP);
