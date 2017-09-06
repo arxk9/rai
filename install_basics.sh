@@ -147,7 +147,7 @@ sudo apt-get install $APT_GET_FLAGS libbox2d-dev
 sudo apt-get install $APT_GET_FLAGS liburdfdom-dev
 
 # INSTALL rbdl
-cd $RAI_ROOT/..
+cd $RAI_ROOT/dependencies/
 rm -rf rbdl
 sudo apt-get install $APT_GET_FLAGS mercurial
 hg clone https://bitbucket.org/rbdl/rbdl
