@@ -8,7 +8,7 @@ using Dtype = float;
 // logsNplots
 
 // random sampling
-#include "math/RandomNumberGenerator.hpp"
+#include "rai/common/math/RandomNumberGenerator.hpp"
 #include <rai/RAI_core>
 
 int main(int argc, char* argv[]) {
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
   figurePropertiestest.ylabel = "value";
 
   RAI::Utils::graph->figure(1, figurePropertiestest);
-  RAI::Utils::graph->appendData(X_sphere, Y_sphere, 1000, RAI::Utils::Graph::PlotMethods2D::points, "in sphere", "pt 3 ps 2");
+  RAI::Utils::graph->appendData(1, X_sphere, Y_sphere, 1000, RAI::Utils::Graph::PlotMethods2D::points, "in sphere", "pt 3 ps 2");
   RAI::Utils::graph->drawFigure(1);
 
   std::cout<<"the samples should be confined in a unit circle"<<std::endl;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
   std::cout<<"average should be 2: "<<float(sum)/50000.0f<<std::endl;
 
-  Utils::graph->waitForEnter();
+  RAI::Utils::graph->waitForEnter();
 
   Eigen::RowVectorXi sample(10), sample2(10), sample3(10);
   sample<<1,2,3,4,5,6,7,8,9,10;

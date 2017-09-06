@@ -25,10 +25,10 @@ int main() {
     z_data = x_data.array().sin();
     MatrixXf std = VectorXf::Ones(51, 1).transpose() * 0.1;
 
-    FigProp2D figure1properties;
-    figure1properties.xlabel = "state";
-    figure1properties.ylabel = "value";
-    figure1properties.title = "v function";
+    FigProp2D figure1properties("state", "value","v function" );
+//    figure1properties.xlabel = "state";
+//    figure1properties.ylabel = "value";
+//    figure1properties.title = "v function";
     graph->figure(1, figure1properties);
     graph->appendDataAndStd(1, x_data.data(), y_data.data(), std.data(), 51, "test", "lt 1 lc 10 lw 2");
     graph->appendData(1, x_data.data(),

@@ -14,8 +14,13 @@ set -o xtrace
 APT_GET_FLAGS=-qq
 ADD_APT_REPOSITORY_FLAGS=-y
 
+### Check Ubuntu version 
+version=$(lsb_release -r | awk '{ print $2 }')
+yrelease=$( echo "$version" | cut -d. -f1 )
+mrelease=$( echo "$version" | cut -d. -f2 )
+
 ### General paths
-sed -i '/RAI_ROOT/d' $HOME/.bashrc
+sed -i "/\b\RAI_ROOT\\b/d" $HOME/.bashrc
 printf 'export RAI_ROOT='$PWD'\n' >> $HOME/.bashrc
 RAI_ROOT="$PWD"
 
@@ -38,7 +43,6 @@ sudo apt-get install $APT_GET_FLAGS wget curl
 sudo mkdir -p /etc/pki/tls/certs
 sudo cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
 
-
 # basics
 sudo apt-get install $APT_GET_FLAGS gcc-6 g++-6 libeigen3-dev libtinyxml-dev autoconf automake libtool curl make g++ unzip
 
@@ -51,12 +55,19 @@ sudo apt-get install $APT_GET_FLAGS libgflags-dev libgoogle-glog-dev
 ### Boost
 sudo apt-get install $APT_GET_FLAGS libboost-all-dev
 
-## Bazel
+### Bazel
 sudo apt-get install $APT_GET_FLAGS software-properties-common
 sudo apt-get install $APT_GET_FLAGS golang
 
-#bazel
-sudo apt-get install $APT_GET_FLAGS openjdk-8-jdk
+if [ "$yrelease" -eq "16" ]; then
+	sudo apt-get install $APT_GET_FLAGS openjdk-8-jdk
+else
+	if [ "$yrelease" -eq "14" ]; then
+		sudo add-apt-repository ppa:webupd8team/java
+		sudo apt-get update && sudo apt-get install oracle-java8-installer
+	fi
+fi
+
 echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
 curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 sudo apt-get update
@@ -79,10 +90,11 @@ sudo apt-get install $APT_GET_FLAGS python3.5-dev
 
 # Installing pip
 sudo apt-get install $APT_GET_FLAGS python-pip
+sudo apt-get install $APT_GET_FLAGS python3-pip
 pip3 install --upgrade pip
 
 # Installing virtualenv
-sudo apt-get install $APT_GET_FLAGS python3-virtualenv
+sudo apt-get install $APT_GET_FLAGS python-virtualenv
 sudo apt-get install python3-setuptools
 
 # Installing virtualenvwrapper
@@ -97,10 +109,36 @@ source ~/.bashrc
 
 ### graphic
 # 3D rendering
-sudo apt-get install $APT_GET_FLAGS libglew-dev freeglut3-dev libsdl2-dev libglm-dev glee-dev libsdl2-image-dev libassimp-dev libsoil-dev libfreeimage3 libfreeimage-dev ffmpeg libsdl2-ttf-dev
+sudo apt-get install $APT_GET_FLAGS libglew-dev freeglut3-dev libsdl2-dev libglm-dev glee-dev libsdl2-image-dev libassimp-dev libsoil-dev libfreeimage3 libfreeimage-dev libsdl2-ttf-dev
+
+# ffmpeg
+if [ "$yrelease" -eq "16" ]; then
+    sudo apt-get install $APT_GET_FLAGS ffmpeg
+else
+    if [ "$yrelease" -eq "14" ]; then
+        sudo add-apt-repository ppa:mc3man/trusty-media
+	sudo apt-get update
+	sudo apt-get dist-upgrade
+	sudo apt-get install $APT_GET_FLAGS ffmpeg
+    fi
+fi
 
 # plotting
-sudo apt-get install $APT_GET_FLAGS gnuplot5
+
+if [ "$yrelease" -eq "16" ]; then
+    sudo apt-get install $APT_GET_FLAGS gnuplot5
+else 
+    if [ "$yrelease" -eq "14" ]; then
+     cd $RAI_ROOT
+     mkdir dependencies && cd dependencies
+     sudo apt-get install libqt4-dev
+     wget https://downloads.sourceforge.net/project/gnuplot/gnuplot/5.0.5/gnuplot-5.0.5.tar.gz
+     tar -xvzf gnuplot-5.0.5.tar.gz
+     rm gnuplot-5.0.5.tar.gz
+     cd gnuplot-5.0.5/
+     ./configure --prefix=/usr --disable-wxwidgets --with-qt && sudo make all -j && sudo make install
+    fi
+fi
 
 # Box2D
 sudo apt-get install $APT_GET_FLAGS libbox2d-dev

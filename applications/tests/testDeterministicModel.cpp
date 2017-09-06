@@ -22,7 +22,6 @@ int main() {
   l2coefT.data()[0] = 0.1;
   learningRate.data()[0] = 0.001;
   RAI::Tensor<double, 2> inputT({24,575916}, "input"), targetT({1,575916}, "targetOutput");
-
   RAI::FuncApprox::DeterministicModel_TensorFlow<double, 24, 8>
       sea("cpu", "MLP_inputBottleneck", "relu 1e-3 24 64 64 64 1", 0.001);
 

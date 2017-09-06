@@ -4,7 +4,7 @@
 
 #include <functional>
 #include <Eigen/Core>
-#include "math/ConjugateGradient.hpp"
+#include "rai/common/math/ConjugateGradient.hpp"
 #include <iostream>
 #include <RAI_timer/RAI_timer_ToInclude.hpp>
 #include "rai/RAI_core"
@@ -28,7 +28,7 @@ int main(){
   std::function<void(Vector&, Vector&)> fcn = std::bind(&eval, std::placeholders::_1, std::placeholders::_2);
   for(int i=0; i<10; i++) {
     RAI::Utils::timer->startTimer("conjugate gradient");
-    RAI::Math::conjugateGradient(fcn, b, 10, 1e-10, sol);
+    RAI::conjugateGradient(fcn, b, 10, 1e-10, sol);
     RAI::Utils::timer->stopTimer("conjugate gradient");
   }
   std::cout<<"solution "<<std::endl<<sol<<std::endl;

@@ -31,6 +31,7 @@ Display::Display(int width, int height, const std::string &title) {
 
   glewExperimental = GL_TRUE;
   GLenum res = glewInit();
+
   LOG_IF(FATAL, res != GLEW_OK) << "Glew failed to initialize!" << std::endl;
 
   glEnable(GL_DEPTH_TEST);

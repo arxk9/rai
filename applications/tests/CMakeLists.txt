@@ -1,5 +1,5 @@
 add_executable(randomSampling testRandomSampling.cpp)
-target_link_libraries(randomSampling rai_graph glog)
+target_link_libraries(randomSampling rai_graph glog ${RAI_LINK})
 
 add_executable(conjugateGradient testConjugateGradient.cpp)
 target_link_libraries(conjugateGradient ${RAI_LINK})
