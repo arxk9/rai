@@ -16,9 +16,9 @@ ADD_APT_REPOSITORY_FLAGS=-y
 #sudo apt-get update
 #sudo apt-get install python3.5
 
-
-# Setting WORKON_HOME
+# Enable 
 source ~/.bashrc
+VIRTUALENVWRAPPER_PYTHON='/usr/bin/python3'
 source virtualenvwrapper.sh
 
 # Generate virtualenv for tensorflow (called tensorflow)
@@ -31,7 +31,6 @@ workon $VIRTUALENV_NAME
 
 # Installing python-dev
 sudo apt-get install $APT_GET_FLAGS python-dev
-
 sudo -H pip3 install numpy
 
 ##### now run configure
@@ -44,17 +43,21 @@ git checkout r1.3
 echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
 sudo ./configure
 
-
 echo -n "do you have gpu (y/n)? "
 read answer
 if echo "$answer" | grep -iq "^y" ;then
     sudo bazel build -c opt --config=cuda --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone
-    pip3 install tensorflow-gpu
+    pip3 install --upgrade tensorflow-gpu
 else
     sudo bazel build -c opt --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone
-    pip3 install tensorflow
+    pip3 install --upgrade tensorflow
 fi
 
+# Update protobuf
+#cd $RAI_ROOT/deepLearning/tensorflow/bazel-tensorflow/external/protobuf
+#sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
+
 exit
+
 
 
