@@ -16,8 +16,7 @@ class MLP_inputBottleneck(bc.GraphStructure):
 
         # network
         self.input = tf.placeholder(dtype, shape=[None, dimension[0]], name=fn.input_names[0])
-        bottleneck = tf.Variable(tf.ones(shape=[1, dimension[0]], dtype=dtype))
-        top = tf.multiply(self.input, bottleneck)
+        top = self.input
         layer_n = 0
 
         for dim in dimension[1:-1]:
@@ -34,9 +33,7 @@ class MLP_inputBottleneck(bc.GraphStructure):
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         self.a_param_list = self.l_param_list
 
-        L1_loss_coef = tf.reshape(tf.placeholder(dtype, shape=[1], name='L1_loss_coef'), shape=[])
-        L2_loss_coef = tf.reshape(tf.placeholder(dtype, shape=[1], name='L2_loss_coef'), shape=[])
-        L1_loss = tf.identity(L1_loss_coef * tf.reduce_mean(tf.abs(bottleneck)), name='L1_loss')
-        L2_loss = tf.identity(L2_loss_coef * tf.reduce_mean(tf.square(bottleneck)), name='L2_loss')
-
-        self.extraCost = L1_loss + L2_loss
+        # L1_loss_coef = tf.reshape(tf.placeholder(dtype, shape=[1], name='L1_loss_coef'), shape=[])
+        # L2_loss_coef = tf.reshape(tf.placeholder(dtype, shape=[1], name='L2_loss_coef'), shape=[])
+        # L1_loss = tf.identity(L1_loss_coef * tf.reduce_mean(tf.abs(bottleneck)), name='L1_loss')
+        # L2_loss = tf.identity(L2_loss_coef * tf.reduce_mean(tf.square(bottleneck)), name='L2_loss')

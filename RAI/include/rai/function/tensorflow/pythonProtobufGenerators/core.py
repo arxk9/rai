@@ -115,7 +115,7 @@ class Paramlayer(layers.Layer):
         return self.Param
 
 # loss function related
-def huber_loss(labels, predictions, delta=1e-1, name=None):
+def huber_loss(labels, predictions, delta=1e-1, name=None, extraCost=0):
     cutoffline = tf.constant(value=delta, dtype=labels.dtype)
     residual = tf.sqrt(tf.reduce_sum(tf.square(predictions - labels), axis=1))
     condition = tf.less(residual, delta)
@@ -124,7 +124,7 @@ def huber_loss(labels, predictions, delta=1e-1, name=None):
     return tf.reduce_mean(tf.where(condition, small_res, large_res), 0, name=name)
 
 
-def infimum_loss(labels, predictions, underesterror=1e-3, name=None):
+def infimum_loss(labels, predictions, underesterror=1e-3, name=None, extraCost=0):
     residual = labels - predictions
     condition = tf.less(residual, 0)
     small_res = 0.5 * tf.square(residual)
@@ -132,19 +132,19 @@ def infimum_loss(labels, predictions, underesterror=1e-3, name=None):
     return tf.reduce_mean(tf.where(condition, small_res, large_res), 0, name=name)
 
 
-def huber_loss_opt(dtype, target, value, optimizer):
+def huber_loss_opt(dtype, target, value, optimizer, extraCost=0):
     loss = huber_loss(target, value, name='loss')
     learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
     train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)
 
 
-def infimum_loss_opt(dtype, target, value, optimizer):
+def infimum_loss_opt(dtype, target, value, optimizer, extraCost=0):
     loss = infimum_loss(target, value, name='loss')
     learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
     train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)
 
 
 def square_loss_opt(dtype, target, value, optimizer, extraCost=0):
-    loss = tf.reduce_mean(tf.square(target - value), name='loss')
+    loss = tf.reduce_mean(tf.square(target - value), name='loss') + extraCost
     learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
     train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)
