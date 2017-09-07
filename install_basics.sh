@@ -65,13 +65,13 @@ if [ "$yrelease" -eq "16" ]; then
 else
 	if [ "$yrelease" -eq "14" ]; then
 		sudo add-apt-repository ppa:webupd8team/java
-		sudo apt-get update && sudo apt-get install oracle-java8-installer
+		sudo apt-get update  $APT_GET_FLAGS && sudo apt-get install $APT_GET_FLAGS oracle-java8-installer
 	fi
 fi
 
 echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
 curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
-sudo apt-get update
+sudo apt-get update $APT_GET_FLAGS 
 sudo apt-get install $APT_GET_FLAGS bazel
 sudo apt-get upgrade $APT_GET_FLAGS bazel
 
@@ -96,7 +96,7 @@ pip3 install --upgrade pip
 
 # Installing virtualenv
 sudo apt-get install $APT_GET_FLAGS python-virtualenv
-sudo apt-get install python3-setuptools
+sudo apt-get install $APT_GET_FLAGS python3-setuptools
 
 # Installing virtualenvwrapper
 sudo pip install virtualenvwrapper
@@ -118,13 +118,13 @@ if [ "$yrelease" -eq "16" ]; then
 else
     if [ "$yrelease" -eq "14" ]; then
         sudo add-apt-repository ppa:mc3man/trusty-media
-	sudo apt-get update
-	sudo apt-get dist-upgrade
+	sudo apt-get update $APT_GET_FLAGS 
+	sudo apt-get dist-upgrade $APT_GET_FLAGS 
 	sudo apt-get install $APT_GET_FLAGS ffmpeg
     fi
 fi
 
-# plotting
+# GNUPLOT
 if [ "$yrelease" -eq "16" ]; then
     sudo apt-get install $APT_GET_FLAGS gnuplot5
 else 

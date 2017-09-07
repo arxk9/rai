@@ -30,7 +30,6 @@ workon $VIRTUALENV_NAME
 
 # Installing python-dev
 sudo apt-get install $APT_GET_FLAGS python-dev
-
 sudo -H pip3 install numpy
 
 ##### now run configure
@@ -52,6 +51,10 @@ else
     sudo bazel build -c opt --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone
     pip3 install --upgrade tensorflow
 fi
+
+# Update protobuf
+cd $RAI_ROOT/deepLearning/tensorflow/bazel-tensorflow/external/protobuf
+sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
 
 exit
 
