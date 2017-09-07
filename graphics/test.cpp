@@ -38,7 +38,6 @@ int main() {
 
   graphics.setCameraProp(cprop);
   graphics.setLightProp(lprop);
-
   graphics.start();
   usleep(15e6);
   graphics.end();

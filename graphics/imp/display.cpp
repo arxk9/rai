@@ -20,18 +20,20 @@ Display::Display(int width, int height, const std::string &title) {
   SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
   SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 
-  SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" );
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
   m_window =
       SDL_CreateWindow(title.c_str(), 0, 0, width, height, SDL_WINDOW_OPENGL);
+  LOG_IF(FATAL, m_window ==NULL) << SDL_GetError();
 
   m_glContext = SDL_GL_CreateContext(m_window);
+  LOG_IF(FATAL, m_glContext ==NULL) << SDL_GetError();
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
   glewExperimental = GL_TRUE;
   GLenum res = glewInit();
-  LOG_IF(FATAL, res != GLEW_OK) << "Glew failed to initialize!" << std::endl;
+  LOG_IF(FATAL, res != GLEW_OK) << "Glew failed to initialize!" << " Error: "<<glewGetErrorString(res) << std::endl;
 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
