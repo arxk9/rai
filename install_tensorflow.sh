@@ -16,8 +16,9 @@ ADD_APT_REPOSITORY_FLAGS=-y
 #sudo apt-get update
 #sudo apt-get install python3.5
 
-# Setting WORKON_HOME
+# Enable 
 source ~/.bashrc
+VIRTUALENVWRAPPER_PYTHON='/usr/bin/python3'
 source virtualenvwrapper.sh
 
 # Generate virtualenv for tensorflow (called tensorflow)
@@ -53,8 +54,8 @@ else
 fi
 
 # Update protobuf
-cd $RAI_ROOT/deepLearning/tensorflow/bazel-tensorflow/external/protobuf
-sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
+#cd $RAI_ROOT/deepLearning/tensorflow/bazel-tensorflow/external/protobuf
+#sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
 
 exit
 
