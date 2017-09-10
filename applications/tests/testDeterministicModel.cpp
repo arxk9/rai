@@ -27,8 +27,8 @@ int main() {
   RAI::FuncApprox::DeterministicModel_TensorFlow<double, 9, 1>
       sea("cpu", "MLP_inputBottleneck", "relu 1e-3 9 64 64 64 64 1", 0.001);
 
-  std::ifstream input("/home/jhwangbo/Documents/data_input.bin", std::ios::in | std::ios::binary);
-  std::ifstream target("/home/jhwangbo/Documents/data_target.bin", std::ios::in | std::ios::binary);
+  std::ifstream input("/home/jhwangbo/Documents/data_input5.bin", std::ios::in | std::ios::binary);
+  std::ifstream target("/home/jhwangbo/Documents/data_target5.bin", std::ios::in | std::ios::binary);
 
   // copies all data into buffer
   input.read((char*)inputT.data(), 9*575916*sizeof(double));
@@ -56,4 +56,5 @@ int main() {
     RAI::Utils::graph->drawFigure(0);
   }
   sea.dumpParam("seaModel");
+  RAI::Utils::graph->waitForEnter();
 }

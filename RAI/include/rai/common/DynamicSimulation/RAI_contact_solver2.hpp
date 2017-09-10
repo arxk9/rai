@@ -9,14 +9,15 @@
 #include <stdlib.h>
 #include <iostream>
 #include <boost/bind.hpp>
-#include <rai/common/math/RAI_math.hpp>
+#include <math/RAI_math.hpp>
 #include <math.h>
 #include "Eigen/Core"
 #include "UnilateralContact.hpp"
-#include "rai/common/math/inverseUsingCholesky.hpp"
-#include "rai/common/math/RandomNumberGenerator.hpp"
-#include "rai/common/math/GoldenSectionMethod.hpp"
-#include "rai/common/math/RAI_math.hpp"
+#include "math/inverseUsingCholesky.hpp"
+#include "math/RandomNumberGenerator.hpp"
+#include "math/GoldenSectionMethod.hpp"
+#include "math/RAI_math.hpp"
+#include "rai/RAI_core"
 
 namespace RAI {
 namespace Dynamics {
@@ -26,252 +27,161 @@ class RAI_contact_solver2 {
   typedef Eigen::Vector3d Vector3d;
   typedef Eigen::Vector2d Vector2d;
   typedef Eigen::Matrix3d Matrix3d;
+  typedef Eigen::Matrix<double, 3, 2> Mat32d;
   typedef Eigen::VectorXd VectorXd;
+  typedef Eigen::RowVector2d RowVec2d;
+  typedef Eigen::Vector2d Vec2d;
 
  public:
-  RAI_contact_solver2() {
-    /////////////////////// Plotting properties ////////////////////////
-//    energyFP.title = "energy vs angle";
-//    energyFP.xlabel = "angles";
-//    energyFP.ylabel = "energy";
-//
-//    energy_plot.resize(360);
-//    angles_plot.resize(360);
-//
-//    for(int dataID = 0; dataID < 360; dataID++)
-//      angles_plot(dataID) = dataID / 180.0 * M_PI - M_PI;
-//    Utils::logger->addVariableToLog(1, "ctb", "counter-To-break of cs2");
-  }
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  RAI_contact_solver2() {}
 
   ~RAI_contact_solver2() {}
 
   void solve(std::vector<UnilateralContact *> &uniContacts,
              const MatrixXd &M_inv, const VectorXd &tauStar) {
 
-//    Utils::timer->startTimer("matrix initialization");
     uniContacts_ = &uniContacts;
 
     unsigned contactN = uniContacts.size();
     unsigned stateDim = M_inv.cols();
-    alpha = 0.9;
-    oneMinusAlpha = 1-alpha;
+    alpha = 1.0;
+    oneMinusAlpha = 1.0-alpha;
 
     std::vector<Vector3d> c(contactN);
-    std::vector<Vector3d> impulseUpdate(contactN);
+    std::vector<Vector3d> normVec(contactN);
+    std::vector<std::string> slipCondtion(contactN);
+    double negativeMuSquared[contactN];
 
     inertia.resize(contactN);
     inertiaInv.resize(contactN);
+    inertiaInv_red.resize(contactN);
+    n2_mu.resize(contactN);
 
     MatrixXd temp(3, stateDim);
-//    Utils::timer->startTimer("Delassus");
+    RowVec2d normVecRatio;
+
     for (unsigned i = 0; i < contactN; i++) {
       inertiaInv[i].resize(contactN);
       c[i] = uniContacts[i]->jaco * tauStar;
       temp = uniContacts[i]->jaco * M_inv;
       for (unsigned j = 0; j < contactN; j++)
         inertiaInv[i][j] = temp * uniContacts[j]->jaco.transpose();
-      cholInv(inertiaInv[i][i], inertia[i]);
+      normVec[i] = inertiaInv[i][i].row(2).transpose();
+      negativeMuSquared[i] = -uniContacts[i]->mu * uniContacts[i]->mu;
+      normVecRatio << inertiaInv[i][i](2,0)/inertiaInv[i][i](2,2), inertiaInv[i][i](2,1)/inertiaInv[i][i](2,2);
+      inertiaInv_red[i] = inertiaInv[i][i].leftCols(2) - inertiaInv[i][i].col(2) * normVecRatio;
+      n2_mu[i] = inertiaInv[i][i](2,2)/uniContacts[i]->mu;
     }
-//    Utils::timer->stopTimer("Delassus");
 
-//    Utils::timer->startTimer("Solver");
     for (unsigned i = 0; i < contactN; i++)
       cholInv(inertiaInv[i][i], inertia[i]);
 
     int counterToBreak = 0;
-    double error;
+    double error = 1.0;
 
-    while (true) {
+    while (error > 1e-10 && ++counterToBreak < 1000) {
       error = 0.0;
       for (unsigned i = 0; i < contactN; i++) {
 
-//        Utils::timer->startTimer("rest comp");
         /// initially compute velcoties
         rest = c[i];
         for (unsigned j = 0; j < contactN; j++)
           if (i != j) rest += inertiaInv[i][j] * uniContacts[j]->impulse;
-//        Utils::timer->stopTimer("rest comp");
 
         /// if it is on ground
         if (rest(2) < 0) {
-          impulseUpdate[i] = -uniContacts[i]->impulse; /// storing previous impulse for impulse update computation.
+          originalImpulse = uniContacts[i]->impulse; /// storing previous impulse for impulse update computation.
           /// This is only to check the terminal condition
-          originalImpulse = uniContacts[i]->impulse;
-          newVel.setZero();
-          uniContacts[i]->impulse = inertia[i] * (newVel - rest);
-          ftan = uniContacts[i]->impulse.head(2).norm();
+          uniContacts[i]->impulse = inertia[i] * -rest;
 
-          if (uniContacts[i]->impulse(2) * uniContacts[i]->mu > ftan) {
-            /// if no slip take a step toward the non-slip impulse
-          } else {
-            oldImpulse = uniContacts[i]->impulse;
-            projectToFeasibleSet(uniContacts[i], rest, 0.0, i, ftan);
-//            float firstMinimum = atan2(uniContacts[i]->impulse(1), uniContacts[i]->impulse(0));
-//            float firstEnergy = 0;
-//            {
-//              Vector3d vel_test;
-//              vel_test = inertiaInv[i][i] * uniContacts[i]->impulse + rest;
-//              firstEnergy = vel_test.dot(inertia[i] * vel_test);
-//            }
-
-//            Utils::timer->startTimer("angle stepping");
-            normToCone << uniContacts[i]->impulse(0), uniContacts[i]->impulse(1), (-uniContacts[i]->mu
-                * uniContacts[i]->mu) * uniContacts[i]->impulse(2);
-            Vector3d zeroTanNormalImpulse(0,0,-rest(2) / inertiaInv[i][i](2,2));
+          if (uniContacts[i]->impulse(2) * uniContacts[i]->mu < uniContacts[i]->impulse.head(2).norm()) {
+            double theta = std::atan2(uniContacts[i]->impulse(1), uniContacts[i]->impulse(0));
+            normToCone << uniContacts[i]->impulse(0), uniContacts[i]->impulse(1), negativeMuSquared[i]
+              * uniContacts[i]->impulse(2);
 
             /// if it is going to slip
-            newdirection = inertiaInv[i][i].row(2).transpose().cross(normToCone);
-            newgradient1D = newdirection.dot(inertiaInv[i][i] * uniContacts[i]->impulse + rest);
-            double negativeMuSquared = -uniContacts[i]->mu * uniContacts[i]->mu;
-            ftan = uniContacts[i]->impulse.head(2).norm();
+            newdirection = normVec[i].cross(normToCone);
+            double cTheta = cos(theta), sTheta = sin(theta);
+            double r =  -rest(2)/(n2_mu[i] +inertiaInv[i][i](2,0)*cTheta +inertiaInv[i][i](2,1)*sTheta);
+            Vec2d rscTheta(r * cTheta, r * sTheta);
+            newRest = rest - inertiaInv[i][i].col(2) * (rest(2)/inertiaInv[i][i](2,2));
+            newgradient1D = newdirection.dot(inertiaInv_red[i]*rscTheta + newRest);
 
+            double oldTheta, midTheta;
             /// fixed angle stepping
-            double multiplier = -0.05 *sgn(newgradient1D) * std::min((oldImpulse-uniContacts[i]->impulse).norm(), (uniContacts[i]->impulse - zeroTanNormalImpulse).norm());
+            angleStep = -0.005 * sgn(newgradient1D);
             do {
               gradient1D = newgradient1D;
-              direction = newdirection;
-              angleStep = multiplier* direction;
-              multiplier *= 3;
-              oldImpulse = uniContacts[i]->impulse;
-              uniContacts[i]->impulse = oldImpulse + angleStep;
-              ftan = uniContacts[i]->impulse.head(2).norm();
-              projectToFeasibleSet(uniContacts[i], rest, 0.0, i, ftan);
-              normToCone << uniContacts[i]->impulse(0), uniContacts[i]->impulse(1), negativeMuSquared * uniContacts[i]->impulse(2);
-              newdirection = inertiaInv[i][i].row(2).transpose().cross(normToCone);
-              newgradient1D = newdirection.dot(inertiaInv[i][i] * uniContacts[i]->impulse + rest);
-              direction = newdirection;
-            } while (gradient1D * newgradient1D > 0);
-//            Utils::timer->stopTimer("angle stepping");
-
-
-//            float angleMinimum = atan2(uniContacts[i]->impulse(1), uniContacts[i]->impulse(0));
-//            float angleEnergy = 0;
-//            {
-//              Vector3d vel_test;
-//              vel_test = inertiaInv[i][i] * uniContacts[i]->impulse + rest;
-//              angleEnergy = vel_test.dot(inertia[i] * vel_test);
-//            }
-
-//            Utils::timer->startTimer("bisection");
-            nextImpulse = uniContacts[i]->impulse;
+              oldTheta = theta;
+              theta += angleStep;
+              cTheta = cos(theta);
+              sTheta = sin(theta);
+              r = -rest(2)/(n2_mu[i] +inertiaInv[i][i](2,0)*cTheta +inertiaInv[i][i](2,1)*sTheta);
+              normToCone << r*cTheta, r*sTheta, r*uniContacts[i]->negMu;
+              newdirection = normVec[i].cross(normToCone);
+              newgradient1D = newdirection.dot(inertiaInv_red[i]*normToCone.head(2) + newRest);
+              angleStep *= 2.0;
+            } while (gradient1D * newgradient1D > 0.0);
             /// bisection method
-            for(int interN = 0; interN < 22; interN++) {
-              uniContacts[i]->impulse = (oldImpulse + nextImpulse) / 2.0;
-              projectToFeasibleSet(uniContacts[i], rest, 0.0, i, uniContacts[i]->impulse.head(2).norm());
-              normToCone << uniContacts[i]->impulse(0), uniContacts[i]->impulse(1), -uniContacts[i]->mu
-                  * uniContacts[i]->mu * uniContacts[i]->impulse(2);
-              newdirection = inertiaInv[i][i].row(2).transpose().cross(normToCone);
-              newgradient1D = newdirection.dot(inertiaInv[i][i] * uniContacts[i]->impulse + rest);
+            do {
+              rscTheta = normToCone.head(2);
+              midTheta = (oldTheta + theta) / 2.0;
+              cTheta = cos(midTheta);
+              sTheta = sin(midTheta);
+              r = -rest(2)/(n2_mu[i] +inertiaInv[i][i](2,0)*cTheta +inertiaInv[i][i](2,1)*sTheta);
+              normToCone << r*cTheta, r*sTheta, r*uniContacts[i]->negMu;
+              newdirection = normVec[i].cross(normToCone);
+              newgradient1D = newdirection.dot(inertiaInv_red[i]*normToCone.head(2) + newRest);
+
               if (gradient1D * newgradient1D > 0)
-                oldImpulse = uniContacts[i]->impulse;
+                oldTheta = midTheta;
               else
-                nextImpulse = uniContacts[i]->impulse;
-            }
-//            Utils::timer->stopTimer("bisection");
+                theta = midTheta;
+            } while ((rscTheta - normToCone.head(2)).squaredNorm() > 1e-11);
 
-//            float bsMinimum = atan2(uniContacts[i]->impulse(1), uniContacts[i]->impulse(0));
-//            float bsEnergy = 0;
-//            {
-//              Vector3d vel_test;
-//              vel_test = inertiaInv[i][i] *Utils::logger->appendData("ctb", counterToBreak); uniContacts[i]->impulse + rest;
-//              bsEnergy = vel_test.dot(inertia[i] * vel_test);
-//            }
-
-//            if(bsEnergy > firstEnergy) {
-//              ////// plotting /////////
-//              for(int dataID = 0; dataID < 360; dataID++) {
-//                Vector3d force_test;
-//                double theta = angles_plot(dataID);
-//                force_test(2) = -rest(2) / (inertiaInv[i][i](2,0) * uniContacts[i]->mu * std::cos(theta) +
-//                    inertiaInv[i][i](2,1) * uniContacts[i]->mu * sin(theta) + inertiaInv[i][i](2,2));
-//                force_test(0) = uniContacts[i]->mu * force_test(2) * cos(theta);
-//                force_test(1) = uniContacts[i]->mu * force_test(2) * sin(theta);
-//                Vector3d vel_test;
-//                vel_test = inertiaInv[i][i] * force_test + rest;
-//                energy_plot(dataID) = vel_test.dot(inertia[i] * vel_test);
-//              }
-//
-//              Utils::graph->figure(0, energyFP);
-//              Utils::graph->appendData(0,angles_plot.data(), energy_plot.data(), 360, "energy");
-//              Utils::graph->appendData(0, &angleMinimum, &angleEnergy, 1, Utils::Graph::PlotMethods2D::points, "angle minimum", "ps 2 pt 7");
-//              Utils::graph->appendData(0, &firstMinimum, &firstEnergy, 1, Utils::Graph::PlotMethods2D::points, "projection", "ps 2 pt 7");
-//              Utils::graph->appendData(0, &bsMinimum, &bsEnergy, 1, Utils::Graph::PlotMethods2D::points, "bs minimum", "ps 2 pt 7");
-//              Utils::graph->drawFigure(0);
-//              std::cout<<"first minimum "<<firstEnergy<<std::endl;
-//              std::cout<<"angle minimum "<<angleEnergy<<std::endl;
-//              std::cout<<"bs    minimum "<<bsEnergy<<std::endl;
-//              Utils::graph->waitForEnter();
-//            }
+            uniContacts[i]->impulse<<normToCone.head(2), r/uniContacts[i]->mu;
 
           }
-
           uniContacts[i]->impulse = originalImpulse * oneMinusAlpha + uniContacts[i]->impulse * alpha;
-          velError = std::min(inertiaInv[i][i].row(2) * uniContacts[i]->impulse + rest(2), 0.0);
-          impulseUpdate[i] += uniContacts[i]->impulse;
-          error += impulseUpdate[i].squaredNorm() + velError * velError;
+          velError = std::min(normVec[i].dot(uniContacts[i]->impulse) + rest(2), 0.0);
+          originalImpulse -= uniContacts[i]->impulse;
+          error += originalImpulse.squaredNorm() + velError * velError;
         } else {
           uniContacts[i]->impulse *= oneMinusAlpha;
           error += uniContacts[i]->impulse.squaredNorm();
         }
       }
 
-      if (error < 1e-12) {
-//        std::cout<<counterToBreak<<std::endl;
-//        Utils::logger->appendData("ctb", counterToBreak);
-        break;
-      }
-
-      if (++counterToBreak > 1000) {
-//        if(error > 1e-5) {
-          std::cout << "the Contact dynamic solver did not converge in time, the error is " << error << std::endl;
-          std::cout << "the Contact force is " << uniContacts[0]->impulse.transpose() << std::endl;
-//        }
-        break;
-      }
       alpha = (alpha - alpha_low) * alpha_decay + alpha_low;
       oneMinusAlpha = 1-alpha;
     }
-//    Utils::timer->stopTimer("Solver");
   }
 
  private:
-
-  inline void projectToFeasibleSet(UnilateralContact *contact,
-                                   Vector3d &rest,
-                                   double new_z_vel,
-                                   int contactID,
-                                   double ftan) {
-    double neg_tanTheta = (inertiaInv[contactID][contactID](2, 0) * contact->impulse(0)
-        + inertiaInv[contactID][contactID](2, 1) * contact->impulse(1)) / (ftan
-        * inertiaInv[contactID][contactID](2, 2));
-    double f0 = contact->impulse(2) + neg_tanTheta * ftan;
-    double newFtan = f0 / (1 / contact->mu + neg_tanTheta);
-    contact->impulse(2) = f0 - neg_tanTheta * newFtan;
-    contact->impulse.head(2) *= newFtan / ftan;
-  }
 
   template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
   }
 
   std::vector<std::vector<Matrix3d> > inertiaInv;
-  std::vector<Matrix3d> inertia;
-  Vector3d rest, newVel, originalImpulse;
+  std::vector<Mat32d> inertiaInv_red;
+  std::vector<double> n2_mu;
 
+  std::vector<Matrix3d> inertia;
+  Vector3d rest, originalImpulse, newRest;
+  Vec2d oldImpulseTan;
   double alpha, oneMinusAlpha;
-  double alpha_low = 0.1;
+  double alpha_low = 0.5;
   double alpha_decay = 0.99;
   Vector3d normToCone;
   double velError;
-  double ftan;
 
   /// slippage related
-  Vector3d direction, gradient, newdirection, angleStep;
-  double gradient1D, newgradient1D;
+  Vector3d direction, gradient, newdirection;
+  double gradient1D, newgradient1D, angleStep;
   Vector3d oldImpulse, nextImpulse;
   std::vector<UnilateralContact *> *uniContacts_;
-//  RAI::Utils::Graph::FigProp2D energyFP;
-//  Eigen::VectorXd angles_plot, energy_plot;
 
 };
 
