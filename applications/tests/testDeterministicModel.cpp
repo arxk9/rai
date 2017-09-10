@@ -40,7 +40,7 @@ int main() {
 
   RAI::Utils::Graph::FigProp2D prop("time", "torque", "model");
   prop.size = "1200,800";
-  Eigen::VectorXd time = Eigen::VectorXd::LinSpaced(100000, 0, 250);
+  Eigen::VectorXd time = Eigen::VectorXd::LinSpaced(2000, 0, 5);
   Eigen::VectorXd command = inputT.row(0);
 
   for(int i=0; i<1000; i++) {
@@ -50,10 +50,14 @@ int main() {
             loss.output());
     std::cout << "loss " << loss[1][0] << std::endl;
     RAI::Utils::graph->figure(0, prop);
-    RAI::Utils::graph->appendData(0, time.data(), loss[0]+50000, 100000, "torque");
-    RAI::Utils::graph->appendData(0, time.data(), targetT.data()+50000, 100000, "target");
-    RAI::Utils::graph->appendData(0, time.data(), command.data()+50000, 100000, "command");
-    RAI::Utils::graph->drawFigure(0);
+    RAI::Utils::graph->appendData(0, time.data(), loss[0]+100000, 2000, "torque");
+    RAI::Utils::graph->appendData(0, time.data(), targetT.data()+100000, 2000, "target");
+    RAI::Utils::graph->appendData(0, time.data(), command.data()+100000, 2000, "command");
+
+    if(i==999)
+      RAI::Utils::graph->drawFigure(0, RAI::Utils::Graph::OutputFormat::pdf);
+    else
+      RAI::Utils::graph->drawFigure(0);
   }
   sea.dumpParam("seaModel");
   RAI::Utils::graph->waitForEnter();
