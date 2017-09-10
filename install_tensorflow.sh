@@ -53,10 +53,6 @@ else
     pip3 install --upgrade tensorflow
 fi
 
-# Update protobuf
-#cd $RAI_ROOT/deepLearning/tensorflow/bazel-tensorflow/external/protobuf
-#sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
-
 exit
 
 
