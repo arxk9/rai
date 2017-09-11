@@ -53,6 +53,16 @@ else
     pip3 install --upgrade tensorflow
 fi
 
+# Update protobuf
+cd $HOME/.cache/bazel/_bazel_root
+for d in */ ; do
+    if [ "$d" != "install/" ]; then
+	echo "Entering $d" 
+	cd $d/external/protobuf
+	sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
+    fi
+done
+
 exit
 
 
