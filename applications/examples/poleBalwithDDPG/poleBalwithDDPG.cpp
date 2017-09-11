@@ -108,31 +108,14 @@ int main(int argc, char *argv[]) {
   algorithm.initiallyFillTheMemory();
 
   /////////////////////// Plotting properties ////////////////////////
-  RAI::Utils::Graph::FigProp2D figurePropertiesEVP;
-  figurePropertiesEVP.title = "Number of Steps Taken vs Performance";
-  figurePropertiesEVP.xlabel = "N. Steps Taken";
-  figurePropertiesEVP.ylabel = "Performance";
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVGradient;
-  figurePropertiesSVGradient.title = "Qfunction training data";
-  figurePropertiesSVGradient.xlabel = "angle";
-  figurePropertiesSVGradient.ylabel = "angular velocity";
-  figurePropertiesSVGradient.zlabel = "value";
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVC;
-  figurePropertiesSVC.title = "Q function";
-  figurePropertiesSVC.xlabel = "angle";
-  figurePropertiesSVC.ylabel = "angular velocity";
-  figurePropertiesSVC.zlabel = "value";
+  RAI::Utils::Graph::FigProp2D
+      figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
+  RAI::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "Q function");
   figurePropertiesSVC.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVA;
-  figurePropertiesSVA.title = "Policy";
-  figurePropertiesSVA.xlabel = "angle";
-  figurePropertiesSVA.ylabel = "angular velocity";
-  figurePropertiesSVA.zlabel = "action";
+  RAI::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
   figurePropertiesSVA.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-
+  RAI::Utils::Graph::FigProp3D
+      figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
   RAI::Utils::Graph::FigPropPieChart propChart;
 
   StateBatch state_plot(3, 2601);
