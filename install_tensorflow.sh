@@ -43,6 +43,8 @@ git checkout r1.3
 echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
 sudo ./configure
 
+sed -i '\@https://github.com/google/protobuf/archive/0b059a3d8a8f8aa40dde7bea55edca4ec5dfea66.tar.gz@d' tensorflow/workspace.bzl
+
 echo -n "do you have gpu (y/n)? "
 read answer
 if echo "$answer" | grep -iq "^y" ;then
