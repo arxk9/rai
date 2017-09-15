@@ -15,10 +15,12 @@ class UnilateralContact : public Contact {
   UnilateralContact(double muIn) {
     mu = muIn;
     mu2 = muIn * muIn;
+    negMu = -mu;
   }
 
   double mu;
   double mu2;
+  double negMu;
 };
 
 }
