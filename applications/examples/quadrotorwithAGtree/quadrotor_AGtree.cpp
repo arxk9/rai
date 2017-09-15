@@ -77,12 +77,12 @@ int main(int argc, char *argv[]) {
   algorithm.setVisualizationLevel(1);
 
   /////////////////////// Plotting properties ////////////////////////
-  RAI::Utils::Graph::FigProp2D figurePropertiesEVP;
-  figurePropertiesEVP.title = "Number of Episodes vs Performance";
-  figurePropertiesEVP.xlabel = "N. Steps Taken";
-  figurePropertiesEVP.ylabel = "Performance";
+  RAI::Utils::Graph::FigProp2D
+      figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Episodes vs Performance");
+
   RAI::Utils::Graph::FigPropPieChart propChart;
   RAI::Utils::logger->addVariableToLog(1, "process time", "");
+
 
   ////////////////////////// Learning /////////////////////////////////
   for (int iterationNumber = 0; iterationNumber < 300; iterationNumber++) {

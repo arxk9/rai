@@ -43,6 +43,9 @@ git checkout r1.3
 echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
 sudo ./configure
 
+##  Debug Tensorflow build error(Temporary 14.09.17)
+sed -i '\@https://github.com/google/protobuf/archive/0b059a3d8a8f8aa40dde7bea55edca4ec5dfea66.tar.gz@d' tensorflow/workspace.bzl
+
 echo -n "do you have gpu (y/n)? "
 read answer
 if echo "$answer" | grep -iq "^y" ;then
@@ -52,6 +55,16 @@ else
     sudo bazel build -c opt --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone
     pip3 install --upgrade tensorflow
 fi
+
+# Update protobuf
+cd $HOME/.cache/bazel/_bazel_root
+for d in */ ; do
+    if [ "$d" != "install/" ]; then
+	echo "Entering $d" 
+	cd $d/external/protobuf
+	sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
+    fi
+done
 
 exit
 

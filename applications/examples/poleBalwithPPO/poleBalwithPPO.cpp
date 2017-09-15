@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   constexpr int loggingInterval = 10;
   ////////////////////////// Learning /////////////////////////////////
 
-  for (int iterationNumber = 0; iterationNumber < 20; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 50; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
