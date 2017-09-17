@@ -99,7 +99,7 @@ sudo apt-get install $APT_GET_FLAGS python-virtualenv
 sudo apt-get install $APT_GET_FLAGS python3-setuptools
 
 # Installing virtualenvwrapper
-sudo pip install $APT_GET_FLAGS virtualenvwrapper
+sudo pip3 install $APT_GET_FLAGS virtualenvwrapper
 sed -i '/WORKON_HOME/d' $HOME/.bashrc
 printf 'export WORKON_HOME=~/.virtualenvs\n' >> $HOME/.bashrc
 sed -i '/VIRTUALENVWRAPPER_PYTHON/d' $HOME/.bashrc
