@@ -41,6 +41,7 @@ git clone https://github.com/tensorflow/tensorflow.git
 cd tensorflow
 git checkout r1.3
 echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
+sudo bazel clean --expunge
 sudo ./configure
 
 ##  Debug Tensorflow build error(Temporary 14.09.17)
@@ -61,12 +62,14 @@ cd $HOME/.cache/bazel/_bazel_root
 for d in */ ; do
     if [ "$d" != "install/" ]; then
 	echo "Entering $d" 
-	cd $d/external/protobuf
+	cd $d
+	cd external/protobuf
 	sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
     fi
 done
 
 exit
+
 
 
 
