@@ -64,7 +64,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tensorflowDependencies"
 ################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/RAI/include)
 include_directories(utils)
-include_directories(common)
 include_directories(graphics)
 set(RAI_LINK rai_logger rai_timer rai_graph ${RAI_LINK})
 
