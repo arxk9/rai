@@ -35,7 +35,7 @@ class Tensor {
  public:
 
   // empty constructor. Resize has to be called before use
-  Tensor(){ setDataType(); }
+  Tensor() { setDataType(); }
 
   // empty data constructor
   Tensor(const rai::Vector<int> dim, const std::string name = "") {
@@ -56,7 +56,7 @@ class Tensor {
   // copy construct from Eigen Matrix
   template<int Rows, int Cols>
   Tensor(const Eigen::Matrix<Dtype, Rows, Cols> &emat, const std::string name = "") {
-    LOG_IF(FATAL, NDim != 2)<<"Specify the reshape";
+    LOG_IF(FATAL, NDim != 2) << "Specify the reshape";
     rai::Vector<int> dim = {emat.rows(), emat.cols()};
     init(dim, name);
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
@@ -66,7 +66,7 @@ class Tensor {
   template<int Rows, int Cols>
   Tensor(const Eigen::Matrix<Dtype, Rows, Cols> &emat, rai::Vector<int> dim, const std::string name = "") {
     init(dim, name);
-    LOG_IF(FATAL, emat.size() != size_)<<"size mismatch";
+    LOG_IF(FATAL, emat.size() != size_) << "size mismatch";
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
   }
 
@@ -83,7 +83,7 @@ class Tensor {
 
   template<int Rows, int Cols>
   operator Eigen::Matrix<Dtype, Rows, Cols>() {
-    LOG_IF(FATAL, Rows!=dim_[0] || Cols!=dim_[1]) <<"dimension mismatch";
+    LOG_IF(FATAL, Rows != dim_[0] || Cols != dim_[1]) << "dimension mismatch";
     EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
     return mat;
   };
@@ -129,7 +129,7 @@ class Tensor {
     eTensor().setZero();
   }
 
-  Dtype* data() {
+  Dtype *data() {
     return eTensor().data();
   }
 
@@ -144,7 +144,7 @@ class Tensor {
     return namedTensor_.second;
   }
 
-  rai::Vector<tensorflow::Tensor>& output() {
+  rai::Vector<tensorflow::Tensor> &output() {
     return vecTens;
   }
 
@@ -176,7 +176,7 @@ class Tensor {
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * size_);
   }
 
-  Dtype* operator[](int x) {
+  Dtype *operator[](int x) {
     return vecTens[x].flat<Dtype>().data();
   };
 
@@ -187,9 +187,9 @@ class Tensor {
   void setName(const std::string name) { namedTensor_.first = name; }
   const rai::Vector<int> &dim() const { return dim_; }
   const int dim(int idx) const { return dim_[idx]; }
-  int rows() { return dim_[0];}
-  int cols() { return dim_[1];}
-  int batches() { return dim_[2];}
+  int rows() { return dim_[0]; }
+  int cols() { return dim_[1]; }
+  int batches() { return dim_[2]; }
 
   /// you lose all data calling resize
   void resize(const rai::Vector<int> dim) {
@@ -247,13 +247,12 @@ class Tensor {
   }
 
   template<int rows>
-  void partiallyFillBatch(int batchId, rai::Vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN=0) {
+  void partiallyFillBatch(int batchId, rai::Vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN = 0) {
     LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
-    for(int colId=0; colId < eMatVec.size() - ignoreLastN; colId++)
+    for (int colId = 0; colId < eMatVec.size() - ignoreLastN; colId++)
       batch(batchId).col(colId) = eMatVec[colId];
   }
-
 
  private:
 
@@ -273,7 +272,7 @@ class Tensor {
       esizes_[d] = dim_[d];
   }
 
-  void setDataType(){
+  void setDataType() {
     if (typeid(Dtype) == typeid(float))
       dtype_ = tensorflow::DataType::DT_FLOAT;
     else if (typeid(Dtype) == typeid(double))

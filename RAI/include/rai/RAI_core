@@ -16,7 +16,6 @@
 #include "RAI_Tensor.hpp"
 #include "RAI_Vector.hpp"
 
-
 std::string RAI_LOG_PATH; /// logging directory
 std::string RAI_ROOT_PATH; /// the main RAI directory
 
@@ -24,8 +23,7 @@ using rai::Utils::graph;
 using rai::Utils::logger;
 using rai::Utils::timer;
 
-
-inline int RAI_init(){
+inline int RAI_init() {
   RAI_LOG_PATH = std::string("/logsNplots/" + timer->getCurrentDataAndTime());
   RAI_LOG_PATH = std::string(std::getenv("RAI_ROOT")) + RAI_LOG_PATH;
   RAI_ROOT_PATH = std::string(std::getenv("RAI_ROOT"));
@@ -33,8 +31,8 @@ inline int RAI_init(){
   std::ostringstream glogPath;
   glogPath << RAI_LOG_PATH << "/";
   FLAGS_log_dir = glogPath.str();
-  std::cout<<"logging directory: "<<glogPath.str()<<std::endl;
-  google::SetLogDestination(google::INFO,FLAGS_log_dir.c_str() );
+  std::cout << "logging directory: " << glogPath.str() << std::endl;
+  google::SetLogDestination(google::INFO, FLAGS_log_dir.c_str());
   google::InitGoogleLogging("debug");
   google::LogToStderr();
   google::SetCommandLineOption("GLOG_minloglevel", "0");
@@ -42,7 +40,5 @@ inline int RAI_init(){
   logger->setLogPath(RAI_LOG_PATH);
   timer->setLogPath(RAI_LOG_PATH);
 }
-
-
 
 #endif //RAI_RAI_UTILS_HPP
