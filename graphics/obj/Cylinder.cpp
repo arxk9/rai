@@ -5,7 +5,7 @@
 
 #include "Cylinder.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -90,7 +90,7 @@ Cylinder::Cylinder(float r, float l) {
 //
 //#include "Cylinder.hpp"
 //
-//namespace RAI {
+//namespace rai {
 //namespace Graphics {
 //namespace Obj {
 //

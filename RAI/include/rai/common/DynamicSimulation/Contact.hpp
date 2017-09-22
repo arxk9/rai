@@ -6,7 +6,7 @@
 #ifndef RAI_CONTACT_HPP
 #define RAI_CONTACT_HPP
 
-namespace RAI {
+namespace rai {
 namespace Dynamics {
 
 class Contact {

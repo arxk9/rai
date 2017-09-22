@@ -24,13 +24,14 @@
 
 #include <omp.h>
 
-namespace RAI {
+namespace rai {
 namespace ExpAcq {
 
 template<typename Dtype, int StateDim, int ActionDim, int CommandDim>
 class CommonFunc {
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, StateDim, -1> StateBatch;
@@ -44,7 +45,7 @@ class CommonFunc {
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, CommandDim>;
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
-  using ReplayMemory_ = RAI::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
+  using ReplayMemory_ = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
 
   template<typename NoiseType>
   static Result runEpisode(Task_ *&task,
@@ -106,10 +107,10 @@ class CommonFunc {
 
   ////////////// this method is useful when forward of a policy is expensive ////////
   template<typename NoiseType>
-  static Result runEpisodeInBatch(std::vector<Task_ *> &task,
+  static Result runEpisodeInBatch(rai::Vector<Task_ *> &task,
                                   Policy_ *policy,
-                                  std::vector<NoiseType *> &noise,
-                                  std::vector<Trajectory_> &trajectorySet,
+                                  rai::Vector<NoiseType *> &noise,
+                                  rai::Vector<Trajectory_> &trajectorySet,
                                   StateBatch &startingState,
                                   double timeLimit,
                                   ReplayMemory_ *memory = nullptr) {
@@ -120,7 +121,7 @@ class CommonFunc {
     Result stat;
     StateBatch stateBatch, stateBatchReduced;
     ActionBatch actionBatch, actionBatchReduced;
-    std::vector<TerminationType> termTypeBatch;
+    rai::Vector<TerminationType> termTypeBatch;
     State state_tp1, state_t;
     Action action_t, noiseFreeAction, actionNoise;
     double episodeTime = 0.0;
@@ -228,10 +229,10 @@ class CommonFunc {
   }
 
   template<typename NoiseType>
-  static Result runEpisodeInBatchParallel(std::vector<Task_ *> &taskset,
+  static Result runEpisodeInBatchParallel(rai::Vector<Task_ *> &taskset,
                                           Policy_ *policy,
-                                          std::vector<NoiseType *> &noise,
-                                          std::vector<Trajectory_> &trajectorySet,
+                                          rai::Vector<NoiseType *> &noise,
+                                          rai::Vector<Trajectory_> &trajectorySet,
                                           StateBatch &startingState,
                                           double timeLimit,
                                           ReplayMemory_ *memory = nullptr) {
@@ -245,7 +246,7 @@ class CommonFunc {
     Result stat;
     StateBatch stateBatch, stateBatchReduced;
     ActionBatch actionBatch, actionBatchReduced;
-    std::vector<TerminationType> termTypeBatch;
+    rai::Vector<TerminationType> termTypeBatch;
     State state_tp;
     Action action_tp;
     int stepCount = 0;
@@ -411,9 +412,9 @@ class CommonFunc {
   }
 
   template<typename NoiseType>
-  static void takeOneStep(std::vector<Task_ *> &task,
+  static void takeOneStep(rai::Vector<Task_ *> &task,
                           Policy_ *policy,
-                          std::vector<NoiseType *> &noise,
+                          rai::Vector<NoiseType *> &noise,
                           ReplayMemory_ *memory) {
     State state_t;
     Action action_t;
@@ -435,9 +436,9 @@ class CommonFunc {
   }
 
   template<typename NoiseType>
-  static void takeOneStepInBatch(std::vector<Task_ *> &tasks,
+  static void takeOneStepInBatch(rai::Vector<Task_ *> &tasks,
                                  Policy_ *policy,
-                                 std::vector<NoiseType *> &noises,
+                                 rai::Vector<NoiseType *> &noises,
                                  ReplayMemory_ *memory) {
     unsigned threadN = tasks.size();
 

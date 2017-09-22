@@ -4,7 +4,7 @@
 
 #include "RAI_logger/RAI_logger_ToInclude.hpp"
 
-namespace RAI{
+namespace rai{
 namespace Utils{
   std::shared_ptr<RAI_logger> logger(new RAI_logger());
 }}

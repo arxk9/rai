@@ -9,6 +9,7 @@
 #include "glog/logging.h"
 #include <ctime>
 #include <fstream>
+#include "rai/RAI_Vector.hpp"
 
 class RAI_data{
 
@@ -59,7 +60,7 @@ public:
     appendNewData(data);
   }
 
-  const std::vector<std::vector<float> >& getData(){
+  const rai::Vector<rai::Vector<float> >& getData(){
     return data_;
   }
 
@@ -83,7 +84,7 @@ private:
   int dimension_ = 1;
   std::string name_;
   std::string description_;
-  std::vector<std::vector<float> > data_;
+  rai::Vector<rai::Vector<float> > data_;
   int dimension_idx = 0;
 
 };

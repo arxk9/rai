@@ -7,8 +7,9 @@
 
 #include "SuperObject.hpp"
 #include "CheckerBoard_half.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -16,7 +17,7 @@ class CheckerBoard : public SuperObject {
 
  public:
 
-  CheckerBoard(int gridSize, float width, float length, std::vector<float> color1={0.1,0.1,0.1}, std::vector<float> color2={0.9,0.9,0.9});
+  CheckerBoard(int gridSize, float width, float length, rai::Vector<float> color1={0.1,0.1,0.1}, rai::Vector<float> color2={0.9,0.9,0.9});
   ~CheckerBoard();
   void init();
   void destroy();

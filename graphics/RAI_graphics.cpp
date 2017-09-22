@@ -7,7 +7,7 @@
 #include <FreeImage.h>
 #include <thread>
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 
 typedef void *(RAI_graphics::*Thread2Ptr)(void *);

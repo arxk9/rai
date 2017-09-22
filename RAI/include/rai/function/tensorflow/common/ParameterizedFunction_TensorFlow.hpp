@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <rai/RAI_core>
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int inputDimension, int outputDimension>
@@ -77,7 +77,7 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 
   virtual void forward(Input &input, Output &output) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     tf_->run({{"input", input},
               {"updateBNparams", notUpdateBN}},
              {"output"}, {}, vectorOfOutputs);
@@ -85,21 +85,21 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 
   virtual void forward(InputBatch &inputs, OutputBatch &outputs) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     tf_->run({{"input", inputs},
               {"updateBNparams", notUpdateBN}},
              {"output"}, {}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
   }
   virtual void forward(InputTensor &inputs, OutputTensor &outputs) {
-    std::vector<Tensor3D > vectorOfOutputs;
+    rai::Vector<Tensor3D> vectorOfOutputs;
     tf_->run({{"input", inputs}},
              {"output"}, {}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
   }
 
   virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &targetOutputs) {
-    std::vector<MatrixXD> outputs, dummy;
+    rai::Vector<MatrixXD> outputs, dummy;
     tf_->run({{"input", inputs},
               {"targetOutput", targetOutputs},
               {"trainUsingTargetOutput/learningRate", learningRate_},
@@ -189,9 +189,9 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
     return tf_;
   }
 
-  void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
-                                              const std::vector<std::string> &outputTensorNames,
-                                              const std::vector<std::string> &targetNodeNames, std::vector<tensorflow::Tensor> &outputs) {
+  void run(const rai::Vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
+                                              const rai::Vector<std::string> &outputTensorNames,
+                                              const rai::Vector<std::string> &targetNodeNames, rai::Vector<tensorflow::Tensor> &outputs) {
     tf_->run(inputs, outputTensorNames, targetNodeNames, outputs);
   }
 
@@ -265,4 +265,4 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 };
 } // namespace FuncApprox
-} // namespace RAI
+} // namespace rai

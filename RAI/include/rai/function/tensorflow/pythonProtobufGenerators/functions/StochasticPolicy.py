@@ -23,7 +23,6 @@ class StochasticPolicy(pc.Policy):
             action_stdev = tf.identity(tf.exp(wo), name='stdev')
 
         gs.l_param_list.append(wo)
-        gs.a_param_list.append(wo)
 
         super(StochasticPolicy, self).__init__(dtype, gs)
 
@@ -46,9 +45,12 @@ class StochasticPolicy(pc.Policy):
         PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 3], name='PPO_params_placeholder')
 
         param_assign_op_list = []
-        param_assign_op_list += [tf.assign(kl_coeff, tf.slice(PPO_params_placeholder, [0, 0], [1, 1]), name='kl_coeff_assign')]
-        param_assign_op_list += [tf.assign(ent_coeff, tf.slice(PPO_params_placeholder, [0, 1], [1, 1]), name='ent_coeff_assign')]
-        param_assign_op_list += [tf.assign(clip_param, tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), name='clip_param_assign')]
+        param_assign_op_list += [
+            tf.assign(kl_coeff, tf.slice(PPO_params_placeholder, [0, 0], [1, 1]), name='kl_coeff_assign')]
+        param_assign_op_list += [
+            tf.assign(ent_coeff, tf.slice(PPO_params_placeholder, [0, 1], [1, 1]), name='ent_coeff_assign')]
+        param_assign_op_list += [
+            tf.assign(clip_param, tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), name='clip_param_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 

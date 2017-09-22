@@ -11,8 +11,9 @@
 #include "enumeration.hpp"
 #include "Trajectory.hpp"
 #include "math/RandomNumberGenerator.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Memory {
 
 template<typename Dtype, int stateDim, int actionDim>
@@ -26,7 +27,12 @@ class BellmanTupleSet {
 
   class BellmanTuple {
    public:
-    BellmanTuple(unsigned trajId, unsigned startTimeId, unsigned endTimeId, Dtype discCosts, Dtype cumulDiscFctr, bool terminated) :
+    BellmanTuple(unsigned trajId,
+                 unsigned startTimeId,
+                 unsigned endTimeId,
+                 Dtype discCosts,
+                 Dtype cumulDiscFctr,
+                 bool terminated) :
         trajId_(trajId),
         startTimeId_(startTimeId),
         endTimeId_(endTimeId),
@@ -40,13 +46,14 @@ class BellmanTupleSet {
   };
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   void sampleRandBellTuples(StateBatch &state_t_batch,
                             StateBatch &state_tk_batch,
                             ActionBatch &action_t_batch,
                             CostBatch &discCost_batch,
                             CostBatch &dictFctr_batch,
-                            std::vector<bool> &terminalState,
-                            std::vector<unsigned> &idx) {
+                            rai::Vector<bool> &terminalState,
+                            rai::Vector<unsigned> &idx) {
     unsigned batchSize = state_t_batch.cols();
     unsigned size = tuples_.size();
     LOG_IF(FATAL, tuples_.size() < state_t_batch.cols() * 1.2) <<
@@ -68,15 +75,15 @@ class BellmanTupleSet {
   void sampleRandStates(StateBatch &state_t_batch) {
 
     LOG_IF(FATAL, tuples_.size() < state_t_batch.cols() * 1.2) <<
-                                          "You don't have enough memories in the storage! accumulate more memories before you update your Q-function";
-    std::vector<unsigned> idx = rn_.getNrandomSubsetIdx(tuples_.size(), state_t_batch.cols());
+                                                               "You don't have enough memories in the storage! accumulate more memories before you update your Q-function";
+    rai::Vector<unsigned> idx = rn_.getNrandomSubsetIdx(tuples_.size(), state_t_batch.cols());
     ///// saving memory to the batch
     for (unsigned i = 0; i < state_t_batch.cols(); i++)
       state_t_batch.col(i) = traj_[tuples_[idx[i]].trajId_].stateTraj[tuples_[idx[i]].startTimeId_];
   }
 
   /// nu=1 means only the transition tuples
-  void appendTraj(std::vector<Trajectory_> &traj, unsigned nu, Dtype discFtr) {
+  void appendTraj(rai::Vector<Trajectory_> &traj, unsigned nu, Dtype discFtr) {
     unsigned traId = traj_.size();
     for (auto &tra: traj) {
       traj_.push_back(tra);
@@ -88,7 +95,7 @@ class BellmanTupleSet {
             cumCost = tra.costTraj[i + k] + cumCost * discFtr;
 
           bool terminated = i + j == tra.size() - 1 && tra.termType == TerminationType::terminalState;
-          tuples_.push_back(BellmanTuple(traId, i, i+j, cumCost, cumDiscF, terminated));
+          tuples_.push_back(BellmanTuple(traId, i, i + j, cumCost, cumDiscF, terminated));
         }
       }
       traId++;
@@ -99,26 +106,25 @@ class BellmanTupleSet {
     return tuples_.size();
   }
 
-  void popTuples(std::vector<unsigned> &idx) {
-    std::vector<BellmanTuple> tuples_copy = tuples_;
+  void popTuples(rai::Vector<unsigned> &idx) {
+    rai::Vector<BellmanTuple> tuples_copy = tuples_;
     tuples_.clear();
     bool keep[tuples_copy.size()];
 
-    for (int i=0; i<tuples_copy.size(); i++)
+    for (int i = 0; i < tuples_copy.size(); i++)
       keep[i] = true;
 
-    for (int i=0; i<idx.size(); i++)
+    for (int i = 0; i < idx.size(); i++)
       keep[idx[i]] = false;
 
-    for (int i=0; i<tuples_copy.size(); i++)
-      if(keep[i]) tuples_.push_back(tuples_copy[i]);
+    for (int i = 0; i < tuples_copy.size(); i++)
+      if (keep[i]) tuples_.push_back(tuples_copy[i]);
   }
 
  private:
-  std::vector<Trajectory_> traj_;
-  std::vector<BellmanTuple> tuples_;
-  RandomNumberGenerator<Dtype> rn_;
-
+  rai::Vector<Trajectory_> traj_;
+  rai::Vector<BellmanTuple> tuples_;
+  RandomNumberGenerator <Dtype> rn_;
 
 };
 

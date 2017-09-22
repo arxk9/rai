@@ -3,7 +3,7 @@
 //
 #include "Arrow.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 

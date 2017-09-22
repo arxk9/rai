@@ -36,10 +36,10 @@ To construct such function in your app file you call::
 The arguments are computation mode, GraphStructure, params for GraphStructure and the learning rate, respectively.
 If you want to create a new GraphStructure or a new SpecializedFunction, please refer to Q&A section.
 
-RAI::Tensor
+rai::Tensor
 ========================
 
-RAI::Tensor is the main data format of RAI. It provides convenient interfaces with :code:`Eigen::Tensor`, :code:`Eigen::Matrix`, and :code:`tensorflow::Tensor`.
+rai::Tensor is the main data format of RAI. It provides convenient interfaces with :code:`Eigen::Tensor`, :code:`Eigen::Matrix`, and :code:`tensorflow::Tensor`.
 It's underlying data storage format is :code:`tensorflow::Tensor` and provides :code:`Eigen::Map` to both :code:`Eigen::Tensor` and :code:`Eigen::Matrix`.
 It follows column-major format. So it has the same index as :code:`Eigen` objects but a reverse index of a :code:`tensorflow::Tensor` object.
 A simple example code is below::
@@ -49,7 +49,7 @@ A simple example code is below::
 
     int main() {
 
-      RAI::Tensor<float, 2> ten({3,2}, "test tensor");
+      rai::Tensor<float, 2> ten({3,2}, "test tensor");
       Eigen::Matrix<float, 3, 2> eMat;
       Eigen::Tensor<float, 2> eigenTen(3,2);
       tensorflow::Tensor tfTensor(tensorflow::DataType::DT_FLOAT, tensorflow::TensorShape({2,3}));
@@ -76,7 +76,7 @@ A simple example code is below::
       std::cout<<"my tensor (first column should be 7, 3rd row is 4)"<<std::endl<<ten<<std::endl;
 
       /// checking 3d methods
-      RAI::Tensor<float, 3> ten3D({3, 2, 4}, "testTensor");
+      rai::Tensor<float, 3> ten3D({3, 2, 4}, "testTensor");
       ten3D.setConstant(1.5);
       ten3D.batch(2) = eMat;
       std::cout<<"3rd batch of tensor should be 1"<<std::endl<<ten3D<<std::endl;
@@ -88,5 +88,5 @@ A simple example code is below::
       std::cout<<"there should be 12 numbers now"<<std::endl<<ten3D<<std::endl;
     }
 
-:code:`RAI::Tensor` can be casted to :code:`std::pair<std::string, tensorflow::Tensor>`.
+:code:`rai::Tensor` can be casted to :code:`std::pair<std::string, tensorflow::Tensor>`.
 So you can directly use it with :code:`tensorflow::Session::Run()` function.

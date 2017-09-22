@@ -4,7 +4,7 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
-namespace RAI {
+namespace rai {
 
 template<typename Derived, int n_>
 static inline void cholInv(Eigen::Matrix<Derived, n_, n_> &A, Eigen::Matrix<Derived, n_, n_> &AInv) {

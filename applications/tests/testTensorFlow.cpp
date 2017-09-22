@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "tensorflow/core/public/session.h"
+#include "rai/RAI_Vector.hpp"
 
 using namespace tensorflow;
 
@@ -38,13 +39,13 @@ void testTensorFlow(){
     Tensor b(DT_FLOAT, TensorShape());
     b.scalar<float>()() = 2.0;
 
-    std::vector<std::pair<string, tensorflow::Tensor>> inputs = {
+    rai::Vector<std::pair<string, tensorflow::Tensor>> inputs = {
             { "a", a },
             { "b", b },
     };
 
     // The session will initialize the outputs
-    std::vector<tensorflow::Tensor> outputs;
+    rai::Vector<tensorflow::Tensor> outputs;
 
     // Run the session, evaluating our "c" operation from the graph
     status = session->Run(inputs, {"c"}, {}, &outputs);

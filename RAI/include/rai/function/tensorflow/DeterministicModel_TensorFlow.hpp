@@ -9,7 +9,7 @@
 
 #pragma once
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int inputDim, int outputDim>
@@ -39,28 +39,27 @@ class DeterministicModel_TensorFlow : public virtual DeterministicModel<Dtype, i
   }
 
   virtual void forward(Input &input, Output &output) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"input", input}},
                        {"output"}, vectorOfOutputs);
     output = vectorOfOutputs[0];
   }
 
   virtual void forward(InputBatch &inputs, OutputBatch &outputs) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"input", inputs}},
                        {"output"}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
   }
 
   virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &outputs) {
-    std::vector<MatrixXD> loss, dummy;
+    rai::Vector<MatrixXD> loss, dummy;
     this->tf_->run({{"input", inputs},
                     {"targetOutput", outputs},
                     {"squareLoss/learningRate", this->learningRate_}}, {"squareLoss/loss"},
                    {"squareLoss/solver"}, loss);
     return loss[0](0);
   }
-
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
 

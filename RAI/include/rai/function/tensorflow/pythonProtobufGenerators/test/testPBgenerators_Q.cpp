@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "rai/function/tensorflow/ParameterizedFunction_TensorFlow.hpp"
+#include "rai/function/tensorflow/common/ParameterizedFunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/Qfunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/DeterministicPolicy_TensorFlow.hpp"
 #include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
@@ -19,10 +19,10 @@ using std::cout;
 using std::endl;
 using std::cin;
 
-using RAI::FuncApprox::ParameterizedFunction_TensorFlow;
-using RAI::FuncApprox::Qfunction_TensorFlow;
-using RAI::FuncApprox::Policy_TensorFlow;
-using RAI::FuncApprox::ValueFunction_TensorFlow;
+using rai::FuncApprox::ParameterizedFunction_TensorFlow;
+using rai::FuncApprox::Qfunction_TensorFlow;
+using rai::FuncApprox::DeterministicPolicy_TensorFlow;
+using rai::FuncApprox::ValueFunction_TensorFlow;
 
 using Dtype = double;
 
@@ -32,7 +32,7 @@ using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;
 double training_mean = 50.0;
 double training_variance = 100.0;
 
-using namespace RAI;
+using namespace rai;
 
 Dtype sample(double dummy) {
   static std::mt19937 rng;
@@ -45,7 +45,7 @@ int main() {
   constexpr int stateDimension = 5;
   constexpr int actionDimension = 3;
 
-  bool testCopyStructureCopyWeightAndWeightInterpolation = false;
+  bool testCopyStructureCopyWeightAndWeightInterpolation = true;
 
   using Qfunction_TensorFlow = Qfunction_TensorFlow <Dtype, stateDimension, actionDimension>;
   using State = Qfunction_TensorFlow::State;
@@ -61,8 +61,8 @@ int main() {
   ActionBatch actionBatch = ActionBatch::Random(actionDimension, batchSize);
   ValueBatch qValueTargetBatch = ((stateBatch.array()*4).sin()).square().colwise().sum();
   ValueBatch Qtest,Qtest2;
-  Qfunction_TensorFlow Q("Qfunction", "relu",{32,32},5e-3 ,0.001);
-  Qfunction_TensorFlow Qo("Qfunction_2l", "5 3 relu 32 32 5e-3", 0.001);
+  Qfunction_TensorFlow Q("cpu", "MLP2", "relu 1e-3 5 3 32 32 1", 0.001);
+  Qfunction_TensorFlow Qo("cpu", "MLP2", "relu 1e-3 5 3 32 32 1", 0.001);
   VectorXD param,paramo;
 
   LOG(INFO) << "param # :" <<   Qo.getLPSize()- Q.getLPSize()<< ", "<< Qo.getAPSize()-Q.getAPSize();
@@ -83,13 +83,8 @@ int main() {
     cout << "Test: Policy::copyStructureFrom" << endl;
 
 
-//    using Qfunction_TensorFlow = Qfunction_TensorFlow<Dtype, stateDimension, actionDimension>;
-
-//
-//    Qfunction_TensorFlow qfunction1("Qfunction_2l", "2 2 tanh 32 32 1e0", 0.001);
-//    Qfunction_TensorFlow qfunction2("Qfunction_2l", "2 2 tanh 32 32 1e0", 0.001);
-    Qfunction_TensorFlow qfunction1("Qfunction", "tanh",{2,2,2,2},5e-3 ,0.001);
-    Qfunction_TensorFlow qfunction2("Qfunction", "tanh",{2,2,2,2},5e-3 ,0.001);
+    Qfunction_TensorFlow qfunction1("cpu", "MLP2", "relu 5e-3 5 3 2 2 2 2 1", 0.001);
+    Qfunction_TensorFlow qfunction2("cpu", "MLP2", "relu 5e-3 5 3 2 2 2 2 1", 0.001);
 
     qfunction2.copyStructureFrom(&qfunction1);
 

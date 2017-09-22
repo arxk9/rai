@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-namespace RAI {
+namespace rai {
 
 typedef typename Eigen::Matrix<double, 4, 1> Quaternion;
 typedef typename Eigen::Matrix<double, 3, 1> EulerVector;

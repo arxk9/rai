@@ -11,7 +11,7 @@
 #include "rai/memory/ReplayMemorySARS.hpp"
 #include "AcquisitorCommonFunc.hpp"
 
-namespace RAI {
+namespace rai {
 namespace ExpAcq {
 
 template<typename Dtype, int StateDim, int ActionDim>
@@ -27,10 +27,10 @@ class TrajectoryAcquisitor_Sequential : public TrajectoryAcquisitor<Dtype, State
   using ReplayMemory_ = Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
 
  public:
-  virtual Dtype acquire(std::vector<Task_ *> &taskset,
+  virtual Dtype acquire(rai::Vector<Task_ *> &taskset,
                         Policy_ *policy,
-                        std::vector<Noise_ *> &noise,
-                        std::vector<Trajectory_> &trajectorySet,
+                        rai::Vector<Noise_ *> &noise,
+                        rai::Vector<Trajectory_> &trajectorySet,
                         StateBatch &startingState,
                         double timeLimit,
                         bool countStep,

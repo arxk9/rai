@@ -29,13 +29,15 @@
 #include <Eigen/StdVector>
 #include <Eigen/SVD>
 
-// enumeration
+#include "rai/RAI_Vector.hpp"
 #include "rai/common/enumeration.hpp"
+#include "rai/common/TypeDef.hpp"
 
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Task {
 
 template<typename Dtype, int state_dimension, int action_dimension, int command_dimension>
@@ -44,6 +46,7 @@ class Task {
   //////////////// controlUpdate_dt is the decision update time step
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, state_dimension, 1> State;
   typedef Eigen::Matrix<Dtype, state_dimension, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, action_dimension, 1> Action;
@@ -189,9 +192,8 @@ class Task {
   bool videoRecordingEnabled_ = false;
 
   std::string videoDir_;
-
-  std::vector<State> constraintsNormal_;
-  std::vector<Dtype> constraintsOffset_;
+  rai::Vector<State> constraintsNormal_;
+  rai::Vector<Dtype> constraintsOffset_;
   State constraintBoxUpper_;
   State constraintBoxLower_;
   bool isBoxConstrained_ = false;

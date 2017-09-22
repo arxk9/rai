@@ -16,8 +16,9 @@
 #include <mutex>
 #include <Eigen/Core>
 #include <glog/logging.h>
+#include <rai/RAI_Vector.hpp>
 
-namespace RAI {
+namespace rai {
 
 template<typename Dtype>
 class RandomNumberGenerator {
@@ -112,7 +113,7 @@ class RandomNumberGenerator {
   }
 
   template<typename Derived>
-  void shuffleSTDVector(std::vector<Derived> &order) {
+  void shuffleSTDVector(rai::Vector<Derived> &order) {
     boost::variate_generator<boost::mt19937 &, boost::uniform_int<> >
         random_number_shuffler(rngGenerator, boost::uniform_int<>());
     std::random_shuffle(order.begin(), order.end(), random_number_shuffler);
@@ -124,8 +125,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix.cols());
 
     /// sampling the order
-    std::vector<int> order;
-    std::vector<bool> needSuffling(colSize, true);
+    rai::Vector<int> order;
+    rai::Vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;
@@ -149,8 +150,8 @@ class RandomNumberGenerator {
     }
   }
 
-  std::vector<unsigned> getNrandomSubsetIdx (unsigned nOfElem, unsigned nOfSubElem) {
-    std::vector<unsigned> memoryIdx(nOfSubElem);
+  rai::Vector<unsigned> getNrandomSubsetIdx (unsigned nOfElem, unsigned nOfSubElem) {
+    rai::Vector<unsigned> memoryIdx(nOfSubElem);
     ///// randomly sampling memory indeces
     for (unsigned i = 0; i < nOfSubElem; i++) {
       memoryIdx[i] = intRand(0, nOfElem - 1);
@@ -173,8 +174,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix1.cols());
 
     /// sampling the order
-    std::vector<int> order;
-    std::vector<bool> needSuffling(colSize, true);
+    rai::Vector<int> order;
+    rai::Vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;
@@ -215,8 +216,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix1.cols());
 
     /// sampling the order
-    std::vector<int> order;
-    std::vector<bool> needSuffling(colSize, true);
+    rai::Vector<int> order;
+    rai::Vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;
@@ -262,8 +263,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix1.cols());
 
     /// sampling the order
-    std::vector<int> order;
-    std::vector<bool> needSuffling(colSize, true);
+    rai::Vector<int> order;
+    rai::Vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;
@@ -319,8 +320,8 @@ class RandomNumberGenerator {
 }
 // Initialize the random number generator with a time-based seed instead of the default one.
 template<typename Dtype>
-boost::random::mt19937 RAI::RandomNumberGenerator<Dtype>::rngGenerator(time(NULL));
+boost::random::mt19937 rai::RandomNumberGenerator<Dtype>::rngGenerator(time(NULL));
 template<typename Dtype>
-std::mutex RAI::RandomNumberGenerator<Dtype>::rndMutex_;
+std::mutex rai::RandomNumberGenerator<Dtype>::rndMutex_;
 
 #endif /* RANDOMNUMBERGENERATOR_HPP_ */

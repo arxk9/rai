@@ -6,7 +6,7 @@
 
 int main() {
 
-  RAI::Tensor<float, 2> ten({3, 2}, "test tensor");
+  rai::Tensor<float, 2> ten({3, 2}, "test tensor");
 
   Eigen::Matrix<float, 3, 2> eMat;
   Eigen::Tensor<float, 2> eigenTen(3, 2);
@@ -34,7 +34,7 @@ int main() {
   std::cout << "my tensor (first column should be 7, 3rd row is 4)" << std::endl << ten << std::endl;
 
   /// checking 3d methods
-  RAI::Tensor<float, 3> ten3D({3, 2, 4}, "testTensor");
+  rai::Tensor<float, 3> ten3D({3, 2, 4}, "testTensor");
   ten3D.setConstant(1.5);
   ten3D.batch(2) = eMat;
   std::cout << "3rd batch of tensor should be 1" << std::endl << ten3D << std::endl;
@@ -44,5 +44,4 @@ int main() {
 
   ten3D.resize({3, 2, 2});
   std::cout << "there should be 12 numbers" << std::endl << ten3D << std::endl;
-
 }

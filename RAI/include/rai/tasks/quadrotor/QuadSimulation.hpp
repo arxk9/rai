@@ -9,8 +9,9 @@
 #include "rai/function/common/Policy.hpp"
 #include <sys/time.h>
 #include "math/RAI_math.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI{
+namespace rai{
 namespace Task{
 
 template<typename Dtype>
@@ -37,7 +38,7 @@ class QuadSimulation {
 //    initialPosition << -0.4113 ,   0.8562 ,   2.1539;
 //    initialLinVel <<   -0.4086 ,  -0.8474  ,  3.1776;
 //    initialAngVel << 0.1405 ,  -7.0643  , -0.4982;
-//    RotationMatrix R = RAI::Math::quatToRotMat(quat);
+//    RotationMatrix R = rai::Math::quatToRotMat(quat);
 //    State initialState;
 //    initialState << R.col(0), R.col(1), R.col(2),initialPosition * positionScale_, R * initialAngVel *angVelScale_, R * initialLinVel *linVelScale_;
 //    task.setToParticularState(initialState);
@@ -112,9 +113,9 @@ class QuadSimulation {
     Utils::logger->appendData("orientation", quat.data());
 
     std::cout<<"\r error norm "<<(posi - traj[timeDiscrete].second).norm()<< "position "<<posi.transpose()<< std::flush;
-    RAI::Utils::timer->startTimer("mlp");
+    rai::Utils::timer->startTimer("mlp");
     policy.forward(quat, posi, anglvel, linvel, traj[timeDiscrete].second, thrust);
-    RAI::Utils::timer->stopTimer("mlp");
+    rai::Utils::timer->stopTimer("mlp");
     task.stepSim(thrust);
     gettimeofday(&timevalNow, nullptr);
     double timeEnd = timevalNow.tv_sec + 1e-6 * timevalNow.tv_usec;
@@ -134,7 +135,7 @@ class QuadSimulation {
   double timebegin;
   int timeDiscrete = 0;
   double time = 0;
-  std::vector<std::pair<Dtype, Position> > traj;
+  rai::Vector<std::pair<Dtype, Position> > traj;
 
 };
 

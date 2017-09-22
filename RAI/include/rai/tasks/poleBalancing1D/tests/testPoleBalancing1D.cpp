@@ -6,10 +6,10 @@ using std::cout;
 using std::endl;
 
 using Dtype = float;
-using PoleBalancing1D = RAI::Task::Reaching2D<Dtype>;
+using PoleBalancing1D = rai::Task::Reaching2D<Dtype>;
 using State = PoleBalancing1D::State;
 using Action = PoleBalancing1D::Action;
-using TerminationType = RAI::TerminationType;
+using TerminationType = rai::TerminationType;
 
 int main(){
 

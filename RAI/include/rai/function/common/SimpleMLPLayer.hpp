@@ -14,7 +14,7 @@
 #include <cmath>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 
-namespace RAI {
+namespace rai {
 
 template<int StateDim, int ActionDim>
 class MLP_fullyconnected {
@@ -24,7 +24,7 @@ class MLP_fullyconnected {
   typedef Eigen::Matrix<double, ActionDim, 1> Action;
   typedef Eigen::Matrix<double, StateDim, 1> State;
 
-  MLP_fullyconnected(std::string fileName, std::string activation, std::vector<int> hiddensizes) :
+  MLP_fullyconnected(std::string fileName, std::string activation, rai::Vector<int> hiddensizes) :
       act_(activation), noise_(Eigen::Matrix<double, ActionDim, ActionDim>::Identity()) {
     const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
 
@@ -113,13 +113,13 @@ class MLP_fullyconnected {
  private:
 
 //Eigen::MatrixXd output_;
-  std::vector<Eigen::VectorXd> params;
-  std::vector<Eigen::MatrixXd> Ws;
-  std::vector<Eigen::VectorXd> bs;
-  std::vector<Eigen::VectorXd> lo;
+  rai::Vector<Eigen::VectorXd> params;
+  rai::Vector<Eigen::MatrixXd> Ws;
+  rai::Vector<Eigen::VectorXd> bs;
+  rai::Vector<Eigen::VectorXd> lo;
   Action Stdev;
 
-  std::vector<int> layersizes;
+  rai::Vector<int> layersizes;
   std::string act_;
 
   Noise_ noise_;

@@ -19,7 +19,7 @@
 #include <fstream>
 #include <cmath>
 
-namespace RAI {
+namespace rai {
 
 template<int StateDim, int ActionDim, int firstLayerSize, int secondLayerSize>
 class MLP_QuadControl {

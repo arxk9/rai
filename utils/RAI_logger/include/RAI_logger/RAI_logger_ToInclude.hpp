@@ -8,7 +8,7 @@
 #include <boost/shared_ptr.hpp>
 #include "implementations/RAI_logger.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Utils {
   extern std::shared_ptr<RAI_logger> logger;
 }

@@ -9,7 +9,7 @@
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>
@@ -96,25 +96,25 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
                          Action &Stdev) { LOG(FATAL) << "Not implemented";  return 0; }
 
   ///recurrent
-  virtual void PPOpg(RAI::Tensor<Dtype, 3> &states,
-                     RAI::Tensor<Dtype, 3> &action,
-                     RAI::Tensor<Dtype, 3> &actionNoise,
+  virtual void PPOpg(rai::Tensor<Dtype, 3> &states,
+                     rai::Tensor<Dtype, 3> &action,
+                     rai::Tensor<Dtype, 3> &actionNoise,
                      Advantages &advs,
                      Action &Stdev,
                      VectorXD &len,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual void PPOpg_kladapt(RAI::Tensor<Dtype, 3> &states,
-                             RAI::Tensor<Dtype, 3> &action,
-                             RAI::Tensor<Dtype, 3> &actionNoise,
+  virtual void PPOpg_kladapt(rai::Tensor<Dtype, 3> &states,
+                             rai::Tensor<Dtype, 3> &action,
+                             rai::Tensor<Dtype, 3> &actionNoise,
                              Advantages &advs,
                              Action &Stdev,
                              VectorXD &len,
                              VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual Dtype PPOgetkl(RAI::Tensor<Dtype, 3> &states,
-                         RAI::Tensor<Dtype, 3> &actionBat,
-                         RAI::Tensor<Dtype, 3> &actionNoise,
+  virtual Dtype PPOgetkl(rai::Tensor<Dtype, 3> &states,
+                         rai::Tensor<Dtype, 3> &actionBat,
+                         rai::Tensor<Dtype, 3> &actionNoise,
                          Action &Stdev,
                          VectorXD &len) {LOG(FATAL) << "Not implemented"; return 0; }
 
@@ -146,14 +146,9 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
     LOG(FATAL) << "Not implemented";
   }
-
-  virtual bool isRecurrent() { return false; }
-  virtual void reset(int n) {}
-  virtual void terminate(int n) {}
-  virtual int getInnerStatesize() { return 0; }
 };
 }//namespace FuncApprox
-}//namespace RAI
+}//namespace rai
 
 
 #endif //RAI_STOCHASTICPOLICY_HPP

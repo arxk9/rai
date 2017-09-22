@@ -15,7 +15,7 @@
 #include <rai/RAI_core>
 #include "RAI_graphics.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Task {
 
 constexpr int StateDim = 18;
@@ -263,7 +263,7 @@ class QuadrotorControl : public Task<Dtype,
     LinearVelocity linearVelocity;
 
     orientation << double(std::abs(oriF[0])), double(oriF[1]), double(oriF[2]), double(oriF[3]);
-    RAI::Math::MathFunc::normalizeQuat(orientation);
+    rai::Math::MathFunc::normalizeQuat(orientation);
     position << double(posiF[0])*2., double(posiF[1])*2., double(posiF[2])*2.;
     angularVelocity << double(angVelF[0]), double(angVelF[1]), double(angVelF[2]);
     linearVelocity << double(linVelF[0]), double(linVelF[1]), double(linVelF[2]);
@@ -387,13 +387,13 @@ class QuadrotorControl : public Task<Dtype,
 } /// namespaces
 
 template<typename Dtype>
-RAI::Graphics::RAI_graphics RAI::Task::QuadrotorControl<Dtype>::graphics(
-"quad simulation", {800, 800}, {0, 0}, RAI::Graphics::RAI_graphics::RAI_3D, {7.0, 5.0} );
+rai::Graphics::RAI_graphics rai::Task::QuadrotorControl<Dtype>::graphics(
+"quad simulation", {800, 800}, {0, 0}, rai::Graphics::RAI_graphics::RAI_3D, {7.0, 5.0} );
 
 template<typename Dtype>
-RAI::Graphics::Objects::Quadrotor RAI::Task::QuadrotorControl<Dtype>::quadrotor( { 0.1, 0.1, 0.8 } );
+rai::Graphics::Objects::Quadrotor rai::Task::QuadrotorControl<Dtype>::quadrotor( { 0.1, 0.1, 0.8 } );
 template<typename Dtype>
-RAI::Graphics::Objects::Sphere RAI::Task::QuadrotorControl<Dtype>::target(0.05, { 0.9, 0.1, 0.1 } );
+rai::Graphics::Objects::Sphere rai::Task::QuadrotorControl<Dtype>::target(0.05, { 0.9, 0.1, 0.1 } );
 template<typename Dtype>
-RAI::Position RAI::Task::QuadrotorControl<Dtype>::targetPosition;
+rai::Position rai::Task::QuadrotorControl<Dtype>::targetPosition;
 #endif //RAI_QUADROTORCONTROL_HPP

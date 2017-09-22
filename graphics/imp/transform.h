@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include "glm/gtx/quaternion.hpp"
 #include <glm/gtx/transform.hpp>
-namespace RAI {
+namespace rai {
 namespace Graphics {
 struct Transform {
  public:

@@ -9,8 +9,9 @@
 #include <vector>
 #include "math.h"
 #include "rai/common/TypeDef.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -18,7 +19,7 @@ class CheckerBoard_half : public Object {
 
  public:
 
-  CheckerBoard_half(int gridSize, float width, float length, std::vector<float> color1);
+  CheckerBoard_half(int gridSize, float width, float length, rai::Vector<float> color1);
 
 };
 

@@ -14,7 +14,7 @@
 #include "RAI_data.hpp"
 #include <iostream>
 
-namespace RAI {
+namespace rai {
 namespace Utils {
 
 class RAI_logger {
@@ -62,7 +62,7 @@ class RAI_logger {
     return &data_[dataIdx_[name]]->getData()[dimensionIdx][0];
   }
 
-  const std::vector<std::vector<float> > *getData(std::string name) {
+  const rai::Vector<rai::Vector<float> > *getData(std::string name) {
     LOG_IF(FATAL, dataIdx_.find(name) == dataIdx_.end())
     << "no such Data available";
     return &data_[dataIdx_[name]]->getData();
@@ -99,7 +99,7 @@ class RAI_logger {
   }
 
  private:
-  std::vector<RAI_data *> data_;
+  rai::Vector<RAI_data *> data_;
   std::map<std::string, int> dataIdx_;
   int numberOfData_ = 0;
   std::string log_path_;

@@ -17,7 +17,7 @@
 #include "glog/logging.h"
 #include "rai/common/enumeration.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Memory {
 
 template<typename Dtype, int stateDimension>
@@ -144,6 +144,6 @@ class ReplayMemoryS {
 }
 
 template<typename Dtype, int stateDimension>
-std::mutex RAI::Memory::ReplayMemoryS<Dtype, stateDimension>::memoryMutex_;
+std::mutex rai::Memory::ReplayMemoryS<Dtype, stateDimension>::memoryMutex_;
 
 #endif /* ReplayMemorySARS_HPP_ */
