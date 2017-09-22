@@ -5,13 +5,14 @@
 #ifndef RAI_ACQUISITOR_HPP
 #define RAI_ACQUISITOR_HPP
 
-namespace RAI {
+namespace rai {
 namespace ExpAcq {
 
 template <typename Dtype, int StateDim, int ActionDim>
 class Acquisitor {
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   double stepsTaken(){
     return double(stepsTaken_);
   }

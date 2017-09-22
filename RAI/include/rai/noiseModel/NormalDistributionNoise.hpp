@@ -9,18 +9,18 @@
 #include "rai/common/math/RandomNumberGenerator.hpp"
 #include <Eigen/Cholesky>
 
-namespace RAI {
+namespace rai {
 namespace Noise {
 
 template<typename Dtype, int noiseVectorDimension>
 class NormalDistributionNoise : public Noise<Dtype, noiseVectorDimension> {
 
  public:
-
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef typename Noise<Dtype, noiseVectorDimension>::NoiseVector NoiseVector;
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, noiseVectorDimension> Covariance;
 
-  NormalDistributionNoise(Covariance cov) {
+  NormalDistributionNoise(Covariance &cov) {
     initialCov_ = cov;
     cov_ = cov;
     Eigen::LLT<Covariance> lltOfcov(cov);
@@ -44,7 +44,7 @@ class NormalDistributionNoise : public Noise<Dtype, noiseVectorDimension> {
     return noiseVector_;
   }
 
-  virtual void updateCovariance(Covariance cov) {
+  virtual void updateCovariance(Covariance &cov) {
     initialCov_ = cov;
     cov_ = cov;
     Eigen::LLT<Covariance> lltOfcov(cov);

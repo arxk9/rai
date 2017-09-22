@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 
 /////////////////////// testing uniform sampling ////////////////////
 
-  RAI::RandomNumberGenerator<float> randNumb;
+  rai::RandomNumberGenerator<float> randNumb;
   Dtype sampleNump[2];
   Dtype X_sphere[1000];
   Dtype Y_sphere[1000];
@@ -26,20 +26,20 @@ int main(int argc, char* argv[]) {
     Y_sphere[i] = sampleNump[1];
   }
 
-  RAI::Utils::Graph::FigProp2D figurePropertiestest;
+  rai::Utils::Graph::FigProp2D figurePropertiestest;
   figurePropertiestest.title = "state vs value";
   figurePropertiestest.xlabel = "state";
   figurePropertiestest.ylabel = "value";
 
-  RAI::Utils::graph->figure(1, figurePropertiestest);
-  RAI::Utils::graph->appendData(1, X_sphere, Y_sphere, 1000, RAI::Utils::Graph::PlotMethods2D::points, "in sphere", "pt 3 ps 2");
-  RAI::Utils::graph->drawFigure(1);
+  rai::Utils::graph->figure(1, figurePropertiestest);
+  rai::Utils::graph->appendData(1, X_sphere, Y_sphere, 1000, rai::Utils::Graph::PlotMethods2D::points, "in sphere", "pt 3 ps 2");
+  rai::Utils::graph->drawFigure(1);
 
   std::cout<<"the samples should be confined in a unit circle"<<std::endl;
-  RAI::Utils::graph->waitForEnter();
+  rai::Utils::graph->waitForEnter();
 
 
-  std::vector<int> order;
+  rai::Vector<int> order;
   order.resize(5);
   for(int i=0; i< 5; i++) order[i] = i;
   int sum = 0;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
   std::cout<<"average should be 2: "<<float(sum)/50000.0f<<std::endl;
 
-  RAI::Utils::graph->waitForEnter();
+  rai::Utils::graph->waitForEnter();
 
   Eigen::RowVectorXi sample(10), sample2(10), sample3(10);
   sample<<1,2,3,4,5,6,7,8,9,10;

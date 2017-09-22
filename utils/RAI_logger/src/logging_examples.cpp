@@ -4,7 +4,7 @@
 
 #include "RAI_logger/RAI_logger_ToInclude.hpp"
 
-using RAI::Utils::logger;
+using rai::Utils::logger;
 
 int main (){
 

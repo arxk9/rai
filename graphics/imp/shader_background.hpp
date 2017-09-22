@@ -6,7 +6,7 @@
 #define RAI_SHADER_BACKGROUND_HPP
 #include "shader.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 class Shader_background : public Shader {
 

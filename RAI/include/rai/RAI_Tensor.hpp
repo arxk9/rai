@@ -12,7 +12,8 @@
 #include <algorithm>
 #include "glog/logging.h"
 #include <boost/utility/enable_if.hpp>
-
+#include <Eigen/StdVector>
+#include "RAI_Vector.hpp"
 /* RAI tensor follows EIGEN Tensor indexing
  * The data is stored in tensorflow tensor
  * It provides an interface to Eigen::Tensor and Eigen::Matrix/Vector
@@ -23,7 +24,7 @@
  *
  */
 
-namespace RAI {
+namespace rai {
 
 template<typename Dtype, int NDim>
 class Tensor {
@@ -37,15 +38,15 @@ class Tensor {
   Tensor(){ setDataType(); }
 
   // empty data constructor
-  Tensor(const std::vector<int> dim, const std::string name = "") {
+  Tensor(const rai::Vector<int> dim, const std::string name = "") {
     init(dim, name);
   }
 
-///Eigen Tensor constructor is abigous with std::vector<int> constructor ...
+///Eigen Tensor constructor is abigous with rai::Vector<int> constructor ...
 //  // copy constructor from Eigen Tensor
 //  Tensor(const Eigen::Tensor<Dtype, NDim> &etensor, const std::string name = "") {
 //    auto dims = etensor.dimensions();
-//    std::vector<int> dim(dims.size());
+//    rai::Vector<int> dim(dims.size());
 //    for (int i = 0; i < dims.size(); i++)
 //      dim[i] = dims[i];
 //    Tensor(dim, name);
@@ -56,14 +57,14 @@ class Tensor {
   template<int Rows, int Cols>
   Tensor(const Eigen::Matrix<Dtype, Rows, Cols> &emat, const std::string name = "") {
     LOG_IF(FATAL, NDim != 2)<<"Specify the reshape";
-    std::vector<int> dim = {emat.rows(), emat.cols()};
+    rai::Vector<int> dim = {emat.rows(), emat.cols()};
     init(dim, name);
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
   }
 
   // this constructor is used when the resulting tensor dim is not 2D
   template<int Rows, int Cols>
-  Tensor(const Eigen::Matrix<Dtype, Rows, Cols> &emat, std::vector<int> dim, const std::string name = "") {
+  Tensor(const Eigen::Matrix<Dtype, Rows, Cols> &emat, rai::Vector<int> dim, const std::string name = "") {
     init(dim, name);
     LOG_IF(FATAL, emat.size() != size_)<<"size mismatch";
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
@@ -132,9 +133,9 @@ class Tensor {
     return eTensor().data();
   }
 
-  ///////////////////////////////
-  /// tensorflow tensor mirro ///
-  ///////////////////////////////
+  ////////////////////////////////
+  /// tensorflow tensor mirror ///
+  ////////////////////////////////
   tensorflow::TensorShape tfShape() {
     return namedTensor_.second.shape();
   }
@@ -143,7 +144,7 @@ class Tensor {
     return namedTensor_.second;
   }
 
-  std::vector<tensorflow::Tensor>& output() {
+  rai::Vector<tensorflow::Tensor>& output() {
     return vecTens;
   }
 
@@ -184,14 +185,14 @@ class Tensor {
   ///////////////////////////////
   const std::string &getName() const { return namedTensor_.first; }
   void setName(const std::string name) { namedTensor_.first = name; }
-  const std::vector<int> &dim() const { return dim_; }
+  const rai::Vector<int> &dim() const { return dim_; }
   const int dim(int idx) const { return dim_[idx]; }
   int rows() { return dim_[0];}
   int cols() { return dim_[1];}
   int batches() { return dim_[2];}
 
   /// you lose all data calling resize
-  void resize(const std::vector<int> dim) {
+  void resize(const rai::Vector<int> dim) {
     LOG_IF(FATAL, NDim != dim.size()) << "tensor rank mismatch";
     dim_inv_.Clear();
     size_ = 1;
@@ -208,13 +209,13 @@ class Tensor {
 
   /// you lose all data calling resize
   void resize(int rows, int cols) {
-    std::vector<int> dim = {rows, cols};
+    rai::Vector<int> dim = {rows, cols};
     resize(dim);
   }
 
   /// you lose all data calling resize
   void resize(int rows, int cols, int batches) {
-    std::vector<int> dim = {rows, cols, batches};
+    rai::Vector<int> dim = {rows, cols, batches};
     resize(dim);
   }
 
@@ -238,7 +239,7 @@ class Tensor {
   }
 
   template<int rows, int cols>
-  void partiallyFillBatch(int batchId, Eigen::Matrix<Dtype, rows, cols> eMat) {
+  void partiallyFillBatch(int batchId, Eigen::Matrix<Dtype, rows, cols> &eMat) {
     LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
     std::memcpy(namedTensor_.second.flat<Dtype>().data() + batchId * dim_[0] * dim_[1],
@@ -246,7 +247,7 @@ class Tensor {
   }
 
   template<int rows>
-  void partiallyFillBatch(int batchId, std::vector<Eigen::Matrix<Dtype, rows, 1> > eMatVec, int ignoreLastN=0) {
+  void partiallyFillBatch(int batchId, rai::Vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN=0) {
     LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
     for(int colId=0; colId < eMatVec.size() - ignoreLastN; colId++)
@@ -256,7 +257,7 @@ class Tensor {
 
  private:
 
-  void init(const std::vector<int> dim, const std::string name = "") {
+  void init(const rai::Vector<int> dim, const std::string name = "") {
     LOG_IF(FATAL, dim.size() != NDim)
     << "specified dimension differs from the Dimension in the template parameter";
     namedTensor_.first = name;
@@ -281,11 +282,11 @@ class Tensor {
 
   tensorflow::DataType dtype_;
   std::pair<std::string, tensorflow::Tensor> namedTensor_;
-  std::vector<int> dim_;
+  rai::Vector<int> dim_;
   tensorflow::TensorShape dim_inv_; /// tensorflow dimension
   long int size_;
   Eigen::DSizes<Eigen::DenseIndex, NDim> esizes_;
-  std::vector<tensorflow::Tensor> vecTens;
+  rai::Vector<tensorflow::Tensor> vecTens;
 
 };
 

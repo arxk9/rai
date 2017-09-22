@@ -9,12 +9,12 @@
 
 #include <glog/logging.h>
 
-#include "tasks/poleBalancing/PoleBalancing.hpp"
-#include "noiseModel/OrnsteinUhlenbeckNoise.hpp"
-#include "function/tensorflow/Qfunction_TensorFlow.hpp"
-#include "function/tensorflow/Policy_TensorFlow.hpp"
-#include "memory/ReplayMemorySARS.hpp"
-#include "experienceAcquisitor/ReplayMemoryExperienceAcquisitor.hpp"
+#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+#include "rai/noiseModel/OrnsteinUhlenbeckNoise.hpp"
+#include "rai/function/tensorflow/Qfunction_TensorFlow.hpp"
+#include "rai/function/tensorflow/Policy_TensorFlow.hpp"
+#include "rai/memory/ReplayMemorySARS.hpp"
+#include "rai/experienceAcquisitor/ReplayMemoryExperienceAcquisitor.hpp"
 #include "algorithm/DeepDeterministicPolicyGradient.hpp"
 
 
@@ -23,16 +23,16 @@ using std::endl;
 
 using Dtype = float;
 
-using PoleBalancing = RAI::Task::PoleBalancing<Dtype>;
-using RAI::Task::StateDim;
-using RAI::Task::ActionDim;
-using RAI::Task::CommandDim;
-using DeepDeterministicPolicyGradient = RAI::Algorithm::DeepDeterministicPolicyGradient<Dtype, StateDim, ActionDim, CommandDim>;
-using OrnsteinUhlenbeck = RAI::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>;
-using Policy = RAI::FuncApprox::Policy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Qfunction_TensorFlow = RAI::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim>;
-using ReplayMemorySARS = RAI::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
-using ReplayMemoryExperienceAcquisitor = RAI::ExpAcq::ReplayMemoryExperienceAcquisitor<Dtype, StateDim, ActionDim, CommandDim>;
+using PoleBalancing = rai::Task::PoleBalancing<Dtype>;
+using rai::Task::StateDim;
+using rai::Task::ActionDim;
+using rai::Task::CommandDim;
+using DeepDeterministicPolicyGradient = rai::Algorithm::DeepDeterministicPolicyGradient<Dtype, StateDim, ActionDim, CommandDim>;
+using OrnsteinUhlenbeck = rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>;
+using Policy = rai::FuncApprox::Policy_TensorFlow<Dtype, StateDim, ActionDim>;
+using Qfunction_TensorFlow = rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim>;
+using ReplayMemorySARS = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
+using ReplayMemoryExperienceAcquisitor = rai::ExpAcq::ReplayMemoryExperienceAcquisitor<Dtype, StateDim, ActionDim, CommandDim>;
 
 
 int replayMemorySize = 1000000;

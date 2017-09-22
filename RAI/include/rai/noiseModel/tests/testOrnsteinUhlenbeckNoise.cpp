@@ -8,14 +8,14 @@ using std::cout;
 
 using Dtype = float;
 constexpr int ActionDimension = 1;
-using OrnsteinUhlenbeck = RAI::Noise::OrnsteinUhlenbeck<Dtype, ActionDimension>;
+using OrnsteinUhlenbeck = rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDimension>;
 using Action = Eigen::Matrix<Dtype, ActionDimension, 1>;
 
 int main() {
 
   OrnsteinUhlenbeck ou(0.15, 0.3);
 
-  std::vector<Dtype> x, noiseSamples;
+  rai::Vector<Dtype> x, noiseSamples;
   for (int i = 0; i < 1000; ++i) {
     x.push_back(i);
     Action action = Action::Zero();

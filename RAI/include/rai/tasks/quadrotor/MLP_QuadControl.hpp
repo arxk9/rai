@@ -12,7 +12,7 @@
 #include <fstream>
 #include <cmath>
 
-namespace RAI {
+namespace rai {
 
 class MLP_QuadControl {
 

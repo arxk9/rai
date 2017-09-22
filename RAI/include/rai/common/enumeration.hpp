@@ -6,7 +6,7 @@
 #define ENUMERATION_HPP
 
 /* This enumeration only stores enumeration that is common for the whole RAI framework*/
-namespace RAI {
+namespace rai {
 
   enum class TerminationType {
     not_terminated = 0,

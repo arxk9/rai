@@ -78,7 +78,7 @@
 //                                                              , a,fa, b,fb);//
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace RAI {
+namespace rai {
 namespace Algorithm {
 
 class GoldenSectionMethod {

@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>
@@ -38,7 +38,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   }
 
   virtual void forward(State &state, RecurrentState &rcrntState, Action &action, Dtype &value) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", state},
                     {"init_rcrnt_state", rcrntState},
                     {"action", action},
@@ -48,7 +48,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   }
 
   virtual void forward(StateBatch &states, RecurrentStateBatch &rcrntStates, ActionBatch &actions, ValueBatch &values) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
                     {"init_rcrnt_state", rcrntStates},
                     {"action", actions},
@@ -57,11 +57,11 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
     values = vectorOfOutputs[0];
   }
 
-  Dtype performOneSolverIter(std::vector<StateBatch> &states,
-                             std::vector<RecurrentStateBatch> &rcrntStates,
-                             std::vector<ActionBatch> &actions,
-                             std::vector<ValueBatch> &values) {
-    std::vector<MatrixXD> outputs, dummy;
+  Dtype performOneSolverIter(rai::Vector<StateBatch> &states,
+                             rai::Vector<RecurrentStateBatch> &rcrntStates,
+                             rai::Vector<ActionBatch> &actions,
+                             rai::Vector<ValueBatch> &values) {
+    rai::Vector<MatrixXD> outputs, dummy;
     this->tf_->run({{"state", states},
                     {"new_rcrnt_state", rcrntStates},
                     {"action", actions},
@@ -80,7 +80,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
 
   Dtype getGradient_AvgOf_Q_wrt_action(StateBatch &states, RecurrentStateBatch &rcrntStates, ActionBatch &actions,
                                        JacobianQwrtActionBatch &gradients) const {
-    std::vector<MatrixXD> outputs;
+    rai::Vector<MatrixXD> outputs;
     this->tf_->run({{"state", states},
                     {"action", actions},
                     {"updateBNparams", this->notUpdateBN}},

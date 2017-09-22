@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>
@@ -36,7 +36,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   }
 
   virtual void forward(State &state, Action &action, Dtype &value) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", state},
                     {"action", action},
                     {"updateBNparams", this->notUpdateBN}},
@@ -45,7 +45,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   }
 
   virtual void forward(StateBatch &states, ActionBatch &actions, ValueBatch &values) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
                     {"action", actions},
                     {"updateBNparams", this->notUpdateBN}},
@@ -54,7 +54,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   }
 
   Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions, ValueBatch &values) {
-    std::vector<MatrixXD> outputs, dummy;
+    rai::Vector<MatrixXD> outputs, dummy;
     this->tf_->run({{"state", states},
                     {"action", actions},
                     {"targetQValue", values},
@@ -71,7 +71,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   }
 
   Dtype performOneSolverIter_infimum(StateBatch &states, ActionBatch &actions, ValueBatch &values, Dtype linSlope) {
-    std::vector<MatrixXD> outputs, dummy;
+    rai::Vector<MatrixXD> outputs, dummy;
     auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
     this->tf_->run({{"state", states},
                     {"action", actions},
@@ -91,7 +91,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
 
   Dtype getGradient_AvgOf_Q_wrt_action(StateBatch &states, ActionBatch &actions,
                                        JacobianQwrtActionBatch &gradients) const {
-    std::vector<MatrixXD> outputs;
+    rai::Vector<MatrixXD> outputs;
     this->tf_->run({{"state", states},
                     {"action", actions},
                     {"updateBNparams", this->notUpdateBN}},

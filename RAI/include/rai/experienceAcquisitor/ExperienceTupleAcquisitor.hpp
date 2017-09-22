@@ -11,21 +11,21 @@
 #include "rai/memory/ReplayMemorySARS.hpp"
 #include "rai/function/common/Policy.hpp"
 
-namespace RAI {
+namespace rai {
 namespace ExpAcq {
 
 template<typename Dtype, int StateDim, int ActionDim>
 class ExperienceTupleAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
-  using ReplayMemory_ = RAI::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
+  using ReplayMemory_ = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
   using Noise_ = Noise::Noise<Dtype, ActionDim>;
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
  public:
-  virtual void acquire(std::vector<Task_ *> &task,
+  virtual void acquire(rai::Vector<Task_ *> &task,
                        Policy_ *policy,
-                       std::vector<Noise_ *> &noise,
+                       rai::Vector<Noise_ *> &noise,
                        ReplayMemory_ *memory,
                        unsigned stepsToTake) = 0;
 

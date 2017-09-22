@@ -13,7 +13,7 @@
 #include "rai/tasks/poleBalancing1D/visualizer/visualizer.hpp"
 #endif
 
-namespace RAI {
+namespace rai {
 namespace Task{
 
 constexpr int ActionDim = 1;

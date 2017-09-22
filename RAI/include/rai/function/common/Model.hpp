@@ -6,7 +6,7 @@
 #define RAI_MODEL_HPP
 #include "rai/function/tensorflow/common/ParameterizedFunction_TensorFlow.hpp"
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>

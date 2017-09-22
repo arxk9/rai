@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 
 Shader_basic::Shader_basic() {
@@ -48,7 +48,7 @@ void Shader_basic::UnBind() {
 
 void Shader_basic::Update(Camera *camera, Light *light, Obj::Object* obj) {
   Transform trans;
-  std::vector<float> clr, amb, diff, spec, ambl, diffl, specl, posl;
+  rai::Vector<float> clr, amb, diff, spec, ambl, diffl, specl, posl;
   float shine;
 
   obj->getTransform(trans);

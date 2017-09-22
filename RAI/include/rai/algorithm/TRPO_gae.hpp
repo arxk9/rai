@@ -45,14 +45,15 @@
 #include "math.h"
 #include "rai/RAI_core"
 
-namespace RAI {
-namespace Algorithm {
+#include <Eigen/StdVector>
 
+namespace rai {
+namespace Algorithm {
 template<typename Dtype, int StateDim, int ActionDim>
 class TRPO_gae {
 
  public:
-
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
@@ -75,10 +76,10 @@ class TRPO_gae {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
-  TRPO_gae(std::vector<Task_ *> &tasks,
+  TRPO_gae(rai::Vector<Task_ *> &tasks,
                 ValueFunc_ *vfunction,
                 Policy_ *policy,
-                std::vector<Noise_ *> &noises,
+                rai::Vector<Noise_ *> &noises,
                 Acquisitor_ *acquisitor,
                 Dtype lambda,
                 int K = 0,
@@ -101,8 +102,6 @@ class TRPO_gae {
       ld_(acquisitor){
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
-    Utils::logger->addVariableToLog(2, "Nominal performance", "");
-//    Utils::logger->addVariableToLog(2, "TRPOloss", "");
     termCost = task_[0]->termValue();
     discFactor = task_[0]->discountFtr();
     dt = task_[0]->dt();
@@ -165,7 +164,6 @@ class TRPO_gae {
     ld_.valueBat = ld_.valueBat * mixfrac + valuePrev * (1 - mixfrac);
     for (int i = 0; i < 50; i++) // TODO : change terminal condition
       loss = vfunction_->performOneSolverIter(ld_.stateBat, ld_.valueBat);
-
     Utils::timer->stopTimer("Vfunction update");
     LOG(INFO) << "value function loss : " << loss;
   }
@@ -183,7 +181,7 @@ class TRPO_gae {
       bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
       dataID += advTra.cols();
     }
-    RAI::Math::MathFunc::normalize(advantage_);
+    rai::Math::MathFunc::normalize(advantage_);
 
     /// Update Policy
     Parameter policy_grad = Parameter::Zero(parameter_.rows());
@@ -270,11 +268,11 @@ class TRPO_gae {
   }
 
   /////////////////////////// Core //////////////////////////////////////////
-  std::vector<Task_ *> task_;
-  std::vector<Noise_ *> noise_;
-  std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
-  std::vector<Noise::Noise<Dtype, ActionDim> *> noNoise_;
-  std::vector<Noise::NoNoise<Dtype, ActionDim> > noNoiseRaw_;
+  rai::Vector<Task_ *> task_;
+  rai::Vector<Noise_ *> noise_;
+  rai::Vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
+  rai::Vector<Noise::Noise<Dtype, ActionDim> *> noNoise_;
+  rai::Vector<Noise::NoNoise<Dtype, ActionDim>> noNoiseRaw_;
   ValueFunc_ *vfunction_;
   Policy_ *policy_;
   Acquisitor_ *acquisitor_;
@@ -318,4 +316,6 @@ class TRPO_gae {
 
 }
 }
+
+
 #endif //RAI_TRPO_GAE2_HPP

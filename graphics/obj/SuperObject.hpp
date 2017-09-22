@@ -9,8 +9,9 @@
 #include "../imp/shader.hpp"
 #include "../imp/shader_basic.h"
 #include "rai/common/TypeDef.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -29,16 +30,16 @@ class SuperObject{
 
  protected:
 
-  void setTrans(std::vector<Transform>& trans);
-  void getTrans(std::vector<Transform>& trans);
+  void setTrans(rai::Vector<Transform>& trans);
+  void getTrans(rai::Vector<Transform>& trans);
   void turnOnGhost(bool ghostOn);
   void drawSnapshot(Camera *camera,  Light *light, float transparency);
 
   bool visible = true;
-  std::vector<Object*> objs;
+  rai::Vector<Object*> objs;
   Shader* shader = nullptr;
-  std::vector<std::vector<Transform> > ghosts;
-  std::vector<Transform> currentPose;
+  rai::Vector<rai::Vector<Transform> > ghosts;
+  rai::Vector<Transform> currentPose;
   float ghostTransparency;
   int maxGhostN = 0;
   int oldestGhost = 0;

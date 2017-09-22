@@ -9,8 +9,8 @@
 #include "rai/function/tensorflow/DeterministicPolicy_TensorFlow.hpp"
 #include <termios.h>
 
-using RAI::Task::ActionDim;
-using RAI::Task::StateDim;
+using rai::Task::ActionDim;
+using rai::Task::StateDim;
 
 char getkey() {
   char buf = 0;
@@ -46,11 +46,11 @@ int keyboardHit(void) {
 int main() {
   RAI_init();
 
-  RAI::Task::QuadSimulation<double> sim;
-  RAI::MLP_QuadControl mlp("TensorflowPB_Quad/2017-02-19-14-08-45/policy_200.txt");
-//  RAI::MLP_QuadControl mlp("TensorflowPB_Quad/2017-02-12-00-39-25/policy_1550.txt");
+  rai::Task::QuadSimulation<double> sim;
+  rai::MLP_QuadControl mlp("TensorflowPB_Quad/2017-02-19-14-08-45/policy_200.txt");
+//  rai::MLP_QuadControl mlp("TensorflowPB_Quad/2017-02-12-00-39-25/policy_1550.txt");
 
-//  RAI::FuncApprox::Policy_TensorFlow<double, 18, 4> tf("TensorflowPB_Quad/2017-02-19-14-08-45/policy_2l.pb",1e-3);
+//  rai::FuncApprox::Policy_TensorFlow<double, 18, 4> tf("TensorflowPB_Quad/2017-02-19-14-08-45/policy_2l.pb",1e-3);
 //  tf.loadParam("TensorflowPB_Quad/2017-02-19-14-08-45/policy_3100.txt");
 
   int timeStep=0;

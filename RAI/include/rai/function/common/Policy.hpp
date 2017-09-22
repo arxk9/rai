@@ -11,7 +11,7 @@
 #include "Qfunction.hpp"
 #include "ParameterizedFunction.hpp"
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDimension, int actionDimension>

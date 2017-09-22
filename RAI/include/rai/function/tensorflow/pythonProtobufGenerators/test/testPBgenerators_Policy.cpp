@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "rai/function/tensorflow/ParameterizedFunction_TensorFlow.hpp"
+#include "rai/function/tensorflow/common/ParameterizedFunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/Qfunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/DeterministicPolicy_TensorFlow.hpp"
 #include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
@@ -19,10 +19,10 @@ using std::cout;
 using std::endl;
 using std::cin;
 
-using RAI::FuncApprox::ParameterizedFunction_TensorFlow;
-using RAI::FuncApprox::Qfunction_TensorFlow;
-using RAI::FuncApprox::Policy_TensorFlow;
-using RAI::FuncApprox::ValueFunction_TensorFlow;
+using rai::FuncApprox::ParameterizedFunction_TensorFlow;
+using rai::FuncApprox::Qfunction_TensorFlow;
+using rai::FuncApprox::DeterministicPolicy_TensorFlow;
+using rai::FuncApprox::ValueFunction_TensorFlow;
 
 using Dtype = double;
 
@@ -32,7 +32,7 @@ using VectorXD = Eigen::Matrix<Dtype, -1, 1>;
 double training_mean = 50.0;
 double training_variance = 100.0;
 
-using namespace RAI;
+using namespace rai;
 
 Dtype sample(double dummy) {
   static std::mt19937 rng;
@@ -45,7 +45,7 @@ int main() {
 
   bool testCopyStructureCopyWeightAndWeightInterpolation =false;
   bool testPolicyTensorFlowTrainCiriticWithSeparateCritic = false;
-  bool testJacobianActionWRTState = false;
+  bool testJacobianActionWRTState = true;
   bool testJacobianActionWRTParam = false;
 
   constexpr int StateDim = 5;

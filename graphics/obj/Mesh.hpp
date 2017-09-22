@@ -15,7 +15,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -38,12 +38,12 @@ struct Vertex {
 };
 
 
-class Mesh : public RAI::Graphics::Obj::Object {
+class Mesh : public rai::Graphics::Obj::Object {
  public:
-  Mesh(const std::string& fileName, float scale=1.0f);
+  explicit Mesh(const std::string& fileName, float scale=1.0f);
   Mesh(Vertex *vertices, unsigned int numVertices, unsigned int *indices, unsigned int numIndices);
 
-  void draw(Light& light);
+  void draw(Light& light){};
 
   virtual ~Mesh();
 
@@ -52,7 +52,7 @@ class Mesh : public RAI::Graphics::Obj::Object {
   void operator=(const Mesh &mesh) {}
   Mesh(const Mesh &mesh) {}
 
-  void InitMesh();
+  void InitMesh(){};
 
   void recursiveProcess(aiNode* node,const aiScene* scene);
   void processMesh(aiMesh* mesh,const aiScene* scene);

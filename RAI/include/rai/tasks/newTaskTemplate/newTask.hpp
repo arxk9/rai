@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace RAI {
+namespace rai {
 namespace Task {
 
 // change them according to your task

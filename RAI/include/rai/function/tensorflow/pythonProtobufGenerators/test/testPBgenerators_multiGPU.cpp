@@ -14,9 +14,9 @@ using std::cout;
 using std::endl;
 using std::cin;
 
-using RAI::FuncApprox::ParameterizedFunction_TensorFlow;
-using RAI::FuncApprox::Qfunction_TensorFlow;
-using RAI::FuncApprox::ValueFunction_TensorFlow;
+using rai::FuncApprox::ParameterizedFunction_TensorFlow;
+using rai::FuncApprox::Qfunction_TensorFlow;
+using rai::FuncApprox::ValueFunction_TensorFlow;
 
 using Dtype = double;
 
@@ -26,7 +26,7 @@ using VectorXD = Eigen::Matrix<Dtype, -1, 1>;
 double training_mean = 50.0;
 double training_variance = 100.0;
 
-using namespace RAI;
+using namespace rai;
 
 Dtype sample(double dummy) {
   static std::mt19937 rng;
@@ -42,8 +42,8 @@ int main() {
   constexpr int StateDim = 10;
   constexpr int ActionDim = 5;
 
-  using Policy_ = RAI::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-  using PolicyBase = RAI::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
+  using Policy_ = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+  using PolicyBase = rai::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
@@ -76,13 +76,9 @@ int main() {
         policy.TRPOpg(stateBatch, actionBatch, actionBatch2, advs, stdev, policy_grad);
       Utils::timer->stopTimer("Gradient");
 
-      Utils::timer->startTimer("FVP");
-        policy.TRPOfvp(stateBatch, actionBatch, actionBatch2, advs, stdev, policy_grad, FVP);
-      Utils::timer->stopTimer("FVP");
-
     Utils::timer->disable();
 
-    RAI::Utils::Graph::FigPropPieChart propChart;
+    rai::Utils::Graph::FigPropPieChart propChart;
     graph->drawPieChartWith_RAI_Timer(1, timer->getTimedItems(), propChart);
     graph->drawFigure(1);
     graph->waitForEnter();

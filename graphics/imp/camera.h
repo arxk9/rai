@@ -12,7 +12,7 @@
 #include <obj/Object.hpp>
 #include "vector3d.h"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 struct Camera {
  public:
@@ -22,12 +22,12 @@ struct Camera {
   void GetVP(glm::mat4& vp);
   void GetPos(glm::vec3& position);
   void Control(SDL_Event e);
-  void follow(RAI::Graphics::Obj::Object* obj, Eigen::Vector3d pos);
+  void follow(rai::Graphics::Obj::Object* obj, Eigen::Vector3d pos);
 
  protected:
  private:
 
-  RAI::Graphics::Obj::Object* toFollowObj = nullptr;
+  rai::Graphics::Obj::Object* toFollowObj = nullptr;
   glm::vec4 relativePos;
   glm::vec4 rotationPitcAxis;
   glm::mat4 vp_;

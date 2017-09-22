@@ -8,7 +8,7 @@
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
 #include "rai/common/math/RandomNumberGenerator.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Noise {
 
 template<typename Dtype, int dim>

@@ -8,14 +8,14 @@
 
 #include "CheckerBoard_half.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
 CheckerBoard_half::CheckerBoard_half(int gridSize,
                            float width,
                            float length,
-                           std::vector<float> color) {
+                           rai::Vector<float> color) {
 
   for(int i=-width/2/gridSize; i<width/2/gridSize; i++)
     for(int j=-length/2/gridSize; j<length/2/gridSize; j++){

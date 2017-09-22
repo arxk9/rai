@@ -6,7 +6,7 @@
 #define RAI_RAI_TIMER_TOINCLUDE_HPP
 #include "RAI_timer.hpp"
 #include <memory>
-namespace RAI {
+namespace rai {
 namespace Utils {
 
 extern std::shared_ptr<Timer> timer;

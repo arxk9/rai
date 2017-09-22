@@ -12,7 +12,7 @@
 #include <flann/flann.hpp>
 #include <RAI_timer/RAI_timer_ToInclude.hpp>
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>

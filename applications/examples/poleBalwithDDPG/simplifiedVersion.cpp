@@ -14,16 +14,16 @@
 using Dtype = float;
 
 /// shortcuts
-using RAI::Task::ActionDim;
-using RAI::Task::StateDim;
+using rai::Task::ActionDim;
+using rai::Task::StateDim;
 
-using Task = RAI::Task::PoleBalancing<Dtype>;
-using Policy_TensorFlow = RAI::FuncApprox::DeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Qfunction_TensorFlow = RAI::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim>;
-using ReplayMemorySARS = RAI::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
-using Acquisitor_ = RAI::ExpAcq::ExperienceTupleAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
-using Noise = RAI::Noise::Noise<Dtype, ActionDim>;
-using OUNoise = RAI::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>;
+using Task = rai::Task::PoleBalancing<Dtype>;
+using Policy_TensorFlow = rai::FuncApprox::DeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+using Qfunction_TensorFlow = rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim>;
+using ReplayMemorySARS = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
+using Acquisitor_ = rai::ExpAcq::ExperienceTupleAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
+using Noise = rai::Noise::Noise<Dtype, ActionDim>;
+using OUNoise = rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>;
 #define nThread 2
 
 int main(int argc, char *argv[]) {
@@ -43,9 +43,9 @@ int main(int argc, char *argv[]) {
   Qfunction_TensorFlow qfunction_target("cpu", "MLP2", "relu 1e-3 3 1 32 32 1", 1e-3);
 
   ////////////////////////// Algorithm ////////////////////////////////
-  std::vector<RAI::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
-  std::vector<Noise*> noiseVector = {&noise};
-  RAI::Algorithm::DDPG<Dtype, StateDim, ActionDim>
+  rai::Vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
+  rai::Vector<Noise*> noiseVector = {&noise};
+  rai::Algorithm::DDPG<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &qfunction, &qfunction_target, &policy, &policy_target, noiseVector, &acquisitor, &replayMemorySARS, 80, 1, 1e-3);
   algorithm.setVisualizationLevel(1);
 

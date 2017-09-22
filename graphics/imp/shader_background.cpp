@@ -5,7 +5,7 @@
 #include <glog/logging.h>
 #include "shader_background.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 
 Shader_background::Shader_background() {

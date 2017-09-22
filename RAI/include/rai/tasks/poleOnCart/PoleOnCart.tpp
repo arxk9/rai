@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include "math.h"
 
-namespace RAI {
+namespace rai {
 namespace Task {
 
 using std::sin;

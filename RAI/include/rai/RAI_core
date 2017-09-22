@@ -14,13 +14,15 @@
 #include <glog/logging.h>
 #include <omp.h>
 #include "RAI_Tensor.hpp"
+#include "RAI_Vector.hpp"
+
 
 std::string RAI_LOG_PATH; /// logging directory
 std::string RAI_ROOT_PATH; /// the main RAI directory
 
-using RAI::Utils::graph;
-using RAI::Utils::logger;
-using RAI::Utils::timer;
+using rai::Utils::graph;
+using rai::Utils::logger;
+using rai::Utils::timer;
 
 
 inline int RAI_init(){
@@ -34,6 +36,8 @@ inline int RAI_init(){
   std::cout<<"logging directory: "<<glogPath.str()<<std::endl;
   google::SetLogDestination(google::INFO,FLAGS_log_dir.c_str() );
   google::InitGoogleLogging("debug");
+  google::LogToStderr();
+  google::SetCommandLineOption("GLOG_minloglevel", "0");
   graph->setLogPath(RAI_LOG_PATH);
   logger->setLogPath(RAI_LOG_PATH);
   timer->setLogPath(RAI_LOG_PATH);

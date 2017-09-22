@@ -14,7 +14,7 @@
 #include <iostream>
 #include <fstream>
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 class Shader {
 

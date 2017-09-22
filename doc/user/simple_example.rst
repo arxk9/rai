@@ -17,24 +17,24 @@ Examples can be found in :code:`applications/examples`. The following example co
   using Dtype = float;
 
   /// shortcuts
-  using RAI::Task::ActionDim;
-  using RAI::Task::StateDim;
-  using RAI::Task::CommandDim;
+  using rai::Task::ActionDim;
+  using rai::Task::StateDim;
+  using rai::Task::CommandDim;
 
-  using Task = RAI::Task::PoleBalancing<Dtype>;
-  using Policy_TensorFlow = RAI::FuncApprox::DeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-  using Qfunction_TensorFlow = RAI::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim>;
-  using ReplayMemorySARS = RAI::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
-  using Acquisitor_ = RAI::ExpAcq::ExperienceTupleAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
-  using Noise = RAI::Noise::Noise<Dtype, ActionDim>;
+  using Task = rai::Task::PoleBalancing<Dtype>;
+  using Policy_TensorFlow = rai::FuncApprox::DeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+  using Qfunction_TensorFlow = rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim>;
+  using ReplayMemorySARS = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
+  using Acquisitor_ = rai::ExpAcq::ExperienceTupleAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
+  using Noise = rai::Noise::Noise<Dtype, ActionDim>;
 
   int main() {
 
     RAI_init();
 
     Task task(Task::fixed, Task::easy);
-    RAI::Noise::OrnsteinUhlenbeck<Dtype, ActionDim> noise(0.15, 0.3);
-    RAI::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim> replayMemorySARS(1000000);
+    rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim> noise(0.15, 0.3);
+    rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim> replayMemorySARS(1000000);
 
     Policy_TensorFlow policy("cpu", "MLP", "relu 1e-3 3 32 32 1", 1e-4);
     Policy_TensorFlow policy_target("cpu", "MLP", "relu 1e-3 3 32 32 1", 1e-4);
@@ -43,9 +43,9 @@ Examples can be found in :code:`applications/examples`. The following example co
 
     Acquisitor_ acquisitor;
 
-    std::vector<RAI::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
-    std::vector<Noise*> noiseVector = {&noise};
-    RAI::Algorithm::DDPG<Dtype, StateDim, ActionDim>
+    rai::Vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
+    rai::Vector<Noise*> noiseVector = {&noise};
+    rai::Algorithm::DDPG<Dtype, StateDim, ActionDim>
         algorithm(taskVector, &qfunction, &qfunction_target, &policy, &policy_target, noiseVector, &acquisitor, &replayMemorySARS, 80, 1, 1e-3);
     algorithm.setVisualizationLevel(1);
 

@@ -6,7 +6,7 @@
 #include "obj/Mesh.hpp"
 #include "obj/Sphere.hpp"
 
-using namespace RAI::Graphics;
+using namespace rai::Graphics;
 
 
 int main() {

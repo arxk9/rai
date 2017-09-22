@@ -5,8 +5,9 @@
 #include <vector>
 #include <string>
 #include "glog/logging.h"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 struct OBJIndex {
   unsigned int vertexIndex;
@@ -18,20 +19,20 @@ struct OBJIndex {
 
 class IndexedModel {
  public:
-  std::vector<glm::vec3> positions;
-  std::vector<glm::vec2> texCoords;
-  std::vector<glm::vec3> normals;
-  std::vector<unsigned int> indices;
+  rai::Vector<glm::vec3> positions;
+  rai::Vector<glm::vec2> texCoords;
+  rai::Vector<glm::vec3> normals;
+  rai::Vector<unsigned int> indices;
 
   void CalcNormals();
 };
 
 class OBJModel {
  public:
-  std::vector<OBJIndex> OBJIndices;
-  std::vector<glm::vec3> vertices;
-  std::vector<glm::vec2> uvs;
-  std::vector<glm::vec3> normals;
+  rai::Vector<OBJIndex> OBJIndices;
+  rai::Vector<glm::vec3> vertices;
+  rai::Vector<glm::vec2> uvs;
+  rai::Vector<glm::vec3> normals;
   bool hasUVs;
   bool hasNormals;
 
@@ -39,7 +40,7 @@ class OBJModel {
 
   IndexedModel ToIndexedModel();
  private:
-  unsigned int FindLastVertexIndex(const std::vector<OBJIndex *> &indexLookup,
+  unsigned int FindLastVertexIndex(const rai::Vector<OBJIndex *> &indexLookup,
                                    const OBJIndex *currentIndex,
                                    const IndexedModel &result);
   void CreateOBJFace(const std::string &line);

@@ -4,7 +4,7 @@
 #include <string>
 #include <SDL2/SDL.h>
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 class Display {
  public:

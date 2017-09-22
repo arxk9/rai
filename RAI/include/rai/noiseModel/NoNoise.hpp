@@ -8,16 +8,16 @@
 #include <Eigen/Core>
 #include "Noise.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Noise {
 
 template<typename Dtype, int noiseVectorDimension>
 class NoNoise : public Noise<Dtype, noiseVectorDimension> {
 
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   NoNoise(){};
   ~NoNoise(){};
-
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, 1> NoiseVector;
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, noiseVectorDimension> CovarianceMatrix;
   void initializeNoise() { };

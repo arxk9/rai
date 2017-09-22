@@ -7,8 +7,7 @@
 
 #include <iostream>
 
-#include "rai/experienceAcquisitor/ExperienceTupleAcquisitor.hpp"
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
+
 #include "rai/tasks/common/Task.hpp"
 #include "rai/memory/ReplayMemorySARS.hpp"
 #include "rai/memory/Trajectory.hpp"
@@ -20,8 +19,14 @@
 #include <Eigen/Cholesky>
 #include <boost/bind.hpp>
 #include <rai/RAI_core>
+
+
+// acquisitor
+#include "rai/experienceAcquisitor/ExperienceTupleAcquisitor.hpp"
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
+#include <rai/algorithm/common/PerformanceTester.hpp>
 
 // Neural network
 //function approximations
@@ -35,7 +40,7 @@
 #include "math.h"
 #include "rai/RAI_core"
 
-namespace RAI {
+namespace rai {
 namespace Algorithm {
 
 template<typename Dtype, int StateDim, int ActionDim>
@@ -56,7 +61,7 @@ class DDPG {
   typedef Eigen::Matrix<Dtype, 1, -1> RowVectorXD;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
-  using ReplayMemory_ = RAI::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
+  using ReplayMemory_ = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
   using Qfunction_ = FuncApprox::Qfunction<Dtype, StateDim, ActionDim>;
   using Policy_ = FuncApprox::DeterministicPolicy<Dtype, StateDim, ActionDim>;
   using Noise_ = Noise::Noise<Dtype, ActionDim>;
@@ -66,12 +71,12 @@ class DDPG {
   using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
  // using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
 
-  DDPG(std::vector<Task_ *> &task,
+  DDPG(rai::Vector<Task_ *> &task,
        Qfunction_ *qfunction,
        Qfunction_ *qfunction_target,
        Policy_ *policy,
        Policy_ *policy_target,
-       std::vector<Noise_ *> &noise,
+       rai::Vector<Noise_ *> &noise,
        Acquisitor_ *acquisitor,
        ReplayMemory_ *memory,
        unsigned batchSize,
@@ -87,12 +92,10 @@ class DDPG {
       batSize_(batchSize),
       tau_(tau),
       testingTrajN_(testingTrajN),
-      testTraj_(testingTrajN, Trajectory()),
       task_(task) {
 
     for (auto &task : task_)
       task->setToInitialState();
-    Utils::logger->addVariableToLog(2, "Nominal performance", "");
 
     policy_->copyAPFrom(policy_target_);
     qfunction_->copyAPFrom(qfunction_target_);
@@ -113,40 +116,15 @@ class DDPG {
 
     //////////////// testing (not part of the algorithm) ////////////////////
     Utils::timer->disable();
-    for (auto &tra : testTraj_)
-      tra.clear();
-    for (auto &noise : noise_)
-      noise->initializeNoise();
-    for (auto &task : task_)
-      task->setToInitialState();
+    tester_.testPerformance(task_,
+                            noise_,
+                            policy_,
+                            task_[0]->timeLimit(),
+                            testingTrajN_,
+                            acquisitor_->stepsTaken(),
+                            vis_lv_,
+                            std::to_string(iterNumber_));
 
-    StateBatch startState(StateDim, testingTrajN_);
-    sampleBatchOfInitial(startState);
-
-    Noise::NoNoise<Dtype, ActionDim> noNoises[task_.size()];
-    std::vector<Noise_*> noiseVec;
-    for (int i = 0; i < task_.size(); i++)
-      noiseVec.push_back( &noNoises[i] );
-
-    if (vis_lv_ > 0) {
-      task_[0]->turnOnVisualization("");
-      if (task_[0]->shouldRecordVideo())
-        task_[0]->startRecordingVideo(RAI_LOG_PATH + "/" + std::to_string(iterNumber_), "nominalPolicy");
-    }
-    Dtype averageCost = testAcquisitor_.acquire( task_,
-                                                 policy_,
-                                                 noiseVec,
-                                                 testTraj_,
-                                                 startState,
-                                                 task_[0]->timeLimit(), false );
-    if (vis_lv_ > 0) task_[0]->turnOffVisualization();
-    if (task_[0]->shouldRecordVideo()) { task_[0]->endRecordingVideo(); }
-    Utils::logger->appendData("Nominal performance",
-                              acquisitor_->stepsTaken(),
-                              averageCost);
-
-    LOG(INFO) << "steps taken " << logger->getData("Nominal performance")->at(0).back()
-              << ", average cost " << logger->getData("Nominal performance")->at(1).back();
     /// reset all for learning
     for (auto &task : task_)
       task->setToInitialState();
@@ -218,14 +196,14 @@ class DDPG {
   }
 
   /////////////////////////// Core ///////////////////////////////
-  std::vector<Task_ *> task_;
-  std::vector<Memory::Trajectory<Dtype, StateDim, ActionDim> > testTraj_;
+  rai::Vector<Task_ *> task_;
   Qfunction_ *qfunction_, *qfunction_target_;
   Policy_ *policy_, *policy_target_;
   Noise::NoNoise<Dtype, ActionDim> noNoise_;
   Acquisitor_ *acquisitor_;
   ReplayMemory_ *memorySARS_;
-  std::vector<Noise_ *> noise_;
+  rai::Vector<Noise_ *> noise_;
+  PerformanceTester<Dtype, StateDim, ActionDim> tester_;
 
   unsigned batSize_;
   Dtype tau_;

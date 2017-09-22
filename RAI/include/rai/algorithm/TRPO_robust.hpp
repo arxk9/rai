@@ -43,7 +43,7 @@
 #include "math.h"
 #include "rai/RAI_core"
 
-namespace RAI {
+namespace rai {
 namespace Algorithm {
 
 template<typename Dtype, int StateDim, int ActionDim>
@@ -72,10 +72,10 @@ class TRPO_gae_robust {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
-  TRPO_gae_robust(std::vector<Task_ *> &tasks,
+  TRPO_gae_robust(rai::vector<Task_ *> &tasks,
                   FuncApprox::ValueFunction <Dtype, StateDim> *vfunction,
                   FuncApprox::StochasticPolicy <Dtype, StateDim, ActionDim> *policy,
-                  std::vector<Noise_ *> &noises,
+                  rai::vector<Noise_ *> &noises,
                   Acquisitor_ *acquisitor,
                   Dtype lambda,
                   int K,
@@ -182,7 +182,7 @@ class TRPO_gae_robust {
 
  private:
   void get_trajs(int numOfSteps) {
-    std::vector<Trajectory_> rollouts;
+    rai::vector<Trajectory_> rollouts;
     Utils::timer->startTimer("Simulation");
     numOfTra_ = std::ceil(1.1 * numOfSteps * dt / timeLimit);
     traj_.resize(numOfTra_);
@@ -210,7 +210,7 @@ class TRPO_gae_robust {
 
     if (numOfSteps > stepsInThisLoop) {
       int stepsneeded = numOfSteps - stepsInThisLoop;
-      std::vector<Trajectory_> tempTraj_;
+      rai::vector<Trajectory_> tempTraj_;
       while (1) {
 //        LOG(INFO) << "taking more steps :" << stepsneeded;
         int numofnewtraj = std::ceil(1.5 * stepsneeded * dt / timeLimit); // TODO: fix
@@ -249,8 +249,8 @@ class TRPO_gae_robust {
     StateBatch rolloutstartState(StateDim, numofjunct_ * K_);
     rollouts.resize(numofjunct_ * K_);
     rolloutstartState.setOnes();
-    std::vector<std::pair<int, int> > indx;
-    RAI::Op::VectorHelper::sampleRandomStates(traj_, VineStartPosition, int(0.3 * timeLimit / dt), indx);
+    rai::vector<std::pair<int, int> > indx;
+    rai::Op::VectorHelper::sampleRandomStates(traj_, VineStartPosition, int(0.3 * timeLimit / dt), indx);
 
     for (int dataID = 0; dataID < numofjunct_; dataID++) {
       rolloutstartState.block(0, dataID * K_, StateDim, K_) =
@@ -343,7 +343,7 @@ class TRPO_gae_robust {
       bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
       dataID += advTra.cols();
     }
-    RAI::Math::MathFunc::normalize(advantage_);
+    rai::Math::MathFunc::normalize(advantage_);
 
     /// Update Policy
     Parameter policy_grad = Parameter::Zero(parameter_.rows());
@@ -444,11 +444,11 @@ class TRPO_gae_robust {
   }
 
   /////////////////////////// Core //////////////////////////////////////////
-  std::vector<Task_ *> task_;
-  std::vector<Noise_ *> noise_;
-  std::vector<Noise::Noise < Dtype, ActionDim> *> noiseBasePtr_;
-  std::vector<Noise::Noise < Dtype, ActionDim>* > noNoise_;
-  std::vector<Noise::NoNoise < Dtype, ActionDim> > noNoiseRaw_;
+  rai::vector<Task_ *> task_;
+  rai::vector<Noise_ *> noise_;
+  rai::vector<Noise::Noise < Dtype, ActionDim> *> noiseBasePtr_;
+  rai::vector<Noise::Noise < Dtype, ActionDim>* > noNoise_;
+  rai::vector<Noise::NoNoise < Dtype, ActionDim> > noNoiseRaw_;
   FuncApprox::ValueFunction <Dtype, StateDim> *vfunction_;
   FuncApprox::StochasticPolicy <Dtype, StateDim, ActionDim> *policy_;
   Acquisitor_ *acquisitor_;
@@ -478,9 +478,9 @@ class TRPO_gae_robust {
   ValueBatch advantage_, bellmanErr_;
 
   /////////////////////////// trajectories //////////////////////
-  std::vector<Trajectory_> testTraj_;
-  std::vector<Trajectory_> traj_;
-  std::vector<Trajectory_> junction_;
+  rai::vector<Trajectory_> testTraj_;
+  rai::vector<Trajectory_> traj_;
+  rai::vector<Trajectory_> junction_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;

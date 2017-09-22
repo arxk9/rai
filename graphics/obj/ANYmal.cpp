@@ -5,7 +5,7 @@
 #include "ANYmal.hpp"
 #include "rai/common/TypeDef.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -56,20 +56,20 @@ ANYmal::ANYmal():
 
   /// manual adjustment
   /// hip
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[1], M_PI*0.5);
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[4], M_PI*0.5);
-  RAI::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[4], M_PI);
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[7], -M_PI*0.5);
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[10], -M_PI*0.5);
-  RAI::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[10], M_PI);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[1], M_PI*0.5);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[4], M_PI*0.5);
+  rai::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[4], M_PI);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[7], -M_PI*0.5);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[10], -M_PI*0.5);
+  rai::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[10], M_PI);
 
   /// thigh
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[5], 0.5*M_PI);
-  RAI::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[5], M_PI);
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[5], -0.5*M_PI);
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[11], -0.5*M_PI);
-  RAI::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[11], M_PI);
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[11], 0.5*M_PI);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[5], 0.5*M_PI);
+  rai::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[5], M_PI);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[5], -0.5*M_PI);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[11], -0.5*M_PI);
+  rai::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[11], M_PI);
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[11], 0.5*M_PI);
 }
 
 ANYmal::~ANYmal(){}
@@ -86,7 +86,7 @@ void ANYmal::destroy(){
   delete shader;
 }
 
-void ANYmal::setPose(std::vector<HomogeneousTransform> &bodyPose) {
+void ANYmal::setPose(rai::Vector<HomogeneousTransform> &bodyPose) {
   for (int i = 0; i < objs.size(); i++) {
     HomogeneousTransform ht = bodyPose[i] * defaultPose_[i];
     objs[i]->setPose(ht);
