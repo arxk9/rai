@@ -152,7 +152,7 @@ class Tensor {
   ////////// operators //////////
   ///////////////////////////////
   void operator=(const tensorflow::Tensor &tfTensor) {
-    LOG_IF(FATAL, dim_inv_ != tfTensor.shape()) << "Tensor shape mismatch";
+    LOG_IF(FATAL, dim_inv_ != tfTensor.shape()) << "Tensor shape mismatch" ;
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), tfTensor.flat<Dtype>().data(), sizeof(Dtype) * size_);
   }
 
@@ -217,6 +217,12 @@ class Tensor {
   void resize(int rows, int cols, int batches) {
     rai::Vector<int> dim = {rows, cols, batches};
     resize(dim);
+  }
+
+  void expandDim(int axis){
+    tensorflow::Tensor stateTensor(dtype_, tensorflow::TensorShape({states.cols(), 1, stateDim}));
+
+    std::memcpy(len_tensor.flat<Dtype>().data(), len_vec.data(), sizeof(Dtype) * len_vec.size());
   }
 
   /////////// 3D methods /////////

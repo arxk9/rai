@@ -15,7 +15,6 @@ int main() {
   eMat.setConstant(1);
   eigenTen.setConstant(2);
   tfTensor.tensor<float, 2>().setConstant(3);
-
   /// testing '=' operator
   ten.setZero();
   std::cout << "my tensor (should be 0) " << std::endl << ten << std::endl;
@@ -44,4 +43,5 @@ int main() {
 
   ten3D.resize({3, 2, 2});
   std::cout << "there should be 12 numbers" << std::endl << ten3D << std::endl;
+
 }

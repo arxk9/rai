@@ -10,7 +10,6 @@
 #include "rai/function/common/Qfunction.hpp"
 #include "Qfunction_TensorFlow.hpp"
 #include "common/ParameterizedFunction_TensorFlow.hpp"
-
 namespace rai {
 namespace FuncApprox {
 
@@ -249,7 +248,12 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
 
   virtual void forward(StateTensor &states, ActionTensor &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
+    this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
+    LOG(INFO)<< vectorOfOutputs[0].dims();
+    rai::Tensor<Dtype,2> test;
+    test.resize(vectorOfOutputs[0].dim_size(0), vectorOfOutputs[0].dim_size(1));
+    test = vectorOfOutputs[0];
+    std::cout <<test;
     actions = vectorOfOutputs[0];
   }
 

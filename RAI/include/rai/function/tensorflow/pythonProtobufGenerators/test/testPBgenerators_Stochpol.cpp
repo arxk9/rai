@@ -18,11 +18,12 @@
 #include <functional>
 
 #include "rai/RAI_core"
+#include "rai/RAI_Tensor.hpp"
 
 using std::cout;
 using std::endl;
 using std::cin;
-const int ActionDim = 1;
+const int ActionDim = 2;
 const int StateDim = 3;
 using Dtype = float;
 
@@ -52,9 +53,10 @@ using namespace rai;
 int main() {
   RAI_init();
   bool teststdev = false;
-  bool testgradient = true;
-  const int sampleN = 100000;
-  stPolicy policy("cpu", "MLP", "relu 1e-5 3 32 1", 0.001);
+  bool testgradient = false;
+  const int sampleN = 5;
+  stPolicy policy("cpu", "MLP", "relu 1e-5 3 32 2", 0.001);
+
 
   StateBatch stateBatch = StateBatch::Random(StateDim, sampleN);
   ActionBatch actionBatch;
@@ -71,9 +73,23 @@ int main() {
   Dtype loss, loss2;
 
   policy.forward(stateBatch, actionmean);
+  std::cout << actionmean <<std::endl;
 
   actionBatch = actionmean + actionNoise;
 
+  rai::Tensor<Dtype, 3> StateTensor;
+  rai::Tensor<Dtype, 3> ActionTensor;
+
+  StateTensor = "state";
+  StateTensor.resize(stateBatch.rows(),stateBatch.cols(),1);
+
+  StateTensor.batch(0)  = stateBatch;
+
+  ActionTensor.resize(actionBatch.rows(),actionBatch.cols(),1);
+
+  policy.forward(StateTensor, ActionTensor);
+
+  std::cout << ActionTensor;
   if (teststdev) {
 
     NoiseCov Cov;
@@ -118,7 +134,8 @@ int main() {
 
     for (int i = 0; i < sampleN; i++) {
       Action Temp2 = actionNoise.col(i).array() / Stdev_o.array();
-      p_old[i] = -0.5 * Temp2.transpose() * Temp2 -  Stdev_o.array().log().sum();//- 0.5 * std::log(2.0 * M_PI) * ActionDim;
+      p_old[i] =
+          -0.5 * Temp2.transpose() * Temp2 - Stdev_o.array().log().sum();//- 0.5 * std::log(2.0 * M_PI) * ActionDim;
     }
 
     policy.TRPOpg(stateBatch, actionBatch, actionNoise, advs, Stdev_o, testgrad);
@@ -144,12 +161,12 @@ int main() {
         Action Temp = Noise_new.col(i).array() / StdevNew.array();
         p_n[i] =
             -0.5 * Temp.transpose() * Temp - StdevNew.array().log().sum();//- 0.5 * std::log(2.0 * M_PI) * ActionDim;
-        Loss += std::exp(p_n[i] - p_old[i])* advs[i];
+        Loss += std::exp(p_n[i] - p_old[i]) * advs[i];
       }
       Loss = Loss / sampleN;
       Err += std::abs((Loss - loss2) / Loss);
 
-      LOG(INFO) << "Loss " << " " << Loss - loss<< ", " << loss2- loss;
+      LOG(INFO) << "Loss " << " " << Loss - loss << ", " << loss2 - loss;
 //      LOG(INFO) << " Loss Function Error (%)" << std::abs((Loss - loss2) / Loss) * 100;
       pgtest(j) = (Loss - loss) / stepsize;
       pgtest2(j) = (loss2 - loss) / stepsize;
