@@ -25,8 +25,11 @@ public:
   typedef typename FunctionBase::InputBatch StateBatch;
   typedef typename FunctionBase::Output Action;
   typedef typename FunctionBase::OutputBatch ActionBatch;
-  typedef typename FunctionBase::InputTensor StateTensor;
-  typedef typename FunctionBase::OutputTensor ActionTensor;
+//  typedef typename FunctionBase::InputTensor StateTensor;
+//  typedef typename FunctionBase::OutputTensor ActionTensor;
+  typedef typename FunctionBase::Tensor1D Tensor1D;
+  typedef typename FunctionBase::Tensor2D Tensor2D;
+  typedef typename FunctionBase::Tensor3D Tensor3D;
 
   typedef typename FunctionBase::Gradient Gradient;
   typedef typename FunctionBase::Jacobian Jacobian;

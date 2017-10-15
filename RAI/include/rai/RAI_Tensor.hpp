@@ -35,7 +35,10 @@ class Tensor {
  public:
 
   // empty constructor. Resize has to be called before use
-  Tensor() { setDataType(); }
+  Tensor(const std::string name = "") {
+    namedTensor_.first = name;
+    setDataType();
+  }
 
   // empty data constructor
   Tensor(const rai::Vector<int> dim, const std::string name = "") {
@@ -219,11 +222,6 @@ class Tensor {
     resize(dim);
   }
 
-  void expandDim(int axis){
-    tensorflow::Tensor stateTensor(dtype_, tensorflow::TensorShape({states.cols(), 1, stateDim}));
-
-    std::memcpy(len_tensor.flat<Dtype>().data(), len_vec.data(), sizeof(Dtype) * len_vec.size());
-  }
 
   /////////// 3D methods /////////
   typename EigenMat::ColXpr col(int batchId, int colId) {

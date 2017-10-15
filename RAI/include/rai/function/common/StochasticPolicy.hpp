@@ -31,10 +31,13 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
-  typedef typename PolicyBase::StateTensor StateTensor;
-  typedef typename PolicyBase::ActionTensor ActionTensor;
+//  typedef typename PolicyBase::StateTensor StateTensor;
+//  typedef typename PolicyBase::ActionTensor ActionTensor;
 //  typedef typename PolicyBase::InputVector StateVector;
 //  typedef typename PolicyBase::OutputVector ActionVector;
+  typedef typename PolicyBase::Tensor1D Tensor1D;
+  typedef typename PolicyBase::Tensor2D Tensor2D;
+  typedef typename PolicyBase::Tensor3D Tensor3D;
 
   virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) = 0;
 

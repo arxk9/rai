@@ -77,17 +77,24 @@ int main() {
 
   actionBatch = actionmean + actionNoise;
 
-  rai::Tensor<Dtype, 3> StateTensor;
-  rai::Tensor<Dtype, 3> ActionTensor;
+  rai::Tensor<Dtype, 2> StateTensor;
+  rai::Tensor<Dtype, 2> ActionTensor;
+  rai::Tensor<Dtype, 3> StateTensor3;
 
   StateTensor = "state";
-  StateTensor.resize(stateBatch.rows(),stateBatch.cols(),1);
+  StateTensor3 = "state";
 
-  StateTensor.batch(0)  = stateBatch;
+  StateTensor3.resize(stateBatch.rows(),stateBatch.cols(),1);
+  StateTensor3.batch(0) = stateBatch;
 
-  ActionTensor.resize(actionBatch.rows(),actionBatch.cols(),1);
+  StateTensor.resize(stateBatch.rows(),stateBatch.cols());
+  StateTensor = stateBatch;
+  ActionTensor.resize(actionBatch.rows(),actionBatch.cols());
 
   policy.forward(StateTensor, ActionTensor);
+  std::cout << ActionTensor;
+
+  policy.forward(StateTensor3, ActionTensor);
 
   std::cout << ActionTensor;
   if (teststdev) {

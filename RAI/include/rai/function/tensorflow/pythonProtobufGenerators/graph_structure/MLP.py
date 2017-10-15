@@ -17,8 +17,7 @@ class MLP(bc.GraphStructure):
 
         # network
         self.input = tf.placeholder(dtype, shape=[None, dimension[0]], name=fn.input_names[0])
-
-        top = self.input
+        top = tf.reshape(self.input,[-1, dimension[0]])
         layer_n = 0
 
         for dim in dimension[1:-1]:

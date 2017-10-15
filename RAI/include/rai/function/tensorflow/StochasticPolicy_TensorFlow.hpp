@@ -18,8 +18,6 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                                     public virtual ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim> {
  public:
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
-  typedef Eigen::Matrix<Dtype, -1, -1> testMatrix;
-  typedef Eigen::Matrix<Dtype, 2 * actionDim, 2 * actionDim> FimInActionSpace;
   typedef Eigen::Matrix<Dtype, 2 * actionDim, -1> JacobianWRTparam;
 
   using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
@@ -33,8 +31,12 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
   typedef typename PolicyBase::ActionBatch ActionBatch;
-  typedef typename PolicyBase::StateTensor StateTensor;
-  typedef typename PolicyBase::ActionTensor ActionTensor;
+
+  //// working
+  typedef typename PolicyBase::Tensor1D Tensor1D;
+  typedef typename PolicyBase::Tensor2D Tensor2D;
+  typedef typename PolicyBase::Tensor3D Tensor3D;
+  ////
 
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
@@ -246,14 +248,21 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     actions = vectorOfOutputs[0];
   }
 
-  virtual void forward(StateTensor &states, ActionTensor &actions) {
+//  virtual void forward(StateTensor &states, ActionTensor &actions) {
+//    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+//    this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
+//    LOG(INFO)<< vectorOfOutputs[0].dims();
+//    actions = vectorOfOutputs[0];
+//  }
+
+  virtual void forward(Tensor2D &states, Tensor2D &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
-    LOG(INFO)<< vectorOfOutputs[0].dims();
-    rai::Tensor<Dtype,2> test;
-    test.resize(vectorOfOutputs[0].dim_size(0), vectorOfOutputs[0].dim_size(1));
-    test = vectorOfOutputs[0];
-    std::cout <<test;
+    actions = vectorOfOutputs[0];
+  }
+  virtual void forward(Tensor3D &states, Tensor2D &actions) {
+    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];
   }
 
@@ -295,7 +304,6 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
 
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
-  using Tensor3D = Eigen::Tensor<Dtype, 3>;
 
 };
 }//namespace FuncApprox

@@ -84,9 +84,9 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)}, "h_init");
     hiddenState.setZero();
     Tensor<Dtype, 3> advsT(advs, {advs.cols(),1,1}, "advantage");
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor<Dtype, 1> StdevT(Stdev, "stdv_o");
     Tensor<Dtype, 3> lenT(len, {1,1,len.size()}, "length");
-    Tensor<Dtype, 1> gradT(grad, {grad.rows()}, "Algo/PPO/Pg2");
+    Tensor<Dtype, 1> gradT(grad, "Algo/PPO/Pg2");
 
     this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, lenT},
                    {"Algo/PPO/Pg"},
@@ -182,12 +182,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   virtual void forward(StateTensor &states, ActionTensor &actions) {
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
-  }
-
-  virtual void test(StateTensor &states, ActionTensor &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];

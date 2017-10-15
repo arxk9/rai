@@ -21,6 +21,7 @@
 #include "rai/noiseModel/Noise.hpp"
 #include "rai/function/common/Policy.hpp"
 #include <rai/RAI_core>
+#include <rai/RAI_Tensor.hpp>
 
 #include <omp.h>
 
@@ -41,6 +42,7 @@ class CommonFunc {
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> RowVectorXD;
   typedef Eigen::Matrix<Dtype, 2, 1> Result;
+  typedef rai::Tensor<Dtype,2> rTensor2D;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, CommandDim>;
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
@@ -119,6 +121,8 @@ class CommonFunc {
     noise[0]->initializeNoise();
 
     Result stat;
+    rTensor2D states, actions;
+
     StateBatch stateBatch, stateBatchReduced;
     ActionBatch actionBatch, actionBatchReduced;
     rai::Vector<TerminationType> termTypeBatch;
@@ -131,6 +135,7 @@ class CommonFunc {
     int idx[numOfTraj];
     bool Reduce[numOfTraj];
 
+
     stateBatch = startingState;
     actionBatch.resize(ActionDim, numOfTraj);
     termTypeBatch.resize(numOfTraj);
@@ -138,6 +143,7 @@ class CommonFunc {
     actionBatchReduced.resize(ActionDim, numOfTraj);
 
     stateBatchReduced = stateBatch;
+    states = stateBatch;
 
     for (int trajID = 0; trajID < numOfTraj; trajID++) {
       Reduce[trajID] = false;
@@ -164,7 +170,6 @@ class CommonFunc {
       for (int cnt = IDXbefore - 1; cnt > -1; cnt--) {
         if (Reduce[cnt]) {
           int target = cnt;
-//          LOG(INFO) << target << "kill";
           // remove column(target) from reduced batch
           // if recurrent, policy.kill(target)
           if (target < reducedIdx - 1) {
@@ -187,6 +192,8 @@ class CommonFunc {
       actionBatchReduced.conservativeResize(ActionDim, reducedIdx);
       timer->startTimer("Policy evaluation");
       policy->forward(stateBatchReduced, actionBatchReduced);
+      policy->forward(states, actionBatchReduced);
+
       timer->stopTimer("Policy evaluation");
 
       for (int trajID = 0; trajID < reducedIdx; trajID++) {
@@ -243,9 +250,12 @@ class CommonFunc {
     for (auto &noise_ : noise)
       noise_->initializeNoise();
 
+    rTensor2D states("state");
+    rTensor2D actions("action");
+
     Result stat;
     StateBatch stateBatch, stateBatchReduced;
-    ActionBatch actionBatch, actionBatchReduced;
+    ActionBatch actionBatch;
     rai::Vector<TerminationType> termTypeBatch;
     State state_tp;
     Action action_tp;
@@ -273,7 +283,6 @@ class CommonFunc {
     actionBatch.resize(ActionDim, numOfTraj);
     termTypeBatch.resize(numOfTraj);
     stateBatchReduced.resize(StateDim, ThreadN);
-    actionBatchReduced.resize(ActionDim, ThreadN);
     Occupied.resize(ThreadN);
 
     for (int i = 0; i < ThreadN; i++) {
@@ -343,14 +352,15 @@ class CommonFunc {
           }
         }
         stateBatchReduced.conservativeResize(StateDim, reducedIdx);
-        actionBatchReduced.resize(ActionDim, reducedIdx);
       }
       if (reducedIdx == 0) /// Termination : No more job to do
         break;
+      states.resize(StateDim,reducedIdx);
+      actions.resize(ActionDim,reducedIdx);
+      states = stateBatchReduced;
 
       timer->startTimer("Policy evaluation");
-      LOG_IF(FATAL,stateBatchReduced.cols() != actionBatchReduced.cols()) << stateBatchReduced.cols() << actionBatchReduced.cols();
-      policy->forward(stateBatchReduced, actionBatchReduced);
+      policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
       int colID = 0;
@@ -359,8 +369,9 @@ class CommonFunc {
       for (int taskID = 0; taskID < reducedIdx; taskID++) {
         cost[taskID] = 0;
         action_noise[taskID] = noise[taskID]->sampleNoise();
-        state_t[taskID] = stateBatchReduced.col(taskID);
-        action_t[taskID] = actionBatchReduced.col(taskID) + action_noise[taskID];
+        state_t[taskID] = states.col(taskID);
+        action_t[taskID] = actions.col(taskID) + action_noise[taskID];
+
       }
       timer->startTimer("dynamics");
 #pragma omp parallel for schedule(dynamic) reduction(+:stepCount)
