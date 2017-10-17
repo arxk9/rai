@@ -33,9 +33,8 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::ActionBatch ActionBatch;
 
   //// working
-  typedef typename PolicyBase::Tensor1D Tensor1D;
-  typedef typename PolicyBase::Tensor2D Tensor2D;
-  typedef typename PolicyBase::Tensor3D Tensor3D;
+  typedef typename PolicyBase::Tensor2D ActionTensor;
+  typedef typename PolicyBase::Tensor3D StateTensor;
   ////
 
   typedef typename PolicyBase::Gradient Gradient;
@@ -254,13 +253,8 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
 //    LOG(INFO)<< vectorOfOutputs[0].dims();
 //    actions = vectorOfOutputs[0];
 //  }
-
-  virtual void forward(Tensor2D &states, Tensor2D &actions) {
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
   }
-  virtual void forward(Tensor3D &states, Tensor2D &actions) {
+  virtual void forward(StateTensor &states, ActionTensor &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];
