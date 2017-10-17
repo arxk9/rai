@@ -175,6 +175,8 @@ class LearningData {
       }
     } else {
 
+      stateTensor.resize(StateDim, 1, dataN);
+      stateTensor.resize(StateDim, 1, dataN);
 
     }
 
@@ -245,7 +247,7 @@ class LearningData {
   ActionBatch actionBat, actionNoiseBat;
 
   /////////////////////////// Recurrent
-  VectorXD trajLength;
+  Tensor<Dtype, 1> trajLength;
   Tensor<Dtype, 3> stateTensor;
   Tensor<Dtype, 3> hiddenStateTensor;
   Tensor<Dtype, 3> actionTensor;

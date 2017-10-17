@@ -28,7 +28,7 @@ int main() {
   /// checking 2d Eigen Matrix operation test
   Eigen::Vector3f eigenVec(7, 7, 7);
   Eigen::RowVector2f eigenVec2(4, 4);
-  ten.col(0) = eigenVec;
+//  ten.col(0) = eigenVec;
   ten.row(2) = eigenVec2;
   std::cout << "my tensor (first column should be 7, 3rd row is 4)" << std::endl << ten << std::endl;
 
@@ -43,5 +43,7 @@ int main() {
 
   ten3D.resize({3, 2, 2});
   std::cout << "there should be 12 numbers" << std::endl << ten3D << std::endl;
+
+
 
 }

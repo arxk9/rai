@@ -12,7 +12,7 @@ class GRUNet(bc.GraphStructure):
 
         dimension = [int(i) for i in param[1:]]
         self.input = tf.placeholder(dtype, shape=[None, None, dimension[0]], name=fn.input_names[0])  # [batch, time, dim]
-        length_ = tf.placeholder(dtype, shape=[None, 1, 1], name='length')  # [batch, 1, 1]
+        length_ = tf.placeholder(dtype, shape=[None], name='length')  # [batch]
         length_ = tf.cast(length_, dtype=tf.int32)
         self.seq_length = tf.reshape(length_, [-1])
 

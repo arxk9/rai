@@ -31,13 +31,9 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
-//  typedef typename PolicyBase::StateTensor StateTensor;
-//  typedef typename PolicyBase::ActionTensor ActionTensor;
-//  typedef typename PolicyBase::InputVector StateVector;
-//  typedef typename PolicyBase::OutputVector ActionVector;
-  typedef typename PolicyBase::Tensor1D Tensor1D;
-  typedef typename PolicyBase::Tensor2D Tensor2D;
-  typedef typename PolicyBase::Tensor3D Tensor3D;
+
+  typedef typename PolicyBase::ActionTensor ActionTensor;
+  typedef typename PolicyBase::StateTensor StateTensor;
 
   virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) = 0;
 
@@ -82,14 +78,14 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   virtual void PPOpg(StateBatch &states,
                      ActionBatch &actionBat,
                      ActionBatch &actionNoise,
-                     Advantages &advs,
+                     rai::Tensor<Dtype, 1>  &advs,
                      Action &Stdev,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
   virtual void PPOpg_kladapt(StateBatch &states,
                              ActionBatch &actionBat,
                              ActionBatch &actionNoise,
-                             Advantages &advs,
+                             rai::Tensor<Dtype, 1>  &advs,
                              Action &Stdev,
                              VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
@@ -102,24 +98,24 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   virtual void PPOpg(rai::Tensor<Dtype, 3> &states,
                      rai::Tensor<Dtype, 3> &action,
                      rai::Tensor<Dtype, 3> &actionNoise,
-                     Advantages &advs,
+                     rai::Tensor<Dtype, 1>  &advs,
                      Action &Stdev,
-                     VectorXD &len,
+                     rai::Tensor<Dtype, 1> &len,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
   virtual void PPOpg_kladapt(rai::Tensor<Dtype, 3> &states,
                              rai::Tensor<Dtype, 3> &action,
                              rai::Tensor<Dtype, 3> &actionNoise,
-                             Advantages &advs,
+                             rai::Tensor<Dtype, 1>  &advs,
                              Action &Stdev,
-                             VectorXD &len,
+                             rai::Tensor<Dtype, 1> &len,
                              VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
   virtual Dtype PPOgetkl(rai::Tensor<Dtype, 3> &states,
                          rai::Tensor<Dtype, 3> &actionBat,
                          rai::Tensor<Dtype, 3> &actionNoise,
                          Action &Stdev,
-                         VectorXD &len) {LOG(FATAL) << "Not implemented"; return 0; }
+                         rai::Tensor<Dtype, 1> &len) {LOG(FATAL) << "Not implemented"; return 0; }
 
 
   /// common
@@ -133,7 +129,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   }
 
   virtual void forward(State &state, Action &action) =0;
-  virtual void forward(StateBatch &states, ActionBatch &actions) =0;
+  virtual void forward(StateTensor &states, ActionTensor &actions) =0;
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
     LOG(FATAL) << "Not implemented";

@@ -29,7 +29,8 @@ namespace rai {
 template<typename Dtype, int NDim>
 class Tensor {
 
-  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1> > EigenMat;
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>,0, Eigen::OuterStride<Eigen::Dynamic>> EigenMatStride;
   typedef Eigen::TensorMap<Eigen::Tensor<Dtype, NDim>, Eigen::Aligned> EigenTensor;
 
  public:
@@ -44,6 +45,13 @@ class Tensor {
   Tensor(const rai::Vector<int> dim, const std::string name = "") {
     init(dim, name);
   }
+
+  // constant constructor
+  Tensor(const rai::Vector<int> dim,const Dtype constant, const std::string name = "") {
+    init(dim, name);
+    eTensor().setConstant(constant);
+  }
+
 
 ///Eigen Tensor constructor is abigous with rai::Vector<int> constructor ...
 //  // copy constructor from Eigen Tensor
@@ -86,9 +94,16 @@ class Tensor {
 
   template<int Rows, int Cols>
   operator Eigen::Matrix<Dtype, Rows, Cols>() {
-    LOG_IF(FATAL, Rows != dim_[0] || Cols != dim_[1]) << "dimension mismatch";
-    EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
-    return mat;
+    if (dim_.size() == 1) {
+      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0],1);
+      return mat;
+    }
+    else
+    {
+      LOG_IF(FATAL, Rows != dim_[0] || Cols != dim_[1]) << "dimension mismatch";
+      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
+      return mat;
+    }
   };
 
   operator EigenTensor() {
@@ -124,7 +139,7 @@ class Tensor {
     return EigenTensor(namedTensor_.second.flat<Dtype>().data(), esizes_);
   }
 
-  void setConstant(Dtype constant) {
+  void setConstant(const Dtype constant) {
     eTensor().setConstant(constant);
   }
 
@@ -186,7 +201,6 @@ class Tensor {
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * size_);
   }
 
-  template<int rows, int cols>
   void copyData(const tensorflow::Tensor &tfTensor) {
         LOG_IF(FATAL, size_ != tfTensor.flat<Dtype>().size())
     << "Data size mismatch: " << size_ << "vs" <<tfTensor.flat<Dtype>().size();
@@ -196,6 +210,7 @@ class Tensor {
   Dtype *operator[](int x) {
     return vecTens[x].flat<Dtype>().data();
   };
+
 
   ///////////////////////////////
   /////////// generic ///////////
@@ -225,6 +240,12 @@ class Tensor {
   }
 
   /// you lose all data calling resize
+  void resize(int rows) {
+    rai::Vector<int> dim = {rows};
+    resize(dim);
+  }
+
+  /// you lose all data calling resize
   void resize(int rows, int cols) {
     rai::Vector<int> dim = {rows, cols};
     resize(dim);
@@ -236,12 +257,48 @@ class Tensor {
     resize(dim);
   }
 
+  void conservativeResize(int rows, int cols) {
+    tensorflow::Tensor Temp(dtype_, dim_inv_);
+    memcpy(Temp.flat<Dtype>().data(),namedTensor_.second.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
+    rai::Vector<int> dim = {rows, cols};
+    resize(dim);
+    if (Temp.flat<Dtype>().size() < namedTensor_.second.flat<Dtype>().size()){
+      eTensor().setZero();
+      memcpy(namedTensor_.second.flat<Dtype>().data(),Temp.flat<Dtype>().data(),sizeof(Dtype)*Temp.flat<Dtype>().size());
+    }
+    else
+    memcpy(namedTensor_.second.flat<Dtype>().data(),Temp.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
+  }
+
   void conservativeResize(int rows, int cols, int batches) {
     tensorflow::Tensor Temp(dtype_, dim_inv_);
     memcpy(Temp.flat<Dtype>().data(),namedTensor_.second.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
     rai::Vector<int> dim = {rows, cols, batches};
     resize(dim);
+    if (Temp.flat<Dtype>().size() < namedTensor_.second.flat<Dtype>().size()){
+      eTensor().setZero();
+      memcpy(namedTensor_.second.flat<Dtype>().data(),Temp.flat<Dtype>().data(),sizeof(Dtype)*Temp.flat<Dtype>().size());
+    }
+    else
     memcpy(namedTensor_.second.flat<Dtype>().data(),Temp.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
+  }
+
+  void removeCol(int colID){
+    LOG_IF(FATAL, dim_.size() != 2) << "This is 2D Tensor method";
+    tensorflow::Tensor Temp(dtype_, dim_inv_);
+    memcpy(Temp.flat<Dtype>().data(),namedTensor_.second.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
+
+    resize(dim_[0],dim_[1]-1);
+
+    memcpy(namedTensor_.second.flat<Dtype>().data(),
+           Temp.flat<Dtype>().data(),
+           sizeof(Dtype) * dim_[0] * colID);
+
+    if(colID < dim_[1] -1) {
+      memcpy(namedTensor_.second.flat<Dtype>().data() + colID * dim_[0],
+             Temp.flat<Dtype>().data() + (colID + 1) * dim_[0],
+             sizeof(Dtype) * dim_[0]* (dim_[1]-colID-1));
+    }
   }
 
   /////////// 3D methods /////////
@@ -250,13 +307,24 @@ class Tensor {
     tensorflow::Tensor Temp(dtype_, dim_inv_);
     memcpy(Temp.flat<Dtype>().data(),namedTensor_.second.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
 
+    resize(dim_[0],dim_[1],dim_[2]-1);
+
+    memcpy(namedTensor_.second.flat<Dtype>().data(),
+           Temp.flat<Dtype>().data(),
+           sizeof(Dtype) * dim_[0]* dim_[1] * batchId);
+
     if(batchId < dim_[2] -1) {
       memcpy(namedTensor_.second.flat<Dtype>().data() + batchId * dim_[0] * dim_[1],
-             namedTensor_.second.flat<Dtype>().data() + (batchId + 1) * dim_[0] * dim_[1],
-             sizeof(Dtype) * namedTensor_.second.flat<Dtype>().size());
+             Temp.flat<Dtype>().data() + (batchId + 1) * dim_[0] * dim_[1],
+             sizeof(Dtype) * dim_[0]* dim_[1] * (dim_[2]-batchId-1));
     }
-    conservativeResize(dim_[0],dim_[1],dim_[2]-1);
   }
+
+//  typename EigenMatStride::BlockXpr col(int colId) {
+//    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
+//    EigenMatStride mat(namedTensor_.second.flat<Dtype>().data() + colId *dim_[0], dim_[0], dim_[2],Eigen::OuterStride<>(dim_[0] * dim_[1]));
+//    return mat.block(0,0, dim_[0], dim_[2]);
+//  }
 
   typename EigenMat::ColXpr col(int batchId, int colId) {
     LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";

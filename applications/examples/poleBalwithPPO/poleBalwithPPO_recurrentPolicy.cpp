@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(25);
+    task.setTimeLimitPerEpisode(5);
     taskVector.push_back(&task);
   }
 

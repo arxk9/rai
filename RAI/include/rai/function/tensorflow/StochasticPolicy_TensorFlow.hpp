@@ -33,8 +33,8 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::ActionBatch ActionBatch;
 
   //// working
-  typedef typename PolicyBase::Tensor2D ActionTensor;
-  typedef typename PolicyBase::Tensor3D StateTensor;
+  typedef typename PolicyBase::ActionTensor ActionTensor;
+  typedef typename PolicyBase::StateTensor StateTensor;
   ////
 
   typedef typename PolicyBase::Gradient Gradient;
@@ -240,24 +240,19 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     action = vectorOfOutputs[0];
   }
 
-  virtual void forward(StateBatch &states, ActionBatch &actions) {
+  virtual void forward(StateBatch &state, ActionBatch &action) {
     rai::Vector<MatrixXD> vectorOfOutputs;
-    this->tf_->forward({{"state", states}},
+    this->tf_->forward({{"state", state}},
                        {"action"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
+
+    action = vectorOfOutputs[0];
   }
 
-//  virtual void forward(StateTensor &states, ActionTensor &actions) {
-//    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-//    this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
-//    LOG(INFO)<< vectorOfOutputs[0].dims();
-//    actions = vectorOfOutputs[0];
-//  }
-
+  ///
   virtual void forward(StateTensor &states, ActionTensor &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
+    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
+    actions.copyData(vectorOfOutputs[0]);
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {

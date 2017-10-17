@@ -20,6 +20,8 @@
 
 // algorithm
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp>
+#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+
 #include "rai/algorithm/PPO.hpp"
 
 using namespace std;
@@ -43,6 +45,8 @@ using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
+//using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
+
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
@@ -126,8 +130,8 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 10;
-  for (int iterationNumber = 0; iterationNumber < 100; iterationNumber++) {
+  constexpr int loggingInterval = 50;
+  for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
