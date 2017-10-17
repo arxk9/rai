@@ -42,7 +42,8 @@ class CommonFunc {
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> RowVectorXD;
   typedef Eigen::Matrix<Dtype, 2, 1> Result;
-  typedef rai::Tensor<Dtype,2> rTensor2D;
+  typedef rai::Tensor<Dtype,3> StateTensor;
+  typedef rai::Tensor<Dtype,2> ActionTensor;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, CommandDim>;
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
@@ -121,7 +122,8 @@ class CommonFunc {
     noise[0]->initializeNoise();
 
     Result stat;
-    rTensor2D states, actions;
+    StateTensor states("state");
+    ActionTensor actions("action");
 
     StateBatch stateBatch, stateBatchReduced;
     ActionBatch actionBatch, actionBatchReduced;
@@ -250,11 +252,12 @@ class CommonFunc {
     for (auto &noise_ : noise)
       noise_->initializeNoise();
 
-    rTensor2D states("state");
-    rTensor2D actions("action");
+    StateTensor states("state");
+    ActionTensor actions("action");
+
 
     Result stat;
-    StateBatch stateBatch, stateBatchReduced;
+    StateBatch stateBatchReduced;
     ActionBatch actionBatch;
     rai::Vector<TerminationType> termTypeBatch;
     State state_tp;
@@ -279,10 +282,11 @@ class CommonFunc {
     Dtype cost[ThreadN];
     int trajcnt;
 
-    stateBatch = startingState;
     actionBatch.resize(ActionDim, numOfTraj);
     termTypeBatch.resize(numOfTraj);
     stateBatchReduced.resize(StateDim, ThreadN);
+    states.resize(StateDim,1,ThreadN);
+    actions.resize(ActionDim,ThreadN);
     Occupied.resize(ThreadN);
 
     for (int i = 0; i < ThreadN; i++) {
@@ -293,7 +297,9 @@ class CommonFunc {
 
     /////////////check initial states & initialize termTypeBatch
     for (int trajID = 0; trajID < numOfTraj; trajID++) {
-      state_tp = stateBatch.col(trajID);
+//      state_tp = stateBatch.col(trajID);
+      state_tp = startingState.col(trajID); ////
+
       if (taskset[0]->isTerminalState(state_tp)) {
         termTypeBatch[trajID] = TerminationType::terminalState;
         trajectorySet[trajID].terminateTrajectoryAndUpdateValueTraj(
@@ -316,11 +322,11 @@ class CommonFunc {
 //            LOG(INFO) << "taskNo :" << i << " trajNo :" << trajcnt << " / " << numOfTraj;
               if (policy->isRecurrent()) policy->reset(i);
               Occupied(i) = true;
-              state_t[i] = stateBatch.col(trajcnt);
+              state_t[i] = startingState.col(trajcnt);
               idx[i] = trajcnt;
               taskset[i]->setToParticularState(state_t[i]);
               episodetime[i] = 0;
-              stateBatchReduced.col(i) = stateBatch.col(trajcnt);
+              states.batch(i) = state_t[i];
               break;
             }
           }
@@ -339,25 +345,27 @@ class CommonFunc {
             // remove column(target) from reduced batch
             if (target < reducedIdx - 1) {
               //state
-              stateBatchReduced.block(0, target, StateDim, reducedIdx - target - 1) =
-                  stateBatchReduced.block(0, target + 1, StateDim, reducedIdx - target - 1);
+//              stateBatchReduced.block(0, target, StateDim, reducedIdx - target - 1) =
+//                  stateBatchReduced.block(0, target + 1, StateDim, reducedIdx - target - 1);
               //idx
               for (int i = target; i < reducedIdx - 1; i++)
                 idx[i] = idx[i + 1];
               //policy
             }
+            states.removeBatch(target);
             policy->terminate(target);
             reducedIdx -= 1;
             Occupied(cnt) = true;
           }
         }
-        stateBatchReduced.conservativeResize(StateDim, reducedIdx);
+//        stateBatchReduced.conservativeResize(StateDim, reducedIdx);
+//        states.conservativeResize(StateDim,1,reducedIdx);
+        actions.resize(ActionDim,reducedIdx);
       }
       if (reducedIdx == 0) /// Termination : No more job to do
         break;
-      states.resize(StateDim,reducedIdx);
-      actions.resize(ActionDim,reducedIdx);
-      states = stateBatchReduced;
+
+//      states.copyData(stateBatchReduced); //////////
 
       timer->startTimer("Policy evaluation");
       policy->forward(states, actions);
@@ -369,7 +377,7 @@ class CommonFunc {
       for (int taskID = 0; taskID < reducedIdx; taskID++) {
         cost[taskID] = 0;
         action_noise[taskID] = noise[taskID]->sampleNoise();
-        state_t[taskID] = states.col(taskID);
+        state_t[taskID] = states.batch(taskID);
         action_t[taskID] = actions.col(taskID) + action_noise[taskID];
 
       }

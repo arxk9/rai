@@ -59,6 +59,9 @@ class ParameterizedFunction {
   virtual void forward(Tensor2D &intputs, Tensor2D &outputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
+  virtual void forward(Tensor3D &intputs, Tensor2D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
 
   virtual Dtype performOneSolverIter(InputBatch &states, OutputBatch &targetOutputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";

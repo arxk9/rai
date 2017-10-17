@@ -253,7 +253,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
 //    LOG(INFO)<< vectorOfOutputs[0].dims();
 //    actions = vectorOfOutputs[0];
 //  }
-  }
+
   virtual void forward(StateTensor &states, ActionTensor &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({{states}}, {"action"}, vectorOfOutputs);

@@ -179,6 +179,20 @@ class Tensor {
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * size_);
   }
 
+  template<int rows, int cols>
+  void copyData(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
+    LOG_IF(FATAL, size_ != eMat.rows()*eMat.cols())
+    << "Data size mismatch: " << size_ << "vs" <<eMat.rows()*eMat.cols();
+    std::memcpy(namedTensor_.second.flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * size_);
+  }
+
+  template<int rows, int cols>
+  void copyData(const tensorflow::Tensor &tfTensor) {
+        LOG_IF(FATAL, size_ != tfTensor.flat<Dtype>().size())
+    << "Data size mismatch: " << size_ << "vs" <<tfTensor.flat<Dtype>().size();
+    std::memcpy(namedTensor_.second.flat<Dtype>().data(), tfTensor.flat<Dtype>().data(), sizeof(Dtype) * size_);
+  }
+
   Dtype *operator[](int x) {
     return vecTens[x].flat<Dtype>().data();
   };
@@ -222,8 +236,28 @@ class Tensor {
     resize(dim);
   }
 
+  void conservativeResize(int rows, int cols, int batches) {
+    tensorflow::Tensor Temp(dtype_, dim_inv_);
+    memcpy(Temp.flat<Dtype>().data(),namedTensor_.second.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
+    rai::Vector<int> dim = {rows, cols, batches};
+    resize(dim);
+    memcpy(namedTensor_.second.flat<Dtype>().data(),Temp.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
+  }
 
   /////////// 3D methods /////////
+  void removeBatch(int batchId){
+    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
+    tensorflow::Tensor Temp(dtype_, dim_inv_);
+    memcpy(Temp.flat<Dtype>().data(),namedTensor_.second.flat<Dtype>().data(),sizeof(Dtype)*namedTensor_.second.flat<Dtype>().size());
+
+    if(batchId < dim_[2] -1) {
+      memcpy(namedTensor_.second.flat<Dtype>().data() + batchId * dim_[0] * dim_[1],
+             namedTensor_.second.flat<Dtype>().data() + (batchId + 1) * dim_[0] * dim_[1],
+             sizeof(Dtype) * namedTensor_.second.flat<Dtype>().size());
+    }
+    conservativeResize(dim_[0],dim_[1],dim_[2]-1);
+  }
+
   typename EigenMat::ColXpr col(int batchId, int colId) {
     LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     EigenMat mat(namedTensor_.second.flat<Dtype>().data() + batchId * dim_[0] * dim_[1], dim_[0], dim_[1]);
