@@ -18,9 +18,9 @@ using std::cout;
 using std::endl;
 using std::cin;
 
-using RAI::FuncApprox::ParameterizedFunction_TensorFlow;
-using RAI::FuncApprox::Qfunction_TensorFlow;
-using RAI::FuncApprox::ValueFunction_TensorFlow;
+using rai::FuncApprox::ParameterizedFunction_TensorFlow;
+using rai::FuncApprox::Qfunction_TensorFlow;
+using rai::FuncApprox::ValueFunction_TensorFlow;
 
 using Dtype = double;
 
@@ -30,7 +30,7 @@ using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;
 double training_mean = 50.0;
 double training_variance = 100.0;
 
-using namespace RAI;
+using namespace rai;
 
 Dtype sample(double dummy) {
   static std::mt19937 rng;

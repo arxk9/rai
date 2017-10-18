@@ -8,7 +8,7 @@
 #include <Eigen/Core>
 #include <iostream>
 
-namespace RAI{
+namespace rai{
 //namespace Math{
 
 template <typename Derived>

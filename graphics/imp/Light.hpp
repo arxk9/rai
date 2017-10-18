@@ -9,66 +9,68 @@
 #include "Eigen/Core"
 #include "mutex"
 #include "iostream"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI{
+namespace rai{
 namespace Graphics{
 
 class Light{
 
  public:
-  void getPosition(std::vector<float>& pos){
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  void getPosition(rai::Vector<float>& pos){
     mtx.lock();
     pos = position;
     mtx.unlock();
   }
 
-  void getAmbient(std::vector<float>& amb){
+  void getAmbient(rai::Vector<float>& amb){
     mtx.lock();
     amb = ambient;
     mtx.unlock();
   }
 
-  void getDiffuse(std::vector<float>& diff){
+  void getDiffuse(rai::Vector<float>& diff){
     mtx.lock();
     diff = diffuse;
     mtx.unlock();
   }
 
-  void getSpecular(std::vector<float>& spec){
+  void getSpecular(rai::Vector<float>& spec){
     mtx.lock();
     spec = specular;
     mtx.unlock();
   }
 
-  void setPosition(std::vector<float>& pos){
+  void setPosition(rai::Vector<float>& pos){
     mtx.lock();
     position = pos;
     mtx.unlock();
   }
 
-  void setAmbient(std::vector<float>& amb){
+  void setAmbient(rai::Vector<float>& amb){
     mtx.lock();
     ambient = amb;
     mtx.unlock();
   }
 
-  void setDiffuse(std::vector<float>& diff){
+  void setDiffuse(rai::Vector<float>& diff){
     mtx.lock();
     diffuse = diff;
     mtx.unlock();
   }
 
-  void setSpecular(std::vector<float>& spec){
+  void setSpecular(rai::Vector<float>& spec){
     mtx.lock();
     specular = spec;
     mtx.unlock();
   }
 
  private:
-  std::vector<float> position = {-100.0,0.0,10.0};
-  std::vector<float> ambient = {0.5,0.5,0.5};
-  std::vector<float> diffuse = {1,1,1};
-  std::vector<float> specular = {0.7,0.7,0.7};
+  rai::Vector<float> position = {-100.0,0.0,10.0};
+  rai::Vector<float> ambient = {0.5,0.5,0.5};
+  rai::Vector<float> diffuse = {1,1,1};
+  rai::Vector<float> specular = {0.7,0.7,0.7};
   std::mutex mtx;
 };
 

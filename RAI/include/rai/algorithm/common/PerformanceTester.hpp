@@ -10,12 +10,13 @@
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp>
 #include "rai/RAI_core"
 
-namespace RAI {
+namespace rai {
 
 namespace Algorithm {
 
 template<typename Dtype, int StateDim, int ActionDim>
 class PerformanceTester {
+
 
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
@@ -29,9 +30,13 @@ class PerformanceTester {
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  PerformanceTester(){
+    Utils::logger->addVariableToLog(2, "PerformanceTester/performance", "");
+  }
 
-  void testPerformance(std::vector<Task_ *> &task,
-                       std::vector<Noise_ *> &noise,
+  void testPerformance(rai::Vector<Task_ *> &task,
+                       rai::Vector<Noise_ *> &noise,
                        Policy_ *policy,
                        double timeLimit,
                        int testingTrajN,
@@ -79,7 +84,7 @@ class PerformanceTester {
   }
 
  private:
-  void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task_) {
+  void sampleBatchOfInitial(StateBatch &initial, rai::Vector<Task_ *> &task_) {
     for (int trajID = 0; trajID < initial.cols(); trajID++) {
       State state;
       task_[0]->setToInitialState();
@@ -88,7 +93,7 @@ class PerformanceTester {
     }
   }
 
-  std::vector<Trajectory_> testTraj_;
+  rai::Vector<Trajectory_> testTraj_;
   Acquisitor_ acquisitor_;
   Policy_ *policy_;
 

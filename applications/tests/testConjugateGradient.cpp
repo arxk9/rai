@@ -27,9 +27,9 @@ int main(){
   M.setRandom();
   std::function<void(Vector&, Vector&)> fcn = std::bind(&eval, std::placeholders::_1, std::placeholders::_2);
   for(int i=0; i<10; i++) {
-    RAI::Utils::timer->startTimer("conjugate gradient");
-    RAI::conjugateGradient(fcn, b, 10, 1e-10, sol);
-    RAI::Utils::timer->stopTimer("conjugate gradient");
+    rai::Utils::timer->startTimer("conjugate gradient");
+    rai::conjugateGradient(fcn, b, 10, 1e-10, sol);
+    rai::Utils::timer->stopTimer("conjugate gradient");
   }
   std::cout<<"solution "<<std::endl<<sol<<std::endl;
 

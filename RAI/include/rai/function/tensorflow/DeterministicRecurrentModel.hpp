@@ -7,7 +7,7 @@
 
 #include "DeterministicModel.hpp"
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>
@@ -26,7 +26,9 @@ class DeterministicRecurrentModel : public virtual Model<Dtype, stateDim, action
   ~DeterministicRecurrentModel(){}
 
 
-
+  virtual bool isRecurrent() {
+    return true;
+  }
 
 };
 

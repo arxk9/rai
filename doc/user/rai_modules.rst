@@ -8,7 +8,7 @@ Utils
 ========================
 
 All RAI_Utils are global shared pointers which can be included by simply including <rai/RAI_core>.
-There are three utils available at the moment and their pointer names are :code:`RAI::Utils::graph`, :code:`RAI::Utils::logger` and :code:`RAI::Utils::timer`.
+There are three utils available at the moment and their pointer names are :code:`rai::Utils::graph`, :code:`rai::Utils::logger` and :code:`rai::Utils::timer`.
 When :code:`RAI_Init()` is called in your app file, all data (i.e. logging data, timer log, graphs and network protobuf files) are saved in :code:`logsNplots/<current date>`.
 
 logger
@@ -28,12 +28,12 @@ RAI_Timer tracks the allocation of the computational resources. One of the notab
 
     #include <rai/RAI_core>
     Int main(){
-      RAI::Utils::timer->startTimer(“V func learning”);
+      rai::Utils::timer->startTimer(“V func learning”);
       DoSomething();
-      RAI::Utils::timer->startTimer(“backProp”);
+      rai::Utils::timer->startTimer(“backProp”);
       DoBackProp();
-      RAI::Utils::timer->stopTimer(“backProp”);
-      RAI::Utils::timer->stopTimer(“V func learning”);
+      rai::Utils::timer->stopTimer(“backProp”);
+      rai::Utils::timer->stopTimer(“V func learning”);
     }
 
 Here “backProp” is nested inside the “V func learning”. RAI_Timer keeps track of the hierarchy of the timer loops and generates a figure that looks like
@@ -58,24 +58,24 @@ All figure creating starts with :code:`graph->figure()` or :code:`graph->figure3
 At the moment when the :code:`drawFigure` method is called, the graph is generated. Here is an example::
 
     ////////////////////// Plotting properties ////////////////////////
-    RAI::Utils::Graph::FigProp2D prop1;
+    rai::Utils::Graph::FigProp2D prop1;
     prop1.title = "Number of Steps Taken vs Performance";
     prop1.xlabel = "N. Steps Taken";
     prop1.ylabel = "Performance";
 
-    RAI::Utils::Graph::FigProp3D prop2;
+    rai::Utils::Graph::FigProp3D prop2;
     prop2.title = "Q function";
     prop2.xlabel = "angle";
     prop2.ylabel = "angular velocity";
     prop2.zlabel = "value";
-    prop2.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
+    prop2.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
 
     /// plotting with rai_logger
     graph->figure(1, prop1);
     graph->appendData(1,logger->getData("Nominal performance", 0),
                         logger->getData("Nominal performance", 1),
                         logger->getDataSize("Nominal performance"),
-                        RAI::Utils::Graph::PlotMethods2D::linespoints,
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
                         "performance",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
     graph->drawFigure(1);
@@ -95,7 +95,7 @@ RAI_Graph only supports maximum 6 figures per process.
 
 Graphics
 ========================
-RAI_Graphics is based on OpenGL, SDL and GLSL.
+RAI_graphics is based on OpenGL, SDL and GLSL.
 It is efficient in displaying large meshes since all meshes are saved in the GPU memory and the GLSL shader does all the processing (transformation and shading) in GPU.
 It also offers very simple interface and automatic video recording.
 Be careful when recording video since saving many frames might take too much disk space.
@@ -141,7 +141,7 @@ To save the display as a video, do::
     usleep(5e6);
     graphics.images2Video();
 
-If your task uses RAI_Graphics as a visualizer, you can save videos while running your task. RAI saves videos if the following three conditions are met,
+If your task uses RAI_graphics as a visualizer, you can save videos while running your task. RAI saves videos if the following three conditions are met,
 1. display is running (after :code:`graphics.start()` and before :code:`graphics.end()`).
 2. task visualization is on. This is set by the algorithm. You can control your algorithm's visualization by :code:`algorith.setVisualizationLevel()` method.
 3. task is enabled for recording. This is set by :code:`task.enableVideoRecording()` and unset by :code:`task.disableRecording()`. The latter method triggers saving the video to the path defined by your algorithm.

@@ -4,7 +4,7 @@
 
 #include "gnuplot_wrapper/gnuplotFigureManager.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Utils {
 
 std::shared_ptr<Graph::GnuplotFigureManager> graph(new Graph::GnuplotFigureManager);

@@ -11,7 +11,7 @@
 
 #pragma once
 
-namespace RAI {
+namespace rai {
 namespace Task {
 
 constexpr int StateDim = 3;
@@ -164,8 +164,8 @@ class PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
     return result;
   }
 
-  void plotPolicyAndValueFunction(RAI::FuncApprox::Policy<Dtype, StateDim, ActionDim> &policy,
-                                  RAI::FuncApprox::Qfunction<Dtype, StateDim, ActionDim> &qFunction,
+  void plotPolicyAndValueFunction(rai::FuncApprox::Policy<Dtype, StateDim, ActionDim> &policy,
+                                  rai::FuncApprox::Qfunction<Dtype, StateDim, ActionDim> &qFunction,
                                   int nPlotPoints = 50, int figureNumberForValueFunction = 0,
                                   int figureNumberForPolicy = 1) {
     VectorXD phiValues = VectorXD::LinSpaced(nPlotPoints, -M_PI, M_PI);
@@ -211,8 +211,8 @@ class PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
   }
 
 
-  virtual void plotValueFunctionQFunctionPolicy(RAI::FuncApprox::Policy<Dtype, StateDim, ActionDim> &policy,
-                                                RAI::FuncApprox::Qfunction<Dtype,
+  virtual void plotValueFunctionQFunctionPolicy(rai::FuncApprox::Policy<Dtype, StateDim, ActionDim> &policy,
+                                                rai::FuncApprox::Qfunction<Dtype,
                                                                            StateDim,
                                                                            ActionDim> &qFunction) {
     plotPolicyAndValueFunction(policy, qFunction, 50, 1, 2);
@@ -243,8 +243,8 @@ class PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
     double Ang = generalizedCoordinates_(0);
     Eigen::Vector3d axis;
     axis << 1,0,0;
-    orientation = RAI::Math::MathFunc::angleAxisToQuat(Ang, axis);
-    visualizeFrame.topLeftCorner(3,3) = RAI::Math::MathFunc::quatToRotMat(orientation);
+    orientation = rai::Math::MathFunc::angleAxisToQuat(Ang, axis);
+    visualizeFrame.topLeftCorner(3,3) = rai::Math::MathFunc::quatToRotMat(orientation);
   }
   virtual bool isTerminalState(State &state) { return false; }
 
@@ -269,10 +269,10 @@ class PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
   const int pHeightVis_ = 150;
   const int p_WidthVis_ = 20;
   double realTimeRatio;
-  static RAI::Vis::Pole_Visualizer visualizer_;
+  static rai::Vis::Pole_Visualizer visualizer_;
   HomogeneousTransform visualizeFrame;
 };
 }
 }
 template<typename Dtype>
-RAI::Vis::Pole_Visualizer RAI::Task::PoleBalancing<Dtype>::visualizer_;
+rai::Vis::Pole_Visualizer rai::Task::PoleBalancing<Dtype>::visualizer_;

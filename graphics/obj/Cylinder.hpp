@@ -7,8 +7,9 @@
 
 #include "Object.hpp"
 #include <vector>
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 

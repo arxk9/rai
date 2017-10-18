@@ -40,7 +40,7 @@
 #include "rai/RAI_core"
 #include "CMAES.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Algorithm {
 
 template<typename Dtype, int StateDim, int ActionDim>
@@ -66,10 +66,10 @@ class AG_tree {
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
-  AG_tree(std::vector<Task_*> &task,
+  AG_tree(rai::vector<Task_*> &task,
           FuncApprox::ValueFunction<Dtype, StateDim> *vfunction,
           FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy,
-          std::vector<Noise_*> &noise,
+          rai::vector<Noise_*> &noise,
           Acquisitor_* acquisitor,
           int numOfInitialTra,
           int numOfBranches,
@@ -88,7 +88,7 @@ class AG_tree {
       initialTraj_(numOfInitialTra),
       junctionTraj_(numOfBranches),
       testTrajectory_(nOfTestTraj),
-      branchTraj_(noiseDepth, std::vector<Trajectory_>(numOfBranches)),
+      branchTraj_(noiseDepth, rai::vector<Trajectory_>(numOfBranches)),
       noiseDepth_(noiseDepth),
       initialTrajTailTime_(initialTrajTailTime),
       branchTrajTime_(branchTrajLength),
@@ -154,13 +154,13 @@ class AG_tree {
 
     ///////////////////////// stage 1: simulation //////////////////
     Utils::timer->startTimer("simulation");
-    std::vector<std::vector<Dtype> > valueJunction(noiseDepth_ + 1, std::vector<Dtype>(numOfBranches_));
-    std::vector<State> advTuple_state;
-    std::vector<Dtype> advTuple_advantage;
-    std::vector<Dtype> advTuple_importance;
-    std::vector<Dtype> advTuple_MD2;
-    std::vector<Action> advTuple_actionNoise;
-    std::vector<Action> advTuple_gradient;
+    rai::vector<rai::vector<Dtype> > valueJunction(noiseDepth_ + 1, rai::vector<Dtype>(numOfBranches_));
+    rai::vector<State> advTuple_state;
+    rai::vector<Dtype> advTuple_advantage;
+    rai::vector<Dtype> advTuple_importance;
+    rai::vector<Dtype> advTuple_MD2;
+    rai::vector<Action> advTuple_actionNoise;
+    rai::vector<Action> advTuple_gradient;
 
     /// run initial Trajectories
     StateBatch startStateOrg(StateDim, numOfInitialTra_);
@@ -175,7 +175,7 @@ class AG_tree {
     /// update terminal value and value trajectory of the initial trajectories
     ValueBatch terminalValueOrg(1, numOfInitialTra_), terminalValueBra(1, numOfBranches_);
     StateBatch terminalStateOrg(StateDim, numOfInitialTra_), terminalStateBra(StateDim, numOfBranches_);
-    RAI::Op::VectorHelper::collectTerminalStates(initialTraj_, terminalStateOrg);
+    rai::Op::VectorHelper::collectTerminalStates(initialTraj_, terminalStateOrg);
     vfunction_->forward(terminalStateOrg, terminalValueOrg);
 
     for (int trajID = 0; trajID < numOfInitialTra_; trajID++)
@@ -184,8 +184,8 @@ class AG_tree {
 
     /// sample random starting points along initial trajectories and run episodes
     StateBatch startStateJunct(StateDim, numOfBranches_);
-    std::vector<std::pair<int, int> > indx;
-    RAI::Op::VectorHelper::sampleRandomStates(initialTraj_, startStateJunct, int(initialTrajTailTime_ / dt), indx);
+    rai::vector<std::pair<int, int> > indx;
+    rai::Op::VectorHelper::sampleRandomStates(initialTraj_, startStateJunct, int(initialTrajTailTime_ / dt), indx);
 
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
     acquisitor_->acquire(task_, policy_, noiseBasePtr_, junctionTraj_, startStateJunct, dt * noiseDepth_, true);
@@ -199,7 +199,7 @@ class AG_tree {
       for (int i = 0; i < junctionTraj_.size(); i++)
         nthState.col(i) = junctionTraj_[i].stateTraj[depthID];
       acquisitor_->acquire(task_, policy_, noNoise_, branchTraj_[depthID-1], nthState, timeLimit, true);
-      RAI::Op::VectorHelper::collectTerminalStates(branchTraj_[depthID-1], terminalStateBra);
+      rai::Op::VectorHelper::collectTerminalStates(branchTraj_[depthID-1], terminalStateBra);
       vfunction_->forward(terminalStateBra, terminalValueBra);
 
       for (int trajID = 0; trajID < numOfBranches_; trajID++) {
@@ -215,7 +215,7 @@ class AG_tree {
       }
     }
 
-    RAI::Math::MathFunc::normalize(advTuple_advantage);
+    rai::Math::MathFunc::normalize(advTuple_advantage);
     Utils::timer->stopTimer("simulation");
 
     ///////////////////////// stage 2: vfunction train //////////////////
@@ -326,20 +326,20 @@ class AG_tree {
   StateBatch &getStateBatch() { return stateAdvantage_; }
   StateBatch &getValueTrainStateBatch() { return StateBatchVtrain_; }
   ValueBatch &getValueTrainValueBatch() { return valueBatchVtrain_; }
-  std::vector<std::vector<Trajectory_> > getBranchTraj() { return branchTraj_; }
+  rai::vector<rai::vector<Trajectory_> > getBranchTraj() { return branchTraj_; }
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
 
  private:
 
   /////////////////////////// Core //////////////////////////////////////////
-  std::vector<Task_*> task_;
+  rai::vector<Task_*> task_;
   FuncApprox::ValueFunction<Dtype, StateDim> *vfunction_;
   FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy_;
   Acquisitor_* acquisitor_;
-  std::vector<Noise_*> noise_;
-  std::vector<Noise::Noise<Dtype, ActionDim>* > noNoise_;
-  std::vector<Noise::NoNoise<Dtype, ActionDim> > noNoiseRaw_;
-  std::vector<Noise::Noise<Dtype, ActionDim>* > noiseBasePtr_;
+  rai::vector<Noise_*> noise_;
+  rai::vector<Noise::Noise<Dtype, ActionDim>* > noNoise_;
+  rai::vector<Noise::NoNoise<Dtype, ActionDim> > noNoiseRaw_;
+  rai::vector<Noise::Noise<Dtype, ActionDim>* > noiseBasePtr_;
   Dtype learningRate_;
   int iterNumber_ = 0;
 
@@ -350,9 +350,9 @@ class AG_tree {
   double initialTrajTailTime_, branchTrajTime_;
 
   /////////////////////////// trajectories //////////////////////
-  std::vector<Trajectory_> initialTraj_, junctionTraj_;
-  std::vector<std::vector<Trajectory_> > branchTraj_;
-  std::vector<Trajectory_> testTrajectory_;
+  rai::vector<Trajectory_> initialTraj_, junctionTraj_;
+  rai::vector<rai::vector<Trajectory_> > branchTraj_;
+  rai::vector<Trajectory_> testTrajectory_;
 
   /////////////////////////// FIM related variables
   FimInActionSapce fimInActionSpace_, fimInActionSpaceCholesky_;

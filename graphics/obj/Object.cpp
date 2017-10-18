@@ -3,7 +3,7 @@
 //
 #include "Object.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -70,7 +70,7 @@ void Object::setTransform(Transform& trans) {
   transform = trans;
 }
 
-void Object::setLightProp(std::vector<float> &amb, std::vector<float> &diff, std::vector<float> &spec, float shine) {
+void Object::setLightProp(rai::Vector<float> &amb, rai::Vector<float> &diff, rai::Vector<float> &spec, float shine) {
   std::lock_guard<std::mutex> guard(mtx);
   amb_m = amb;
   diff_m = diff;
@@ -78,7 +78,7 @@ void Object::setLightProp(std::vector<float> &amb, std::vector<float> &diff, std
   shininess = shine;
 }
 
-void Object::setColor(std::vector<float> colorL) {
+void Object::setColor(rai::Vector<float> colorL) {
   std::lock_guard<std::mutex> guard(mtx);
   color_ = colorL;
 }
@@ -120,22 +120,22 @@ void Object::setTempTransform(Transform& trans) {
   tempTransform = trans;
 }
 
-void Object::getColor(std::vector<float> &clr) {
+void Object::getColor(rai::Vector<float> &clr) {
   std::lock_guard<std::mutex> guard(mtx);
   clr = color_;
 }
 
-void Object::getLightPropAmb(std::vector<float> &amb) {
+void Object::getLightPropAmb(rai::Vector<float> &amb) {
   std::lock_guard<std::mutex> guard(mtx);
   amb = amb_m;
 }
 
-void Object::getLightPropDiff(std::vector<float> &diff) {
+void Object::getLightPropDiff(rai::Vector<float> &diff) {
   std::lock_guard<std::mutex> guard(mtx);
   diff = diff_m;
 }
 
-void Object::getLightPropSpec(std::vector<float> &spec) {
+void Object::getLightPropSpec(rai::Vector<float> &spec) {
   std::lock_guard<std::mutex> guard(mtx);
   spec = spec_m;
 }

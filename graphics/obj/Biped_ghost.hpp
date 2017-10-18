@@ -7,8 +7,9 @@
 #include "SuperObject.hpp"
 #include "Mesh.hpp"
 #include "Sphere.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -20,31 +21,31 @@ class Biped_ghost : public SuperObject {
   ~Biped_ghost();
   void init();
   void destroy();
-  void setPose(std::vector<HomogeneousTransform> &bodyPose);
-  RAI::Graphics::Obj::Object* basePtr(){ return &base; }
-  RAI::Graphics::Obj::Object* footlPtr(){ return &foot_l; }
-  RAI::Graphics::Obj::Object* footrPtr(){ return &foot_r; }
+  void setPose(rai::Vector<HomogeneousTransform> &bodyPose);
+  rai::Graphics::Obj::Object* basePtr(){ return &base; }
+  rai::Graphics::Obj::Object* footlPtr(){ return &foot_l; }
+  rai::Graphics::Obj::Object* footrPtr(){ return &foot_r; }
 
 
  private:
 
-  RAI::Graphics::Obj::Mesh base;
-  RAI::Graphics::Obj::Mesh haa_l;
-  RAI::Graphics::Obj::Mesh hfe_l;
-  RAI::Graphics::Obj::Mesh thigh_l;
-  RAI::Graphics::Obj::Mesh shank_l;
-//  RAI::Graphics::Obj::Mesh afe_l;
+  rai::Graphics::Obj::Mesh base;
+  rai::Graphics::Obj::Mesh haa_l;
+  rai::Graphics::Obj::Mesh hfe_l;
+  rai::Graphics::Obj::Mesh thigh_l;
+  rai::Graphics::Obj::Mesh shank_l;
+//  rai::Graphics::Obj::Mesh afe_l;
 
-  RAI::Graphics::Obj::Mesh haa_r;
-  RAI::Graphics::Obj::Mesh hfe_r;
-  RAI::Graphics::Obj::Mesh thigh_r;
-  RAI::Graphics::Obj::Mesh shank_r;
-//  RAI::Graphics::Obj::Mesh afe_r;
+  rai::Graphics::Obj::Mesh haa_r;
+  rai::Graphics::Obj::Mesh hfe_r;
+  rai::Graphics::Obj::Mesh thigh_r;
+  rai::Graphics::Obj::Mesh shank_r;
+//  rai::Graphics::Obj::Mesh afe_r;
 
-  RAI::Graphics::Obj::Sphere foot_l;
-  RAI::Graphics::Obj::Sphere foot_r;
+  rai::Graphics::Obj::Sphere foot_l;
+  rai::Graphics::Obj::Sphere foot_r;
 
-  std::vector<HomogeneousTransform> defaultPose_;
+  rai::Vector<HomogeneousTransform> defaultPose_;
 };
 
 }

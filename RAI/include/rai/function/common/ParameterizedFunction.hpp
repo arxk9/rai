@@ -12,7 +12,7 @@
 #include <third_party/eigen3/unsupported/Eigen/CXX11/Tensor>
 #include "rai/RAI_Tensor.hpp"
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 enum class LibraryID {
@@ -34,8 +34,8 @@ class ParameterizedFunction {
   typedef Eigen::Matrix<Dtype, outputDimension, Eigen::Dynamic> JacobianWRTparam;
 
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic> InnerState;
-  typedef RAI::Tensor<Dtype, 3> InputTensor;
-  typedef RAI::Tensor<Dtype, 3> OutputTensor;
+  typedef rai::Tensor<Dtype, 3> InputTensor;
+  typedef rai::Tensor<Dtype, 3> OutputTensor;
 //  typedef std::vector<InputBatch> InputVector;
 //  typedef std::vector<OutputBatch> OutputVector;
 
@@ -144,10 +144,10 @@ class ParameterizedFunction {
   virtual void dumpParam(std::string fileName) { LOG(FATAL) << "NOT IMPLEMENTED"; };
 
   /// recurrent
-  virtual bool isRecurrent() { LOG(FATAL) << "NOT IMPLEMENTED"; }
-  virtual void reset(int n) { LOG(FATAL) << "NOT IMPLEMENTED"; }
-  virtual void terminate(int n) { LOG(FATAL) << "NOT IMPLEMENTED"; }
-  virtual int getInnerStatesize() { LOG(FATAL) << "NOT IMPLEMENTED"; }
+  virtual bool isRecurrent() { return false; }
+  virtual void reset(int n) {}
+  virtual void terminate(int n) {}
+  virtual int getInnerStatesize() { return 0; }
 
   LibraryID libraryID_ = LibraryID::notSpecified;
   int parameterSize = 0;

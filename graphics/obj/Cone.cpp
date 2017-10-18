@@ -4,7 +4,7 @@
 
 #include "Cone.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 

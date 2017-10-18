@@ -7,7 +7,7 @@
 #include "Biped.hpp"
 #include "rai/common/TypeDef.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -30,10 +30,10 @@ Biped::Biped():
     foot_l(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/bipedLocomotion/cadModel/biped/Foot_V1.dae", 0.001),
     foot_r(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/bipedLocomotion/cadModel/biped/Foot_V1.dae", 0.001)
 {
-  std::vector<float> red = {1, 0, 0};
-  std::vector<float> white = {1, 1, 1};
-  std::vector<float> blue = {0, 0.5, 1};
-  std::vector<float> gray = {0.7, 0.7, 0.7};
+  rai::Vector<float> red = {1, 0, 0};
+  rai::Vector<float> white = {1, 1, 1};
+  rai::Vector<float> blue = {0, 0.5, 1};
+  rai::Vector<float> gray = {0.7, 0.7, 0.7};
   base.setColor(white);
   haa_l.setColor(gray);
   hfe_l.setColor(blue);
@@ -78,14 +78,14 @@ Biped::Biped():
   ///base
   defaultPose_[0](0,3) = -0.2;
   ///pelvis
-  RAI::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[6], M_PI );
-  RAI::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[6], M_PI );
-  RAI::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[7], M_PI );
+  rai::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[6], M_PI );
+  rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[6], M_PI );
+  rai::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[7], M_PI );
   ///leg
-  RAI::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[8], M_PI);
-  RAI::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[9], M_PI);
+  rai::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[8], M_PI);
+  rai::Math::MathFunc::rotateHTabout_z_axis(defaultPose_[9], M_PI);
   ///ankle
-  RAI::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[10], M_PI );
+  rai::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[10], M_PI );
 }
 
 Biped::~Biped(){}
@@ -102,7 +102,7 @@ void Biped::destroy(){
   delete shader;
 }
 
-void Biped::setPose(std::vector<HomogeneousTransform> &bodyPose) {
+void Biped::setPose(rai::Vector<HomogeneousTransform> &bodyPose) {
   for (int i = 0; i < objs.size(); i++) {
     HomogeneousTransform ht = bodyPose[i] * defaultPose_[i];
     objs[i]->setPose(ht);

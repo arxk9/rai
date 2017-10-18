@@ -11,7 +11,7 @@ inline bool fileexists (const std::string& name) {
   return (stat (name.c_str(), &buffer) == 0);
 }
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -40,7 +40,7 @@ Mesh::Mesh(Vertex *vertices, unsigned int numVertices, unsigned int *indicesL, u
     indices.push_back(indicesL[i]);
 }
 
-Mesh::~Mesh() {}
+Mesh::~Mesh() = default;
 
 void Mesh::recursiveProcess(aiNode *node, const aiScene *scene) {
   //process

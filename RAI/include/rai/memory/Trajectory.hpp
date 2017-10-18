@@ -8,16 +8,19 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <Eigen/StdVector>
 #include "rai/common/enumeration.hpp"
 #include "rai/function/common/ValueFunction.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Memory {
 
 template<typename Dtype, int stateDim, int actionDim>
 class Trajectory {
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, stateDim, 1> State;
   typedef Eigen::Matrix<Dtype, actionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
@@ -176,10 +179,10 @@ class Trajectory {
 
   /// prepend a section of other trajectory to this trajectory
   void prependAsectionOfTraj (Trajectory& otherTraj, unsigned startingId, unsigned endId) {
-    std::vector<Action> actionTraj_cpy = actionTraj;
-    std::vector<State> stateTraj_cpy = stateTraj;
-    std::vector<Action> actionNoiseTraj_cpy = actionNoiseTraj;
-    std::vector<Dtype> costTraj_cpy = costTraj;
+    rai::Vector<Action> actionTraj_cpy = actionTraj;
+    rai::Vector<State> stateTraj_cpy = stateTraj;
+    rai::Vector<Action> actionNoiseTraj_cpy = actionNoiseTraj;
+    rai::Vector<Dtype> costTraj_cpy = costTraj;
 
     unsigned currentSize = size();
     unsigned sectionSize = endId - startingId + 1;
@@ -205,11 +208,11 @@ class Trajectory {
     gaeUpdated = false;
   }
 
-  std::vector<State> stateTraj;
-  std::vector<Action> actionTraj;
-  std::vector<Action> actionNoiseTraj;
-  std::vector<Dtype> costTraj, accumCostTraj;
-  std::vector<Dtype> valueTraj;
+  rai::Vector<State> stateTraj;
+  rai::Vector<Action> actionTraj;
+  rai::Vector<Action> actionNoiseTraj;
+  rai::Vector<Dtype> costTraj, accumCostTraj;
+  rai::Vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;
   CostBatch valueMat, bellmanErr, advantage;
   Dtype terminalValue_ = Dtype(0);

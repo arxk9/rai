@@ -29,10 +29,10 @@ using namespace boost;
 using Dtype = float;
 
 /// shortcuts
-using RAI::Task::ActionDim;
-using RAI::Task::StateDim;
-using RAI::Task::CommandDim;
-using Task = RAI::Task::PoleBalancing<Dtype>;
+using rai::Task::ActionDim;
+using rai::Task::StateDim;
+using rai::Task::CommandDim;
+using Task = rai::Task::PoleBalancing<Dtype>;
 using State = Task::State;
 using StateBatch = Task::StateBatch;
 using Action = Task::Action;
@@ -40,13 +40,13 @@ using ActionBatch = Task::ActionBatch;
 using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
-using Policy_TensorFlow = RAI::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Vfunction_TensorFlow = RAI::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
-using Acquisitor_ = RAI::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
-using Noise = RAI::Noise::NormalDistributionNoise<Dtype, ActionDim>;
+using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
+using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
+using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
-#define nThread 2
+#define nThread 7
 
 int main(int argc, char *argv[]) {
 
@@ -54,22 +54,23 @@ int main(int argc, char *argv[]) {
   omp_set_num_threads(nThread);
 
   ////////////////////////// Define task ////////////////////////////
-  std::vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
-  std::vector<RAI::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
+  rai::Vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
+  rai::Vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
-    task.setRealTimeFactor(1.5);
-    task.setTimeLimitPerEpisode(20.0);
+    task.setRealTimeFactor(2);
+    task.setTimeLimitPerEpisode(25);
     taskVector.push_back(&task);
   }
 
   ////////////////////////// Define Noise Model //////////////////////
   Dtype Stdev = 1;
 
-  std::vector<Noise> noiseVec(nThread, Noise(NoiseCovariance::Identity() * Stdev));
-  std::vector<Noise *> noiseVector;
+  NoiseCovariance covariance = NoiseCovariance::Identity() * Stdev;
+  rai::Vector<Noise> noiseVec(nThread, Noise(covariance));
+  rai::Vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
 
@@ -81,48 +82,48 @@ int main(int argc, char *argv[]) {
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
-  RAI::Algorithm::PPO<Dtype, StateDim, ActionDim>
+  rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 30, true);
 
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
-  RAI::Utils::Graph::FigProp2D figurePropertiesEVP;
+  rai::Utils::Graph::FigProp2D figurePropertiesEVP;
   figurePropertiesEVP.title = "Number of Steps Taken vs Performance";
   figurePropertiesEVP.xlabel = "N. Steps Taken";
   figurePropertiesEVP.ylabel = "Performance";
 
-  RAI::Utils::Graph::FigProp2D figurePropertieskl;
+  rai::Utils::Graph::FigProp2D figurePropertieskl;
   figurePropertieskl.title = "Number of Steps Taken vs KlD";
   figurePropertieskl.xlabel = "N. Steps Taken";
   figurePropertieskl.ylabel = "KlD";
 
-  RAI::Utils::Graph::FigProp2D figurePropertiescoef;
+  rai::Utils::Graph::FigProp2D figurePropertiescoef;
   figurePropertiescoef.title = "Number of Steps Taken vs Kl_coeff";
   figurePropertiescoef.xlabel = "N. Steps Taken";
   figurePropertiescoef.ylabel = "Kl_coeff";
 
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVGradient;
+  rai::Utils::Graph::FigProp3D figurePropertiesSVGradient;
   figurePropertiesSVGradient.title = "Qfunction training data";
   figurePropertiesSVGradient.xlabel = "angle";
   figurePropertiesSVGradient.ylabel = "angular velocity";
   figurePropertiesSVGradient.zlabel = "value";
 
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVC;
+  rai::Utils::Graph::FigProp3D figurePropertiesSVC;
   figurePropertiesSVC.title = "V function";
   figurePropertiesSVC.xlabel = "angle";
   figurePropertiesSVC.ylabel = "angular velocity";
   figurePropertiesSVC.zlabel = "value";
-  figurePropertiesSVC.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
+  figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
 
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVA;
+  rai::Utils::Graph::FigProp3D figurePropertiesSVA;
   figurePropertiesSVA.title = "Policy";
   figurePropertiesSVA.xlabel = "angle";
   figurePropertiesSVA.ylabel = "angular velocity";
   figurePropertiesSVA.zlabel = "action";
-  figurePropertiesSVA.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
+  figurePropertiesSVA.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
 
-  RAI::Utils::Graph::FigPropPieChart propChart;
+  rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
   StateBatch state_plot(3, 2601);
@@ -149,41 +150,51 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Learning /////////////////////////////////
-
+  constexpr int loggingInterval = 10;
   for (int iterationNumber = 0; iterationNumber < 250; iterationNumber++) {
 
+    if (iterationNumber % loggingInterval == 0) {
+      algorithm.setVisualizationLevel(1);
+      taskVector[0]->enableVideoRecording();
+    }
+
     algorithm.runOneLoop(5000);
-    graph->figure(1, figurePropertiesEVP);
-    graph->appendData(1, logger->getData("Nominal performance", 0),
-                      logger->getData("Nominal performance", 1),
-                      logger->getDataSize("Nominal performance"),
-                      RAI::Utils::Graph::PlotMethods2D::linespoints,
-                      "performance",
-                      "lw 2 lc 4 pi 1 pt 5 ps 1");
-    graph->drawFigure(1);
 
-    policy.forward(state_plot, action_plot);
-    Vfunction.forward(state_plot, value_plot);
-    graph->figure(2, figurePropertieskl);
-    graph->appendData(2, logger->getData("klD", 0),
-                      logger->getData("klD", 1),
-                      logger->getDataSize("klD"),
-                      RAI::Utils::Graph::PlotMethods2D::linespoints,
-                      "klD",
-                      "lw 2 lc 4 pi 1 pt 5 ps 1");
-    graph->drawFigure(2);
+    if (iterationNumber % loggingInterval == 0) {
+      algorithm.setVisualizationLevel(0);
+      taskVector[0]->disableRecording();
+      graph->figure(1, figurePropertiesEVP);
+      graph->appendData(1, logger->getData("PerformanceTester/performance", 0),
+                        logger->getData("PerformanceTester/performance", 1),
+                        logger->getDataSize("PerformanceTester/performance"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "performance",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(1);
 
-    graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
-                       minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
-    graph->drawFigure(4);
-    graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
-                       minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
-    graph->drawFigure(5);
+      policy.forward(state_plot, action_plot);
+      Vfunction.forward(state_plot, value_plot);
+      graph->figure(2, figurePropertieskl);
+      graph->appendData(2, logger->getData("klD", 0),
+                        logger->getData("klD", 1),
+                        logger->getDataSize("klD"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "klD",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(2);
+
+      graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
+      graph->drawFigure(4);
+      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
+      graph->drawFigure(5);
+    }
   }
 
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");
   graph->drawPieChartWith_RAI_Timer(0, timer->getTimedItems(), propChart);
-  graph->drawFigure(0, RAI::Utils::Graph::OutputFormat::pdf);
+  graph->drawFigure(0, rai::Utils::Graph::OutputFormat::pdf);
   graph->waitForEnter();
 
 }

@@ -13,19 +13,20 @@
 #include "imp/shader_background.hpp"
 #include "rai/common/StopWatch.hpp"
 #include <mutex>
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 
 class RAI_graphics {
  public:
-
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   enum ShaderType {
     RAI_SHADER_BASIC
   };
 
   struct LightProp {
-    std::vector<float>  pos_light = {-100.0,0.0,10.0},
+    rai::Vector<float>  pos_light = {-100.0,0.0,10.0},
                         amb_light = {0.5, 0.5, 0.5},
                         diff_light = {1, 1, 1},
                         spec_light = {0.7, 0.7, 0.7};
@@ -73,20 +74,20 @@ class RAI_graphics {
   Obj::Background *background = nullptr;
   bool backgroundChanged;
 
-  std::vector<Obj::Object *> objs_;
-  std::vector<Obj::SuperObject *> supObjs_;
+  rai::Vector<Obj::Object *> objs_;
+  rai::Vector<Obj::SuperObject *> supObjs_;
 
-  std::vector<Obj::Object *> added_objs_;
-  std::vector<Obj::SuperObject *> added_supObjs_;
+  rai::Vector<Obj::Object *> added_objs_;
+  rai::Vector<Obj::SuperObject *> added_supObjs_;
 
-  std::vector<Obj::Object *> tobeRemoved_objs_;
-  std::vector<Obj::SuperObject *> tobeRemoved_supObjs_;
+  rai::Vector<Obj::Object *> tobeRemoved_objs_;
+  rai::Vector<Obj::SuperObject *> tobeRemoved_supObjs_;
 
   Display *display = nullptr;
   Shader_basic *shader_basic = nullptr;
   Shader_background *shader_background = nullptr;
-  std::vector<Shader *> shaders_;
-  std::vector<ShaderType> added_shaders_;
+  rai::Vector<Shader *> shaders_;
+  rai::Vector<ShaderType> added_shaders_;
 
   unsigned imageCounter = 0;
   bool areThereimagesTosave = false;

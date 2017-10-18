@@ -4,7 +4,7 @@
 
 #include "Sphere.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -15,8 +15,8 @@ Sphere::Sphere(float radius, int rings) {
 
   positions.resize(rings * rings * 3);
   normals.resize((rings-1) * (rings-1) * 3);
-  std::vector<glm::vec3>::iterator v = positions.begin();
-  std::vector<glm::vec3>::iterator n = normals.begin();
+  rai::Vector<glm::vec3>::iterator v = positions.begin();
+  rai::Vector<glm::vec3>::iterator n = normals.begin();
 
   for (r = 0; r < rings; r++)
     for (s = 0; s < rings; s++) {
@@ -36,7 +36,7 @@ Sphere::Sphere(float radius, int rings) {
     }
 
   indices.resize((rings-1) * (rings-1) * 6);
-  std::vector<unsigned>::iterator i = indices.begin();
+  rai::Vector<unsigned>::iterator i = indices.begin();
   unsigned idx=0;
   for (r = 0; r < rings - 1; r++)
     for (s = 0; s < rings - 1; s++) {

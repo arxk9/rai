@@ -4,11 +4,11 @@
 
 #ifndef RAI_RAI_TIMER_ITEMS_HPP
 #define RAI_RAI_TIMER_ITEMS_HPP
-#include "vector"
+#include "rai/RAI_Vector.hpp"
 #include <string>
 #include <algorithm>
 
-namespace RAI {
+namespace rai {
 namespace Utils {
 
 class Timer_items {
@@ -19,7 +19,7 @@ class Timer_items {
 
   }
 
-  void add_item(std::string name, int id, std::vector<int> parentsID) {
+  void add_item(std::string name, int id, rai::Vector<int> parentsID) {
     totalChildren_++;
 
     if (parentsID.size() == 0) {
@@ -53,7 +53,7 @@ class Timer_items {
   std::string name_;
   double time_sum_;
   int id_;
-  std::vector<Timer_items> subItems_;
+  rai::Vector<Timer_items> subItems_;
   int totalChildren_ = 0;
   int maximum_depth = 0;
 };

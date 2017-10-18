@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-namespace RAI {
+namespace rai {
 namespace Noise {
 
 template<typename Dtype, int noiseVectorDimension>
@@ -16,7 +16,7 @@ class Noise {
 public:
   Noise(){};
   ~Noise(){};
-
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, 1> NoiseVector;
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, noiseVectorDimension> CovarianceMatrix;
   virtual void initializeNoise() { };

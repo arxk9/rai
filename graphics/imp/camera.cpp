@@ -3,7 +3,7 @@
 //
 #include "camera.h"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 void Camera::lockCamera() {
   if (camPitch > 90)
@@ -154,7 +154,7 @@ void Camera::Control(SDL_Event e) {
   switchTime++;
 }
 
-void Camera::follow(RAI::Graphics::Obj::Object *obj, Eigen::Vector3d pos) {
+void Camera::follow(rai::Graphics::Obj::Object *obj, Eigen::Vector3d pos) {
   mtx.lock();
   toFollowObj = obj;
   relativePos = glm::vec4(pos[0], pos[1], pos[2], 0);

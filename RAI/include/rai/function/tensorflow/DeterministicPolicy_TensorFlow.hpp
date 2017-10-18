@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>
@@ -40,21 +40,21 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
   }
 
   virtual void forward(State &state, Action &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", state}},
                        {"action"}, vectorOfOutputs);
     action = vectorOfOutputs[0];
   }
 
   virtual void forward(StateBatch &states, ActionBatch &actions) {
-    std::vector<MatrixXD> vectorOfOutputs;
+    rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", states}},
                        {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-    std::vector<MatrixXD> loss, dummy;
+    rai::Vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
                     {"targetAction", actions},
                     {"trainUsingTargetAction/learningRate", this->learningRate_}}, {"trainUsingTargetAction/loss"},
@@ -71,7 +71,7 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-    std::vector<MatrixXD> dummy;
+    rai::Vector<MatrixXD> dummy;
     this->tf_->run({{"state", states},
                     {"trainUsingCritic/gradientFromCritic", gradients},
                     {"trainUsingCritic/learningRate", this->learningRate_}}, {},
@@ -87,8 +87,8 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-    std::vector<MatrixXD> output;
-    std::vector<MatrixXD> dummy;
+    rai::Vector<MatrixXD> output;
+    rai::Vector<MatrixXD> dummy;
     this->tf_->run({{"state", states},
                     {"gradQwrtParamMethod/gradientFromCritic", gradients}},
                    {"gradQwrtParamMethod/gradientQwrtParam"},
@@ -98,20 +98,19 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
   }
 
   void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
-    std::vector<MatrixXD> temp;
+    rai::Vector<MatrixXD> temp;
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_Param"}, {}, temp);
     jacobian = temp[0];
   }
 
   void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
-    std::vector<MatrixXD> temp;
+    rai::Vector<MatrixXD> temp;
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_State"}, {}, temp);
     jacobian = temp[0];
   }
-
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
 
 };
 } // namespace FuncApprox
-} // namespace RAI
+} // namespace rai

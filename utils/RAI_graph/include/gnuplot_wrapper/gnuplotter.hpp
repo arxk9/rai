@@ -11,7 +11,7 @@
 
 #include "gnuplotFigureManager.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Utils {
 extern std::shared_ptr<Graph::GnuplotFigureManager> graph;
 

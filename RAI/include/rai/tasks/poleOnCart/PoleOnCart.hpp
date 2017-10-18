@@ -28,7 +28,7 @@
 #include "rai/tasks/poleOnCart/visualizer/visualizer.hpp"
 #endif
 
-namespace RAI {
+namespace rai {
 namespace Task {
 
 constexpr int ActionDim = 1;

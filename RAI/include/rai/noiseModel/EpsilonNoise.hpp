@@ -11,7 +11,7 @@
 #include "Noise.hpp"
 #include "math/RandomNumberGenerator.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Noise {
 
 template<typename Dtype, int noiseVectorDimension>
@@ -26,7 +26,7 @@ class EpsilonNoise : public Noise<Dtype, noiseVectorDimension> {
 
   Noise* baseNoise_;
   float epsilon_;
-  RAI::RandomNumberGenerator<float> rn_;
+  rai::RandomNumberGenerator<float> rn_;
   NoiseVector zeroVector = NoiseVector::Zero();
 
 

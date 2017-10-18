@@ -26,7 +26,7 @@
 #define RAI_CLOCK_TYPE CLOCK_THREAD_CPUTIME_ID
 #endif
 
-namespace RAI {
+namespace rai {
 namespace Utils {
 
 class Timer {
@@ -124,11 +124,11 @@ class Timer {
     return dataAndTime.str().c_str();
   }
 
-  std::vector<double> &getTotalTime() {
+  rai::Vector<double> &getTotalTime() {
     return timeSum;
   }
 
-  std::vector<std::string> &getNames() {
+  rai::Vector<std::string> &getNames() {
     return name_;
   }
 
@@ -196,17 +196,17 @@ class Timer {
 
 
  private:
-  std::vector<std::string> name_;
+  rai::Vector<std::string> name_;
   timeval timevalNow;
   struct timespec timespec;
-  std::vector<double> timeSum;
-  std::vector<double> timeMin;
-  std::vector<double> timeMax;
-  std::vector<int> frameCount;
-  std::vector<int> allParent;
-  std::vector<double> Avg;
-  std::vector<double> curTime;
-  std::vector<double> curTime_ns;
+  rai::Vector<double> timeSum;
+  rai::Vector<double> timeMin;
+  rai::Vector<double> timeMax;
+  rai::Vector<int> frameCount;
+  rai::Vector<int> allParent;
+  rai::Vector<double> Avg;
+  rai::Vector<double> curTime;
+  rai::Vector<double> curTime_ns;
   double timeLaps;
   std::string log_path_;
   Timer_items items_;

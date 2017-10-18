@@ -9,8 +9,9 @@
 #include <vector>
 #include "math.h"
 #include "rai/common/TypeDef.hpp"
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -23,8 +24,8 @@ class Background {
   void draw();
 
  private:
-  std::vector<std::string> faces;
-  GLuint loadCubemap(std::vector<std::string>& faces);
+  rai::Vector<std::string> faces;
+  GLuint loadCubemap(rai::Vector<std::string>& faces);
   GLuint skyboxVAO, skyboxVBO;
   GLuint cubemapTexture;
   GLfloat skyboxVertices[108] = {

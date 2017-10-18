@@ -29,10 +29,10 @@ using namespace boost;
 using Dtype = float;
 
 /// shortcuts
-using RAI::Task::ActionDim;
-using RAI::Task::StateDim;
-using RAI::Task::CommandDim;
-using Task = RAI::Task::PoleBalancing<Dtype>;
+using rai::Task::ActionDim;
+using rai::Task::StateDim;
+using rai::Task::CommandDim;
+using Task = rai::Task::PoleBalancing<Dtype>;
 using State = Task::State;
 using StateBatch = Task::StateBatch;
 using Action = Task::Action;
@@ -40,10 +40,10 @@ using ActionBatch = Task::ActionBatch;
 using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
-using Policy_TensorFlow = RAI::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Vfunction_TensorFlow = RAI::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
-using Acquisitor_ = RAI::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
-using Noise = RAI::Noise::NormalDistributionNoise<Dtype, ActionDim>;
+using Policy_TensorFlow = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
+using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
+using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
 #define nThread 2
@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
   omp_set_num_threads(nThread);
 
   ////////////////////////// Define task ////////////////////////////
-  std::vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
-  std::vector<RAI::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
+  rai::Vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
+  rai::Vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
@@ -67,9 +67,9 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Noise Model //////////////////////
   Dtype Stdev = 1;
-
-  std::vector<Noise> noiseVec(nThread, Noise(NoiseCovariance::Identity() * Stdev));
-  std::vector<Noise *> noiseVector;
+  NoiseCovariance covariance = NoiseCovariance::Identity() * Stdev;
+  rai::Vector<Noise> noiseVec(nThread, Noise(covariance));
+  rai::Vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
 
@@ -82,24 +82,24 @@ int main(int argc, char *argv[]) {
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
-  RAI::Algorithm::PPO<Dtype, StateDim, ActionDim>
+  rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 30, true);
 
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
-  RAI::Utils::Graph::FigProp2D
+  rai::Utils::Graph::FigProp2D
       figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
-  RAI::Utils::Graph::FigProp2D figurePropertiesSur("N. Steps Taken", "loss", "Number of Steps Taken vs Surrogate loss");
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "V function");
-  figurePropertiesSVC.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-  RAI::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
-  figurePropertiesSVA.displayType = RAI::Utils::Graph::DisplayType3D::heatMap3D;
-  RAI::Utils::Graph::FigProp2D figurePropertieskl("N. Steps Taken", "KlD", "Number of Steps Taken vs KlD");
-  RAI::Utils::Graph::FigProp2D figurePropertiescoef("N. Steps Taken", "Kl_coeff", "Number of Steps Taken vs Kl_coeff");
-  RAI::Utils::Graph::FigProp3D
+  rai::Utils::Graph::FigProp2D figurePropertiesSur("N. Steps Taken", "loss", "Number of Steps Taken vs Surrogate loss");
+  rai::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "V function");
+  figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+  rai::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
+  figurePropertiesSVA.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+  rai::Utils::Graph::FigProp2D figurePropertieskl("N. Steps Taken", "KlD", "Number of Steps Taken vs KlD");
+  rai::Utils::Graph::FigProp2D figurePropertiescoef("N. Steps Taken", "Kl_coeff", "Number of Steps Taken vs Kl_coeff");
+  rai::Utils::Graph::FigProp3D
       figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
-  RAI::Utils::Graph::FigPropPieChart propChart;
+  rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
   StateBatch state_plot(3, 2601);
@@ -125,10 +125,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  constexpr int loggingInterval = 10;
   ////////////////////////// Learning /////////////////////////////////
-
-  for (int iterationNumber = 0; iterationNumber < 50; iterationNumber++) {
+  constexpr int loggingInterval = 10;
+  for (int iterationNumber = 0; iterationNumber < 100; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
@@ -141,10 +140,10 @@ int main(int argc, char *argv[]) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
       graph->figure(1, figurePropertiesEVP);
-      graph->appendData(1, logger->getData("Nominal performance", 0),
-                        logger->getData("Nominal performance", 1),
-                        logger->getDataSize("Nominal performance"),
-                        RAI::Utils::Graph::PlotMethods2D::linespoints,
+      graph->appendData(1, logger->getData("PerformanceTester/performance", 0),
+                        logger->getData("PerformanceTester/performance", 1),
+                        logger->getDataSize("PerformanceTester/performance"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
                         "performance",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1);
@@ -155,7 +154,7 @@ int main(int argc, char *argv[]) {
       graph->appendData(2, logger->getData("klD", 0),
                         logger->getData("klD", 1),
                         logger->getDataSize("klD"),
-                        RAI::Utils::Graph::PlotMethods2D::linespoints,
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
                         "klD",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(2);
@@ -171,7 +170,7 @@ int main(int argc, char *argv[]) {
 
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");
   graph->drawPieChartWith_RAI_Timer(0, timer->getTimedItems(), propChart);
-  graph->drawFigure(0, RAI::Utils::Graph::OutputFormat::pdf);
+  graph->drawFigure(0, rai::Utils::Graph::OutputFormat::pdf);
   graph->waitForEnter();
 
 }

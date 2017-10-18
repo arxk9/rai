@@ -12,7 +12,7 @@
 #include "ParameterizedFunction.hpp"
 #include "Policy.hpp"
 
-namespace RAI {
+namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>

@@ -4,13 +4,16 @@
 #include "rai/common/math/RAI_math.hpp"
 #include "obj/Cylinder.hpp"
 #include "obj/Sphere.hpp"
+#include "obj/Arrow.hpp"
 
-namespace RAI {
+
+namespace rai {
 namespace Vis {
 
 class Pole_Visualizer {
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Pole_Visualizer();
 
   ~Pole_Visualizer();
@@ -25,7 +28,8 @@ class Pole_Visualizer {
   Graphics::Obj::Cylinder Pole;
   Graphics::Obj::Sphere Dot;
   Graphics::Obj::Sphere Dot2;
-  RAI::Graphics::Obj::Mesh arrow;
+
+  rai::Graphics::Obj::Mesh arrow;
   HomogeneousTransform defaultPose_;
 };
 

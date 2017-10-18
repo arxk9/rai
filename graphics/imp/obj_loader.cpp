@@ -3,15 +3,16 @@
 #include <iostream>
 #include <algorithm>
 #include <map>
+#include "rai/RAI_Vector.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 
 static bool CompareOBJIndexPtr(const OBJIndex *a, const OBJIndex *b);
 static inline unsigned int FindNextChar(unsigned int start, const char *str, unsigned int length, char token);
 static inline unsigned int ParseOBJIndexValue(const std::string &token, unsigned int start, unsigned int end);
 static inline float ParseOBJFloatValue(const std::string &token, unsigned int start, unsigned int end);
-static inline std::vector<std::string> SplitString(const std::string &s, char delim);
+static inline rai::Vector<std::string> SplitString(const std::string &s, char delim);
 
 OBJModel::OBJModel(const std::string &fileName) {
   hasUVs = false;
@@ -76,7 +77,7 @@ IndexedModel OBJModel::ToIndexedModel() {
 
   unsigned int numIndices = OBJIndices.size();
 
-  std::vector<OBJIndex *> indexLookup;
+  rai::Vector<OBJIndex *> indexLookup;
 
   for (unsigned int i = 0; i < numIndices; i++)
     indexLookup.push_back(&OBJIndices[i]);
@@ -145,7 +146,7 @@ IndexedModel OBJModel::ToIndexedModel() {
   return result;
 };
 
-unsigned int OBJModel::FindLastVertexIndex(const std::vector<OBJIndex *> &indexLookup,
+unsigned int OBJModel::FindLastVertexIndex(const rai::Vector<OBJIndex *> &indexLookup,
                                            const OBJIndex *currentIndex,
                                            const IndexedModel &result) {
   unsigned int start = 0;
@@ -221,7 +222,7 @@ unsigned int OBJModel::FindLastVertexIndex(const std::vector<OBJIndex *> &indexL
 }
 
 void OBJModel::CreateOBJFace(const std::string &line) {
-  std::vector<std::string> tokens = SplitString(line, ' ');
+  rai::Vector<std::string> tokens = SplitString(line, ' ');
 
   this->OBJIndices.push_back(ParseOBJIndex(tokens[1], &this->hasUVs, &this->hasNormals));
   this->OBJIndices.push_back(ParseOBJIndex(tokens[2], &this->hasUVs, &this->hasNormals));
@@ -345,8 +346,8 @@ static inline float ParseOBJFloatValue(const std::string &token, unsigned int st
   return atof(token.substr(start, end - start).c_str());
 }
 
-static inline std::vector<std::string> SplitString(const std::string &s, char delim) {
-  std::vector<std::string> elems;
+static inline rai::Vector<std::string> SplitString(const std::string &s, char delim) {
+  rai::Vector<std::string> elems;
 
   const char *cstr = s.c_str();
   unsigned int strLength = s.length();

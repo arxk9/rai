@@ -7,7 +7,7 @@
 
 #include "Contact.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Dynamics {
 
 class UnilateralContact : public Contact {

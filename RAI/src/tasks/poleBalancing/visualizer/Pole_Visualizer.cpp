@@ -1,7 +1,7 @@
 
 #include "rai/tasks/poleBalancing/visualizer/Pole_Visualizer.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Vis {
 
 Pole_Visualizer::Pole_Visualizer() :
@@ -18,18 +18,19 @@ Pole_Visualizer::Pole_Visualizer() :
   arrow.setTransparency(0.5);
 
   defaultPose_.setIdentity();
-  RAI::Math::MathFunc::rotateHTabout_z_axis(defaultPose_, M_PI_2);
+  rai::Math::MathFunc::rotateHTabout_z_axis(defaultPose_, M_PI_2);
   defaultPose_(0, 3) = +1.53 / 4 * 0.1;
 
   graphics.addObject(&Pole);
   graphics.addObject(&Dot);
   graphics.addObject(&Dot2);
   graphics.addObject(&arrow);
+
   graphics.setBackgroundColor(1, 1, 1, 1);
 
   Eigen::Vector3d relPos;
   relPos << -3, 0, 0;
-  std::vector<float> pos = {-100, 0, 0}, spec = {0.7, 0.7, 0.7}, amb = {0.7, 0.7, 0.7}, diff = {0.7, 0.7, 0.7};
+  rai::Vector<float> pos = {-100, 0, 0}, spec = {0.7, 0.7, 0.7}, amb = {0.7, 0.7, 0.7}, diff = {0.7, 0.7, 0.7};
 
   Graphics::RAI_graphics::LightProp lprop;
   lprop.amb_light = amb;
@@ -60,13 +61,12 @@ void Pole_Visualizer::drawWorld(HomogeneousTransform &bodyPose, double action) {
   rotmat = bodyPose.topLeftCorner(3, 3);
   pos = bodyPose.topRightCorner(3, 1);
 
-
   arrowpose.topRightCorner(3, 1) = pos;
 
   end = rotmat * end;
 
   if (action < 0) {
-    RAI::Math::MathFunc::rotateHTabout_z_axis(arrowpose, M_PI);
+    rai::Math::MathFunc::rotateHTabout_z_axis(arrowpose, M_PI);
     action = -action;
   }
   arrowpose;
@@ -75,6 +75,7 @@ void Pole_Visualizer::drawWorld(HomogeneousTransform &bodyPose, double action) {
   Dot.setPos(pos);
   Pole.setPose(bodyPose);
   Dot2.setPos(end);
+
   arrow.setPose(ht);
   arrow.setScale(action);
 

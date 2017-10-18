@@ -5,7 +5,7 @@
 #include <glog/logging.h>
 #include "shader.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 
 std::string Shader::LoadShader(const std::string &fileName) {

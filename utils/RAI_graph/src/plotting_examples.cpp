@@ -9,10 +9,10 @@
 #include <unistd.h>
 
 using namespace Eigen;
-using namespace RAI::Utils;
-using namespace RAI::Utils::Graph;
+using namespace rai::Utils;
+using namespace rai::Utils::Graph;
 
-using RAI::Utils::graph;
+using rai::Utils::graph;
 
 
 int main() {

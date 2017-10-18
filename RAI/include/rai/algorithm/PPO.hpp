@@ -45,7 +45,7 @@
 #include "rai/RAI_core"
 #include "common/PerformanceTester.hpp"
 
-namespace RAI {
+namespace rai {
 namespace Algorithm {
 
 template<typename Dtype, int StateDim, int ActionDim>
@@ -75,10 +75,10 @@ class PPO {
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
   using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
 
-  PPO(std::vector<Task_ *> &tasks,
+  PPO(rai::Vector<Task_ *> &tasks,
       ValueFunc_ *vfunction,
       Policy_ *policy,
-      std::vector<Noise_ *> &noises,
+      rai::Vector<Noise_ *> &noises,
       Acquisitor_ *acquisitor,
       Dtype lambda,
       int K,
@@ -104,9 +104,8 @@ class PPO {
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
       Ent_coeff_(Ent_coeff),
-      ld_(acquisitor) {
+      ld_(acquisitor){
 
-    Utils::logger->addVariableToLog(2, "Nominal performance", "");
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
     Utils::logger->addVariableToLog(2, "klcoef", "");
@@ -178,7 +177,7 @@ class PPO {
       bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
       dataID += advTra.cols();
     }
-    RAI::Math::MathFunc::normalize(advantage_);
+    rai::Math::MathFunc::normalize(advantage_);
     Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
@@ -186,7 +185,6 @@ class PPO {
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0, KLsum = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
-
     for (int i = 0; i < n_epoch_; i++) {
 
       Utils::timer->startTimer("Vfunction update");
@@ -267,9 +265,9 @@ class PPO {
   }
 
   /////////////////////////// Core //////////////////////////////////////////
-  std::vector<Task_ *> task_;
-  std::vector<Noise_ *> noise_;
-  std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
+  rai::Vector<Task_ *> task_;
+  rai::Vector<Noise_ *> noise_;
+  rai::Vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
   ValueFunc_ *vfunction_;
   Policy_ *policy_;
   Acquisitor_ *acquisitor_;

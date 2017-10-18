@@ -7,7 +7,7 @@
 #include "Background.hpp"
 #include "SOIL/SOIL.h"
 
-namespace RAI {
+namespace rai {
 namespace Graphics {
 namespace Obj {
 
@@ -34,7 +34,7 @@ void Background::init() {
   glBindVertexArray(0);
 }
 
-GLuint Background::loadCubemap(std::vector<std::string>& faces)
+GLuint Background::loadCubemap(rai::Vector<std::string>& faces)
 {
   GLuint textureID;
   glGenTextures(1, &textureID);
