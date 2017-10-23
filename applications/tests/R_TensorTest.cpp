@@ -44,6 +44,7 @@ int main() {
   ten3D.resize({3, 2, 2});
   std::cout << "there should be 12 numbers" << std::endl << ten3D << std::endl;
 
-
-
+  rai::Tensor<float, 1> ten1D({4}, "testTensor");
+  ten1D.setZero();
+  std::cout << ten1D[2];
 }

@@ -207,10 +207,13 @@ class Tensor {
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), tfTensor.flat<Dtype>().data(), sizeof(Dtype) * size_);
   }
 
-  Dtype *operator[](int x) {
-    return vecTens[x].flat<Dtype>().data();
-  };
+//  Dtype *operator[](int x) {
+//    return vecTens[x].flat<Dtype>().data();
+//  };
 
+  Dtype & operator[](int i) {
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  };
 
   ///////////////////////////////
   /////////// generic ///////////
