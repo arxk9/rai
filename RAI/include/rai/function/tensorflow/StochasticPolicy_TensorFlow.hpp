@@ -252,7 +252,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   virtual void forward(StateTensor &states, ActionTensor &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"action"}, vectorOfOutputs);
-    actions.copyData(vectorOfOutputs[0]);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {

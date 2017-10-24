@@ -174,7 +174,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     std::memcpy(stateTensor.flat<Dtype>().data(), states.data(), sizeof(Dtype) * states.size());
     this->tf_->run({{"state", stateTensor}, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
     std::memcpy(actions.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * actions.size());
-    h.copyData(vectorOfOutputs[1]);
+    h.copyDataFrom(vectorOfOutputs[1]);
   }
 
   ///
@@ -188,8 +188,8 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     }
 
     this->tf_->run({states, h,len}, {"action", "h_state"},{}, vectorOfOutputs);
-    h.copyData(vectorOfOutputs[1]);
-    actions.copyData(vectorOfOutputs[0]);
+    h.copyDataFrom(vectorOfOutputs[1]);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual void trainUsingGrad(const VectorXD &grad) {
