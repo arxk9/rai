@@ -11,7 +11,7 @@ int main() {
   Eigen::Matrix<float, 3, 2> eMat;
   Eigen::Tensor<float, 2> eigenTen(3, 2);
   tensorflow::Tensor tfTensor(tensorflow::DataType::DT_FLOAT, tensorflow::TensorShape({2, 3}));
-
+  ten.row(1);
   eMat.setConstant(1);
   eigenTen.setConstant(2);
   tfTensor.tensor<float, 2>().setConstant(3);
@@ -19,6 +19,7 @@ int main() {
   ten.setZero();
   std::cout << "my tensor (should be 0) " << std::endl << ten << std::endl;
   ten = eMat;
+  ten = "ten";
   std::cout << "my tensor (should be 1)" << std::endl << ten << std::endl;
   ten = eigenTen;
   std::cout << "my tensor (should be 2)" << std::endl << ten << std::endl;
@@ -28,7 +29,7 @@ int main() {
   /// checking 2d Eigen Matrix operation test
   Eigen::Vector3f eigenVec(7, 7, 7);
   Eigen::RowVector2f eigenVec2(4, 4);
-//  ten.col(0) = eigenVec;
+
   ten.row(2) = eigenVec2;
   std::cout << "my tensor (first column should be 7, 3rd row is 4)" << std::endl << ten << std::endl;
 
