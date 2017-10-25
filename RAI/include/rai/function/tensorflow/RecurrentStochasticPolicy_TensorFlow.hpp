@@ -111,7 +111,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                    {"Algo/PPO/Pg2"},
                    {},
                    vectorOfOutputs);
-    std::memcpy(grad.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
   virtual Dtype PPOgetkl(Tensor<Dtype, 3> &states,
                          Tensor<Dtype, 3> &action,

@@ -201,7 +201,6 @@ class PPO {
       LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
       Utils::timer->startTimer("Gradient computation");
       if (KL_adapt_) {
-        if (policy_->isRecurrent())
           policy_->PPOpg_kladapt(ld_.stateTensor,
                                  ld_.actionTensor,
                                  ld_.actionNoiseTensor,
@@ -209,10 +208,7 @@ class PPO {
                                  stdev_o,
                                  ld_.trajLength,
                                  policy_grad);
-        else
-          policy_->PPOpg_kladapt(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, advantage_, stdev_o, policy_grad);
       } else {
-        if (policy_->isRecurrent())
           policy_->PPOpg(ld_.stateTensor,
                          ld_.actionTensor,
                          ld_.actionNoiseTensor,
@@ -220,8 +216,6 @@ class PPO {
                          stdev_o,
                          ld_.trajLength,
                          policy_grad);
-        else
-          policy_->PPOpg(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, advantage_, stdev_o, policy_grad);
       }
 
       Utils::timer->stopTimer("Gradient computation");
@@ -231,10 +225,7 @@ class PPO {
       policy_->trainUsingGrad(policy_grad);
       Utils::timer->stopTimer("Adam update");
 
-      if (policy_->isRecurrent())
-        KL = policy_->PPOgetkl(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, stdev_o, ld_.trajLength);
-      else
-        KL = policy_->PPOgetkl(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, stdev_o);
+      KL = policy_->PPOgetkl(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, stdev_o, ld_.trajLength);
 
       LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       KLsum += KL;

@@ -259,8 +259,10 @@ class Tensor : public rai::TensorBase<Dtype, NDim> {
  public:
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
-  using TensorBase::operator=;
-  using TensorBase::operator[];
+  using TensorBase::operator =;
+  using TensorBase::operator [];
+  using TensorBase::operator std::pair<std::string, tensorflow::Tensor>;
+  using TensorBase::operator tensorflow::Tensor;
 
 };
 
@@ -362,7 +364,6 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
   }
 
   void removeCol(int colID) {
-    LOG_IF(FATAL, dim_.size() != 2) << "This is 2D Tensor method";
     tensorflow::Tensor Temp(dtype_, dim_inv_);
     memcpy(Temp.flat<Dtype>().data(),
            namedTensor_.second.template flat<Dtype>().data(),
@@ -386,7 +387,8 @@ template<typename Dtype>
 class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
 
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
-  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>, 0, Eigen::OuterStride<Eigen::Dynamic>> EigenMatStride;
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>, 0, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>> EigenMatStride;
+
   typedef Eigen::TensorMap<Eigen::Tensor<Dtype, 1>, Eigen::Aligned> EigenTensor;
   typedef rai::TensorBase<Dtype, 3> TensorBase;
 
@@ -431,7 +433,6 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
 
   /////////// 3D methods /////////
   void removeBatch(int batchId) {
-    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     tensorflow::Tensor Temp(dtype_, dim_inv_);
     memcpy(Temp.flat<Dtype>().data(),
            namedTensor_.second.template flat<Dtype>().data(),
@@ -450,33 +451,39 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
     }
   }
 
-//  typename EigenMatStride::BlockXpr col(int colId) {
-//    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
-//    EigenMatStride mat(namedTensor_.second.flat<Dtype>().data() + colId *dim_[0], dim_[0], dim_[2],Eigen::OuterStride<>(dim_[0] * dim_[1]));
-//    return mat.block(0,0, dim_[0], dim_[2]);
-//  }
-
   typename EigenMat::ColXpr col(int batchId, int colId) {
-    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + batchId * dim_[0] * dim_[1], dim_[0], dim_[1]);
     return mat.col(colId);
   }
 
   typename EigenMat::RowXpr row(int batchId, int rowId) {
-    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + batchId * dim_[0] * dim_[1], dim_[0], dim_[1]);
     return mat.row(rowId);
   }
 
+  /// row(rowId) of all the batches)
+  /// shape = dim[1] * dim[2]
+  /// [ row(0,rowId).transpose(), row(1,rowId).transpose(), ... ]
+  EigenMatStride row(int rowId) {
+    EigenMatStride mat(namedTensor_.second.template flat<Dtype>().data() + rowId, dim_[1], dim_[2], Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0] * dim_[1],dim_[0]));
+    return mat;
+  }
+
+  /// col(colId) of all the batches)
+  /// shape = dim[0] * dim[2]
+  /// [ col(0,colId), col(1,colId), ... ]
+  EigenMatStride col(int colId) {
+    EigenMatStride mat(namedTensor_.second.template flat<Dtype>().data() + colId * dim_[0], dim_[0], dim_[2],Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0] * dim_[1],1));
+    return mat;
+  }
+
   EigenMat batch(int batchId) {
-    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + batchId * dim_[0] * dim_[1], dim_[0], dim_[1]);
     return mat;
   }
 
   template<int rows, int cols>
   void partiallyFillBatch(int batchId, Eigen::Matrix<Dtype, rows, cols> &eMat) {
-    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
     std::memcpy(namedTensor_.second.template flat<Dtype>().data() + batchId * dim_[0] * dim_[1],
                 eMat.data(), sizeof(Dtype) * eMat.size());
@@ -484,7 +491,6 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
 
   template<int rows>
   void partiallyFillBatch(int batchId, rai::Vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN = 0) {
-    LOG_IF(FATAL, dim_.size() != 3) << "This is 3D Tensor method";
     LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
     for (int colId = 0; colId < eMatVec.size() - ignoreLastN; colId++)
       batch(batchId).col(colId) = eMatVec[colId];

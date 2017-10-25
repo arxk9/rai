@@ -151,6 +151,21 @@ class LearningData {
     int dataN = 0;
     for (auto &tra : traj) dataN += tra.size() - 1;
 
+    // TO DO: find better method for recurrent value function update
+    stepsTaken = int(trajAcquisitor_->stepsTaken());
+    stateBat.resize(StateDim, dataN);
+//    actionBat.resize(ActionDim, dataN);
+//    actionNoiseBat.resize(ActionDim, dataN);
+
+//    int colID = 0;
+//    for (int traID = 0; traID < traj.size(); traID++) {
+//      for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
+//        stateBat.col(colID) = traj[traID].stateTraj[timeID];
+//        actionBat.col(colID) = traj[traID].actionTraj[timeID];
+//        actionNoiseBat.col(colID++) = traj[traID].actionNoiseTraj[timeID];
+//      }
+//    }
+
     if (policy->isRecurrent()) {
 
       /////Zero padding tensor//////////////////
@@ -160,40 +175,42 @@ class LearningData {
 
       int numtra = int(traj.size());
       stateTensor.resize(StateDim, maxlen, numtra);
-      stateTensor.setZero();
       actionTensor.resize(ActionDim, maxlen, numtra);
-      actionTensor.setZero();
       actionNoiseTensor.resize(ActionDim, maxlen, numtra);
+
+      stateTensor.setZero();
+      actionTensor.setZero();
       actionNoiseTensor.setZero();
       trajLength.resize(numtra);
 
       for (int i = 0; i < numtra; i++) {
-        trajLength(i) = traj[i].stateTraj.size() - 1;
+        trajLength[i] = traj[i].stateTraj.size() - 1;
         stateTensor.partiallyFillBatch(i, traj[i].stateTraj, 1);
         actionTensor.partiallyFillBatch(i, traj[i].actionTraj, 1);
         actionNoiseTensor.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
       }
     } else {
-
       stateTensor.resize(StateDim, 1, dataN);
-      stateTensor.resize(StateDim, 1, dataN);
+      actionTensor.resize(ActionDim, 1, dataN);
+      actionNoiseTensor.resize(ActionDim, 1, dataN);
+      stateTensor.setZero();
+      actionTensor.setZero();
+      actionNoiseTensor.setZero();
+      trajLength.resize(1);
+      trajLength[0] = dataN;
 
-    }
-
-    // TO DO: find better method for recurrent value function update
-    stepsTaken = int(trajAcquisitor_->stepsTaken());
-    stateBat.resize(StateDim, dataN);
-    actionBat.resize(ActionDim, dataN);
-    actionNoiseBat.resize(ActionDim, dataN);
-
-    int colID = 0;
-    for (int traID = 0; traID < traj.size(); traID++) {
-      for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-        stateBat.col(colID) = traj[traID].stateTraj[timeID];
-        actionBat.col(colID) = traj[traID].actionTraj[timeID];
-        actionNoiseBat.col(colID++) = traj[traID].actionNoiseTraj[timeID];
+      int pos = 0;
+      for (int traID = 0; traID < traj.size(); traID++) {
+        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
+          stateBat.col(pos) = traj[traID].stateTraj[timeID];
+          actionTensor.batch(pos) = traj[traID].actionTraj[timeID];
+          actionNoiseTensor.batch(pos++) = traj[traID].actionNoiseTraj[timeID];
+        }
       }
+      stateTensor.copyDataFrom(stateBat);
+
     }
+
     // update terimnal value
     if (vfunction) {
       termValueBat.resize(1, traj.size());

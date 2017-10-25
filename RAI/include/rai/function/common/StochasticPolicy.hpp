@@ -38,28 +38,13 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) = 0;
 
   ///TRPO
-  // singlesample
-  virtual void TRPOpg(State &state,
-                      Action &action,
-                      Action &actionNoise,
-                      Advantages &adv,
-                      Action &Stdev,
-                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; };
-
-  //batch
+ //batch
   virtual void TRPOpg(StateBatch &states,
                       ActionBatch &actionBat,
                       ActionBatch &actionNoise,
                       Advantages &advs,
                       Action &Stdev,
                       VectorXD &grad) { LOG(FATAL) << "Not implemented"; };
-
-  virtual void TRPOfvp(StateBatch &states,
-                       ActionBatch &actionBat,
-                       ActionBatch &actionNoise,
-                       Advantages &advs,
-                       Action &Stdev,
-                       VectorXD &grad, VectorXD &getfvp) { LOG(FATAL) << "Not implemented"; }
 
   virtual Dtype TRPOcg(StateBatch &states,
                        ActionBatch &actionBat,

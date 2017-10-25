@@ -42,10 +42,19 @@ int main() {
   ten3D.partiallyFillBatch(1, eigenVec);
   std::cout << "1st column fo the 2rd batch of tensor should be 7" << std::endl << ten3D << std::endl;
 
-  ten3D.resize({3, 2, 2});
+  ten3D.resize({3, 4, 2});
   std::cout << "there should be 12 numbers" << std::endl << ten3D << std::endl;
 
+  ten3D.setZero();
+  for (int i = 0; i < ten3D.batches(); i++) {
+    ten3D.col(i, 1) << 1 + 3 * i, 2 + 3 * i, 3 + 3 * i;
+  }
+  std::cout << "2nd columns of each batches are nonzero" << std::endl << ten3D << std::endl;
+  std::cout << "all 2nd rows(shape = {4,2}) [ten3D.row(1)]" << std::endl << ten3D.row(1) << std::endl;
+  std::cout << "all 2nd columns(shape = {3,2}) [ten3D.col(1)]" << std::endl << ten3D.col(1) << std::endl;
+
   rai::Tensor<float, 1> ten1D({4}, "testTensor");
-  ten1D.setZero();
-  std::cout << ten1D[2];
+  for (int i = 0; i < ten1D.dim(0); i++)
+    ten1D[i] = i;
+  std::cout << "1D tensor" << std::endl << ten1D;
 }
