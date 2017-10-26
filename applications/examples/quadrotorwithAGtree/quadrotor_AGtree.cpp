@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
   Acquisitor acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
-  rai::vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
-  rai::vector<rai::Noise::NormalDistributionNoise<Dtype, ActionDim>*> noiseVector = {&noise};
+  rai::Vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
+  rai::Vector<rai::Noise::NormalDistributionNoise<Dtype, ActionDim>*> noiseVector = {&noise};
   rai::Algorithm::AG_tree<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &vfunction, &policy, noiseVector, &acquisitor, 512, 1024, 1, 1.5, 1.5, 350, 20);
   algorithm.setVisualizationLevel(1);

@@ -72,10 +72,10 @@ class SPG_gae {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
-  SPG_gae(rai::vector<Task_ *> &tasks,
+  SPG_gae(rai::Vector<Task_ *> &tasks,
           ValueFunc_ *vfunction,
           Policy_ *policy,
-          rai::vector<Noise_ *> &noises,
+          rai::Vector<Noise_ *> &noises,
           Acquisitor_ *acquisitor,
           Dtype lambda,
           int K,
@@ -170,7 +170,7 @@ class SPG_gae {
 
  private:
   void get_trajs(int numOfSteps) {
-    rai::vector<Trajectory_> rollouts;
+    rai::Vector<Trajectory_> rollouts;
     Utils::timer->startTimer("Simulation");
     numOfTra_ = std::ceil(1.1 * numOfSteps * dt / timeLimit);
     traj_.resize(numOfTra_);
@@ -201,7 +201,7 @@ class SPG_gae {
     StateBatch rolloutstartState(StateDim, numofjunct_ * K_);
     rollouts.resize(numofjunct_ * K_);
     rolloutstartState.setOnes();
-    rai::vector<std::pair<int, int> > indx;
+    rai::Vector<std::pair<int, int> > indx;
     rai::Op::VectorHelper::sampleRandomStates(traj_, VineStartPosition, int(0.3 * timeLimit / dt), indx);
 
 //    Utils::timer->startTimer("Rollout Trajectory Acquisition");
@@ -368,9 +368,9 @@ class SPG_gae {
   }
 
   /////////////////////////// Core //////////////////////////////////////////
-  rai::vector<Task_ *> task_;
-  rai::vector<Noise_ *> noise_;
-  rai::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
+  rai::Vector<Task_ *> task_;
+  rai::Vector<Noise_ *> noise_;
+  rai::Vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
   FuncApprox::ValueFunction<Dtype, StateDim> *vfunction_;
   Policy_ *policy_;
   Acquisitor_ *acquisitor_;
@@ -399,8 +399,8 @@ class SPG_gae {
   ValueBatch advantage_, bellmanErr_;
 
   /////////////////////////// trajectories //////////////////////
-  rai::vector<Trajectory_> testTraj_;
-  rai::vector<Trajectory_> traj_;
+  rai::Vector<Trajectory_> testTraj_;
+  rai::Vector<Trajectory_> traj_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
