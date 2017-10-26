@@ -160,7 +160,7 @@ void RAI_graphics::draw() {
       glReadPixels(0, 0, windowWidth_, windowHeight_, GL_BGR, GL_UNSIGNED_BYTE, pixels);
       FIBITMAP *image = FreeImage_ConvertFromRawBits(pixels, windowWidth_, windowHeight_, 3 * windowWidth_, 24,
                                                      0xFF0000, 0x00FF00, 0x0000FF, false);
-      FreeImage_Save(FIF_PNG, image, (image_dir + "/" + imageFileName + ".png").c_str(), 0);
+      FreeImage_Save(FIF_BMP, image, (image_dir + "/" + imageFileName + ".bmp").c_str(), 0);
       FreeImage_Unload(image);
       delete[] pixels;
     } else {
@@ -247,9 +247,9 @@ void RAI_graphics::images2Video() {
 
 void *RAI_graphics::images2Video_inThread(void *obj) {
   std::lock_guard<std::mutex> guard(mtx);
-  std::string command = "ffmpeg -r 60 -i " + image_dir + "/%07d.png -s 800x600 -c:v libx264 -crf 5 " + image_dir + "/" + videoFileName + ".mp4 >nul 2>&1";
+  std::string command = "ffmpeg -r 60 -i " + image_dir + "/%07d.bmp -s 800x600 -c:v libx264 -crf 5 " + image_dir + "/" + videoFileName + ".mp4 >nul 2>&1";
   system(command.c_str());
-  command = "rm -rf " + image_dir + "/*.png";
+  command = "rm -rf " + image_dir + "/*.bmp";
   system(command.c_str());
   return NULL;
 }

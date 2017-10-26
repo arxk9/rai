@@ -3,7 +3,7 @@
 #include <iostream>
 #include <glog/logging.h>
 
-namespace rai {
+namespace RAI {
 namespace Graphics {
 Display::Display(int width, int height, const std::string &title) {
   SDL_Init(SDL_INIT_EVERYTHING);
