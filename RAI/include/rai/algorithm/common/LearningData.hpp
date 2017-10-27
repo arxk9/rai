@@ -45,13 +45,10 @@ class LearningData {
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq) {
-    stateTensor.setName("state");
-    actionTensor.setName("sampled_oa");
-    actionNoiseTensor.setName("noise_oa");
+  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq),stateTensor("state"),
+                                       actionTensor("sampled_oa"),
+                                       actionNoiseTensor("noise_oa"),trajLength("length"){
   }
-  LearningData(TupleAcquisitor_ *acq) : tupleAcquisitor_(acq) {}
-
   void acquireVineTrajForNTimeSteps(rai::Vector<Task_ *> &task,
                                     rai::Vector<Noise_ *> &noise,
                                     Policy_ *policy,

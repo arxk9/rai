@@ -31,5 +31,6 @@ class MLP(bc.GraphStructure):
             top = tf.matmul(top, wo) + bo
 
         self.output = tf.identity(top)
+        print(self.output)
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         self.a_param_list = self.l_param_list

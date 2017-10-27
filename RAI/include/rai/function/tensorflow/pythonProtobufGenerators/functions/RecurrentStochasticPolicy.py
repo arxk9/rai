@@ -36,7 +36,9 @@ class RecurrentStochasticPolicy(pc.Policy):
         old_stdv = tf.placeholder(dtype, shape=[1, action_dim], name='stdv_o')
         old_action_sampled = tf.placeholder(dtype, shape=[None, None, action_dim], name='sampled_oa')
         old_action_noise = tf.placeholder(dtype, shape=[None, None, action_dim], name='noise_oa')
-        advantage_in = tf.placeholder(dtype, shape=[None, 1, 1], name='advantage')  # [batch, len]
+        advantage_in = tf.placeholder(dtype, shape=[None], name='advantage')
+        advantage = tf.reshape(advantage_in, shape=[-1])
+
 
         # Algorithm params
         kl_coeff = tf.Variable(tf.ones(dtype=dtype, shape=[1, 1]), name='kl_coeff')
@@ -75,14 +77,13 @@ class RecurrentStochasticPolicy(pc.Policy):
             logp_n = tf.boolean_mask(util.log_likelihood(action, action_stdev, old_action_sampled), mask)
             logp_old = tf.boolean_mask(util.log_likelihood(old_action_noise, old_stdv), mask)
             ratio = tf.reshape(tf.exp(logp_n - logp_old), [-1])  # 1D
-            adv = tf.reshape(advantage_in, [-1])
             ent = tf.reduce_sum(wo + .5 * tf.cast(tf.log(2.0 * np.pi * np.e), dtype=dtype), axis=-1)
             meanent = tf.reduce_mean(ent)
 
             with tf.name_scope('PPO'):
-                surr1 = tf.multiply(ratio, adv)
+                surr1 = tf.multiply(ratio, advantage)
                 clip_rate = clip_param[0]
-                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), adv)
+                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
 
                 kl_ = tf.boolean_mask(

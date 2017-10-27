@@ -66,7 +66,7 @@ class TensorBase {
   // copy construct from Eigen Matrix
   template<int Rows, int Cols>
   TensorBase(const Eigen::Matrix<Dtype, Rows, Cols> &emat, const std::string name = "") {
-    LOG_IF(FATAL, NDim != 2) << "Specify the reshape";
+    LOG_IF(FATAL, NDim != 2) << "Specify the shape";
     rai::Vector<int> dim = {emat.rows(), emat.cols()};
     init(dim, name);
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
@@ -83,27 +83,41 @@ class TensorBase {
   ////////////////////////////
   /////// casting methods ////
   ////////////////////////////
-  explicit operator std::pair<std::string, tensorflow::Tensor>() {
+  operator std::pair<std::string, tensorflow::Tensor>() {
     return namedTensor_;
   };
 
-  explicit operator tensorflow::Tensor() {
+  operator tensorflow::Tensor() {
     return namedTensor_.second;
   };
 
   template<int Rows, int Cols>
   operator Eigen::Matrix<Dtype, Rows, Cols>() {
-    if (dim_.size() == 1) {
+    LOG_IF(FATAL,dim_.size()>2) << "This method works upto 2D Tensor";
+    LOG_IF(FATAL, Rows != dim_[0] || Cols != dim_[1]) << "dimension mismatch";
+      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
+      return mat;
+  };
+
+  operator Eigen::Matrix<Dtype, -1, -1>() const {
+    LOG_IF(FATAL,dim_.size()>2) << "This method works upto 2D Tensor";
+    if(dim_.size()==1){
       EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], 1);
       return mat;
-    } else {
-      LOG_IF(FATAL, Rows != dim_[0] || Cols != dim_[1]) << "dimension mismatch";
+    }else {
       EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
       return mat;
     }
   };
 
-  explicit operator EigenTensor() {
+  operator Eigen::Matrix<Dtype, -1, 1>() {
+      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], 1);
+      return mat;
+  };
+
+
+
+  operator EigenTensor() {
     EigenTensor mat(namedTensor_.second.flat<Dtype>().data(), esizes_);
     return mat;
   }

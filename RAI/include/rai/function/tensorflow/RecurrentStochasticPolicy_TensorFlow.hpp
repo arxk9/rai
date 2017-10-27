@@ -30,15 +30,10 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   typedef Eigen::Matrix<Dtype, -1, -1> testMatrix;
   typedef Eigen::Matrix<Dtype, 2 * actionDim, 2 * actionDim> FimInActionSpace;
   typedef Eigen::Matrix<Dtype, 2 * actionDim, -1> JacobianWRTparam;
-  typedef rai::Tensor<Dtype, 1> rTensor1D;
-  typedef rai::Tensor<Dtype, 2> rTensor2D;
 
-
-//  using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
+  using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim>;
-  using Qfunction_tensorflow = Qfunction_TensorFlow<Dtype, stateDim, actionDim>;
-  using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
 
   typedef typename PolicyBase::State State;
@@ -50,8 +45,10 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
-  typedef typename PolicyBase::StateTensor StateTensor;
-  typedef typename PolicyBase::ActionTensor ActionTensor;
+
+  typedef typename PolicyBase::Tensor1D Tensor1D;
+  typedef typename PolicyBase::Tensor2D Tensor2D;
+  typedef typename PolicyBase::Tensor3D Tensor3D;
 
   RecurrentStochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -62,7 +59,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                                        std::string graphParam,
                                        Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
-          "RecurrentStochasticPolicy", computeMode, graphName, graphParam, learningRate),h("h_init") {
+          "RecurrentStochasticPolicy", computeMode, graphName, graphParam, learningRate), h("h_init") {
     hdim = this->getInnerStatesize();
     h.resize(hdim, 0);
   }
@@ -75,52 +72,50 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   ///PPO
-  virtual void PPOpg(StateTensor &states,
-                     ActionTensor &action,
-                     ActionTensor &actionNoise,
-                     Tensor<Dtype, 1> &advs,
+  virtual void PPOpg(Tensor3D &states,
+                     Tensor3D &action,
+                     Tensor3D &actionNoise,
+                     Advantages &advs,
                      Action &Stdev,
                      Tensor<Dtype, 1> &len,
                      VectorXD &grad) {
+    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor<Dtype, 1> advsT(advs, {advs.cols()}, "advantage");
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.batches()}, 0, "h_init");
 
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.batches()},0, "h_init");
-    Tensor<Dtype, 1> StdevT(Stdev, "stdv_o");
-    Tensor<Dtype, 1> gradT(grad, "Algo/PPO/Pg2");
-
-    this->tf_->run({states, action, actionNoise, hiddenState, advs, StdevT, len},
+    this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, len},
                    {"Algo/PPO/Pg"},
                    {},
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual void PPOpg_kladapt(StateTensor  &states,
-                             ActionTensor &action,
-                             ActionTensor &actionNoise,
-                             Tensor<Dtype, 1> &advs,
+  virtual void PPOpg_kladapt(Tensor3D &states,
+                             Tensor3D &action,
+                             Tensor3D &actionNoise,
+                             Advantages &advs,
                              Action &Stdev,
-                             Tensor<Dtype, 1> &len,
+                             Tensor1D &len,
                              VectorXD &grad) {
     Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)}, "h_init");
     hiddenState.setZero();
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 1> gradT(grad, {grad.rows()}, "Algo/PPO/Pg2");
+    Tensor<Dtype, 1> advsT(advs, {advs.cols()}, "advantage");
 
-    this->tf_->run({states, action, actionNoise, hiddenState, advs, StdevT, len},
+    this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, len},
                    {"Algo/PPO/Pg2"},
                    {},
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual Dtype PPOgetkl(Tensor<Dtype, 3> &states,
-                         Tensor<Dtype, 3> &action,
-                         Tensor<Dtype, 3> &actionNoise,
+  virtual Dtype PPOgetkl(Tensor3D &states,
+                         Tensor3D &action,
+                         Tensor3D &actionNoise,
                          Action &Stdev,
-                         Tensor<Dtype, 1> &len) {
+                         Tensor1D &len) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)}, "h_init");
-    hiddenState.setZero();
+    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
     this->tf_->run({states, action, actionNoise, hiddenState, StdevT, len},
@@ -161,12 +156,13 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     // Step
     // input shape = [dim, #batch]
     // state shape = [state_size, #batch]
-    tensorflow::Tensor stateTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, stateDim}));
+    tensorflow::Tensor
+        stateTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, stateDim}));
 //    tensorflow::Tensor hTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), hdim}));
 //    tensorflow::Tensor len_tensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, 1}));
 //    VectorXD len_vec = VectorXD::Constant(states.cols(), 1);
 
-    rai::Tensor<Dtype,1> len({states.cols()},1,"length");
+    rai::Tensor<Dtype, 1> len({states.cols()}, 1, "length");
     if (h.cols() != states.cols()) {
       h.resize(hdim, states.cols());
       h.setZero();
@@ -178,16 +174,16 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   ///
-  virtual void forward(StateTensor &states, ActionTensor &actions) {
+  virtual void forward(Tensor3D &states, Tensor3D &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    rai::Tensor<Dtype,1> len({states.batches()},1,"length");
+    rai::Tensor<Dtype, 1> len({states.batches()}, 1, "length");
 
     if (h.cols() != states.batches()) {
       h.resize(hdim, states.batches());
       h.setZero();
     }
 
-    this->tf_->run({states, h,len}, {"action", "h_state"},{}, vectorOfOutputs);
+    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
     h.copyDataFrom(vectorOfOutputs[1]);
     actions.copyDataFrom(vectorOfOutputs[0]);
   }
@@ -233,7 +229,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     int coldim = h.cols() - 1;
     LOG_IF(FATAL, coldim < 0) << "Initialize Innerstates first (Call reset)";
     LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
-  h.removeCol(n);
+    h.removeCol(n);
   }
 
   virtual int getInnerStatesize() {
@@ -242,12 +238,12 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     return vectorOfOutputs[0](0);
   }
 
-  int hiddenStateDim (){ return hdim; }
+  int hiddenStateDim() { return hdim; }
 
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
   int hdim = 0;
-  rTensor2D h;
+  Tensor2D h;
 };
 }//namespace FuncApprox
 }//namespace rai

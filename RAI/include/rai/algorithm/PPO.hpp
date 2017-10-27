@@ -104,7 +104,7 @@ class PPO {
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
       Ent_coeff_(Ent_coeff),
-      ld_(acquisitor),advantage_("advantage"){
+      ld_(acquisitor){
 
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
@@ -173,16 +173,16 @@ class PPO {
     int dataID = 0;
     for (auto &tra : ld_.traj) {
       ValueBatch advTra = tra.getGAE(vfunction_, discFactor, lambda_, termCost);
-//      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
-      memcpy(advantage_.data() + dataID, advTra.data(),sizeof(Dtype)*advTra.cols());
+      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
+//      memcpy(advantage_.data() + dataID, advTra.data(),sizeof(Dtype)*advTra.cols());
       bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
       dataID += advTra.cols();
     }
     Eigen::Matrix<Dtype,-1,1> temp;
-    temp.resize(ld_.stateBat.cols(),1); // TODO: fix err, clean up
-    temp = advantage_;
-    rai::Math::MathFunc::normalize(temp);
-    advantage_ = temp;
+//    temp.resize(ld_.stateBat.cols(),1); // TODO: fix err, clean up
+//    temp = advantage_;
+    rai::Math::MathFunc::normalize(advantage_);
+//    advantage_ = temp;
 
     Utils::timer->stopTimer("GAE");
 
@@ -289,8 +289,7 @@ class PPO {
   bool KL_adapt_;
 
   /////////////////////////// batches
-  ValueBatch bellmanErr_;
-  rai::Tensor<Dtype, 1> advantage_;
+  ValueBatch advantage_ , bellmanErr_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;

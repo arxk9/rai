@@ -23,8 +23,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
   using PolicyBase = StochasticPolicy<Dtype, stateDim, actionDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim>;
-  using Qfunction_tensorflow = Qfunction_TensorFlow<Dtype, stateDim, actionDim>;
-  using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
+
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
 
   typedef typename PolicyBase::State State;
@@ -33,13 +32,13 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::ActionBatch ActionBatch;
 
   //// working
-  typedef typename PolicyBase::ActionTensor ActionTensor;
-  typedef typename PolicyBase::StateTensor StateTensor;
-  ////
-
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
+
+  typedef typename PolicyBase::Tensor1D Tensor1D;
+  typedef typename PolicyBase::Tensor2D Tensor2D;
+  typedef typename PolicyBase::Tensor3D Tensor3D;
 
   StochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -116,36 +115,39 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   ///PPO
-  virtual void PPOpg(rai::Tensor<Dtype, 3> &states,
-                     rai::Tensor<Dtype, 3> &action,
-                     rai::Tensor<Dtype, 3> &actionNoise,
-                     rai::Tensor<Dtype, 1> &advs,
+  virtual void PPOpg(Tensor3D &states,
+                     Tensor3D &action,
+                     Tensor3D &actionNoise,
+                     Advantages &advs,
                      Action &Stdev,
-                     rai::Tensor<Dtype, 1> &len,
+                     Tensor1D &len,
                      VectorXD &grad){
-    Tensor<Dtype, 1> StdevT(Stdev, "stdv_o");
+    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor<Dtype, 1> advsT(advs,{advs.cols()}, "advantage");
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+
     this->tf_->run({states,
                     action,
                     actionNoise,
-                    advs,
+                    advsT,
                     StdevT},
                    {"Algo/PPO/Pg"},
                    {},
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual void PPOpg_kladapt(StateTensor  &states,
-                             ActionTensor &action,
-                             ActionTensor &actionNoise,
-                             Tensor<Dtype, 1> &advs,
+  virtual void PPOpg_kladapt(Tensor3D  &states,
+                             Tensor3D &action,
+                             Tensor3D &actionNoise,
+                             Advantages &advs,
                              Action &Stdev,
-                             Tensor<Dtype, 1> &len,
+                             Tensor1D &len,
                              VectorXD &grad){
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor<Dtype, 1> advsT(advs,{advs.cols()}, "advantage");
 
-    this->tf_->run({states, action, actionNoise, advs, StdevT},
+    this->tf_->run({states, action, actionNoise, advsT, StdevT},
                    {"Algo/PPO/Pg2"},
                    {},
                    vectorOfOutputs);
@@ -153,11 +155,11 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
 
-  virtual Dtype PPOgetkl(Tensor<Dtype, 3> &states,
-                         Tensor<Dtype, 3> &action,
-                         Tensor<Dtype, 3> &actionNoise,
+  virtual Dtype PPOgetkl(Tensor3D &states,
+                         Tensor3D &action,
+                         Tensor3D &actionNoise,
                          Action &Stdev,
-                         Tensor<Dtype, 1> &len)
+                         Tensor1D &len)
   {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
@@ -185,7 +187,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     VectorXD input;
     input.resize(3);
     input << kl_coeff, ent_coeff, clip_param;
-
+    
     this->tf_->run({{"PPO_params_placeholder", input}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
 
@@ -206,7 +208,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   ///
-  virtual void forward(StateTensor &states, ActionTensor &actions) {
+  virtual void forward(Tensor3D &states,Tensor3D &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"action"}, vectorOfOutputs);
     actions.copyDataFrom(vectorOfOutputs[0]);
