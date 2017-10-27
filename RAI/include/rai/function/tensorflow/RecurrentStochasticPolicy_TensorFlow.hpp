@@ -97,8 +97,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                              Action &Stdev,
                              Tensor1D &len,
                              VectorXD &grad) {
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)}, "h_init");
-    hiddenState.setZero();
+    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor<Dtype, 1> advsT(advs, {advs.cols()}, "advantage");
@@ -153,14 +152,8 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
 
   virtual void forward(StateBatch &states, ActionBatch &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    // Step
-    // input shape = [dim, #batch]
-    // state shape = [state_size, #batch]
     tensorflow::Tensor
         stateTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, stateDim}));
-//    tensorflow::Tensor hTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), hdim}));
-//    tensorflow::Tensor len_tensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, 1}));
-//    VectorXD len_vec = VectorXD::Constant(states.cols(), 1);
 
     rai::Tensor<Dtype, 1> len({states.cols()}, 1, "length");
     if (h.cols() != states.cols()) {
@@ -203,14 +196,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
                     {"trainUsingGrad/learningRate", inputrate}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
-  }
-
-  virtual void test(StateBatch &states, ActionBatch &actions) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
-
-    this->tf_->forward({{"state", states}},
-                       {"testout"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
   }
 
   virtual bool isRecurrent() {

@@ -140,7 +140,7 @@ class CommonFunc {
     states.resize(StateDim,1,numOfTraj);
     actions.resize(ActionDim,1,numOfTraj);
 
-    states.copyData(startingState);
+    states.copyDataFrom(startingState);
 
     for (int trajID = 0; trajID < numOfTraj; trajID++) {
       Reduce[trajID] = false;
@@ -186,7 +186,6 @@ class CommonFunc {
       actions.resize(ActionDim,1,reducedIdx);
       timer->startTimer("Policy evaluation");
       policy->forward(states, actions);
-
       timer->stopTimer("Policy evaluation");
 
       for (int trajID = 0; trajID < reducedIdx; trajID++) {
@@ -283,7 +282,6 @@ class CommonFunc {
 
     /////////////check initial states & initialize termTypeBatch
     for (int trajID = 0; trajID < numOfTraj; trajID++) {
-//      state_tp = stateBatch.col(trajID);
       state_tp = startingState.col(trajID); ////
 
       if (taskset[0]->isTerminalState(state_tp)) {
@@ -444,15 +442,16 @@ class CommonFunc {
 
     LOG_IF(FATAL, threadN != noises.size()) << "# Noise: " << noises.size() << ", # Thread: " << threadN << " mismatch";
 
-    StateBatch state_t_Batch(StateDim, threadN);
-    ActionBatch action_t_Batch(ActionDim, threadN);
+    StateTensor states({StateDim, 1 , threadN}, "state");
+    ActionTensor actions({ActionDim, 1 , threadN}, "action");
+
     State tempState;
     unsigned colId = 0;
     for (auto &task : tasks) {
       task->getState(tempState);
-      state_t_Batch.col(colId++) = tempState;
+      states.batch(colId++) = tempState;
     }
-    policy->forward(state_t_Batch, action_t_Batch);
+    policy->forward(states,actions);
 
     State state_t[threadN], state_tp1[threadN];
     Dtype cost[threadN];
@@ -461,8 +460,8 @@ class CommonFunc {
 
     for (int i = 0; i < threadN; i++) {
       termType_tp1[i] = TerminationType::not_terminated;
-      action_t[i] = action_t_Batch.col(i) + noises[i]->sampleNoise();
-      state_t[i] = state_t_Batch.col(i);
+      action_t[i] = actions.batch(i) + noises[i]->sampleNoise();
+      state_t[i] = states.batch(i);
     }
 
 #pragma omp parallel for schedule(dynamic)

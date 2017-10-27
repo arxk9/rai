@@ -32,9 +32,15 @@ class DeterministicPolicy : public virtual Policy <Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
   typedef typename PolicyBase::JacoqWRTparam JacoqWRTparam;
 
+  typedef typename PolicyBase::Tensor1D Tensor1D;
+  typedef typename PolicyBase::Tensor2D Tensor2D;
+  typedef typename PolicyBase::Tensor3D Tensor3D;
+
   virtual void forward(State &state, Action &action) = 0;
 
   virtual void forward(StateBatch &states, ActionBatch &actions) = 0;
+
+  virtual void forward(Tensor3D &states, Tensor3D &actions) =0;
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) = 0;
 

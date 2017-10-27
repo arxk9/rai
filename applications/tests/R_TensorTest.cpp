@@ -4,10 +4,9 @@
 
 #include "rai/RAI_Tensor.hpp"
 
-void test(Eigen::Matrix<float, -1, -1> &samples);
-void test2(std::pair<std::string, tensorflow::Tensor> samples);
+void test(Eigen::Matrix<float, -1, -1> ten2D);
+void test2(std::pair<std::string, tensorflow::Tensor> ten);
 
-static inline void normalize(Eigen::Matrix<float, -1, 1> samples);
 
 int main() {
 
@@ -63,30 +62,14 @@ int main() {
     ten1D[i] = i;
   std::cout << "1D tensor" << std::endl << ten1D << std::endl;
 
-
-  Eigen::Matrix<float,-1,-1> dummy;
-  dummy.resize(2,2);
-  dummy.setZero();
-  test(dummy);
-  test(ten.eMat());
-
-  test2(ten1D);
-
-  normalize(ten1D);
-  std::cout << "1D tensor" << std::endl << ten1D << std::endl;
-
-}
-void test(Eigen::Matrix<float, -1, -1> &samples) {
-  std::cout <<"casting to eigenMat" << samples << std::endl;
-}
-void test2(std::pair<std::string, tensorflow::Tensor> samples){
-std::cout <<"casting to tfTensor" << samples.first << std::endl;
+  test(ten);
+  test2(ten);
 }
 
-static inline void normalize(Eigen::Matrix<float, -1, 1> samples) {
-  Eigen::Matrix<float, 1, -1> centered = samples.array() - samples.mean();
-  float std = std::sqrt(centered.array().square().sum() / (samples.cols() - 1));
+void test(Eigen::Matrix<float, -1, -1> ten2D){
+  std::cout <<"casting to eigenMat"  << std::endl << ten2D << std::endl;
+}
 
-  samples = centered / std;
-  std::cout<<samples;
+void test2(std::pair<std::string, tensorflow::Tensor> ten){
+std::cout <<"casting to tfTensor"  << std::endl << ten.first << std::endl;
 }

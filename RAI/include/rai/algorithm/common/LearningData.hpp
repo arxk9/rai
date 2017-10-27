@@ -154,14 +154,12 @@ class LearningData {
 //    actionBat.resize(ActionDim, dataN);
 //    actionNoiseBat.resize(ActionDim, dataN);
 
-//    int colID = 0;
-//    for (int traID = 0; traID < traj.size(); traID++) {
-//      for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-//        stateBat.col(colID) = traj[traID].stateTraj[timeID];
-//        actionBat.col(colID) = traj[traID].actionTraj[timeID];
-//        actionNoiseBat.col(colID++) = traj[traID].actionNoiseTraj[timeID];
-//      }
-//    }
+    int colID = 0;
+    for (int traID = 0; traID < traj.size(); traID++) {
+      for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
+        stateBat.col(colID++) = traj[traID].stateTraj[timeID];
+      }
+    }
 
     if (policy->isRecurrent()) {
 
@@ -199,13 +197,11 @@ class LearningData {
       int pos = 0;
       for (int traID = 0; traID < traj.size(); traID++) {
         for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-          stateBat.col(pos) = traj[traID].stateTraj[timeID];
           actionTensor.batch(pos) = traj[traID].actionTraj[timeID];
           actionNoiseTensor.batch(pos++) = traj[traID].actionNoiseTraj[timeID];
         }
       }
       stateTensor.copyDataFrom(stateBat);
-
     }
 
     // update terimnal value

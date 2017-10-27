@@ -146,7 +146,7 @@ class TRPO_gae {
     LOG(INFO) << "Vfunction update";
     VFupdate();
     LOG(INFO) << "Policy update";
-    Dtype TRPOloss = TRPOUpdater();
+    TRPOUpdater();
   }
 
   void set_cg_daming(Dtype cgd) { cg_damping = cgd; }
@@ -168,7 +168,7 @@ class TRPO_gae {
     LOG(INFO) << "value function loss : " << loss;
   }
 
-  Dtype TRPOUpdater() {
+  void TRPOUpdater() {
     Utils::timer->startTimer("policy Training");
     /// Update Advantage
     advantage_.resize(ld_.stateBat.cols());
@@ -193,13 +193,13 @@ class TRPO_gae {
 
     LOG(INFO) << "stdev :" << stdev_o.transpose();
     Utils::timer->startTimer("Gradient computation");
-    policy_->TRPOpg(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, advantage_, stdev_o, policy_grad);
+    policy_->TRPOpg(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, advantage_, stdev_o, policy_grad);
     Utils::timer->stopTimer("Gradient computation");
 
     Utils::timer->startTimer("Conjugate gradient");
-    Dtype CGerror = policy_->TRPOcg(ld_.stateBat,
-                                    ld_.actionBat,
-                                    ld_.actionNoiseBat,
+    Dtype CGerror = policy_->TRPOcg(ld_.stateTensor,
+                                    ld_.actionTensor,
+                                    ld_.actionNoiseTensor,
                                     advantage_,
                                     stdev_o,
                                     policy_grad,
@@ -220,8 +220,6 @@ class TRPO_gae {
     policy_->setLP(parameter_);
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
-
-    return costOfParam(parameter_);
   }
 
   void updatePolicyVar() {
@@ -264,7 +262,7 @@ class TRPO_gae {
 
   inline Dtype costOfParam(VectorXD &param) {
     policy_->setLP(param);
-    return policy_->TRPOloss(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, advantage_, stdev_o);
+    return policy_->TRPOloss(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, advantage_, stdev_o);
   }
 
   /////////////////////////// Core //////////////////////////////////////////

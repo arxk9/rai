@@ -56,13 +56,8 @@ class PPO {
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, 1> Value;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
-  typedef Eigen::Matrix<Dtype, StateDim, ActionDim> JacobianStateResAct;
-  typedef Eigen::Matrix<Dtype, 1, ActionDim> JacobianCostResAct;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> JacobianActResParam;
-  typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> FimInActionSapce;
   typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> Covariance;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
@@ -99,7 +94,6 @@ class PPO {
       KL_adapt_(KL_adapt),
       n_epoch_(n_epoch),
       cov_in(Cov),
-      cg_damping(0.1),
       KL_thres_(KL_thres),
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
@@ -149,6 +143,7 @@ class PPO {
                                      numOfBranchPerJunct_,
                                      vfunction_,
                                      vis_lv_);
+
     LOG(INFO) << "PPO Updater";
     PPOUpdater();
   }
@@ -165,7 +160,7 @@ class PPO {
     /// Update Advantage
     advantage_.resize(ld_.stateBat.cols());
     bellmanErr_.resize(ld_.stateBat.cols());
-    ValueBatch valuePred(ld_.stateBat.cols()), valueTest(ld_.stateBat.cols());
+    ValueBatch valuePred(ld_.stateBat.cols());
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
 
@@ -174,15 +169,11 @@ class PPO {
     for (auto &tra : ld_.traj) {
       ValueBatch advTra = tra.getGAE(vfunction_, discFactor, lambda_, termCost);
       advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
-//      memcpy(advantage_.data() + dataID, advTra.data(),sizeof(Dtype)*advTra.cols());
       bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
       dataID += advTra.cols();
     }
     Eigen::Matrix<Dtype,-1,1> temp;
-//    temp.resize(ld_.stateBat.cols(),1); // TODO: fix err, clean up
-//    temp = advantage_;
     rai::Math::MathFunc::normalize(advantage_);
-//    advantage_ = temp;
 
     Utils::timer->stopTimer("GAE");
 
@@ -191,10 +182,17 @@ class PPO {
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0, KLsum = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
+
+    ValueBatch testt;
+    testt.setZero();
+    vfunction_->forward(ld_.stateBat,testt);
+
     for (int i = 0; i < n_epoch_; i++) {
 
       Utils::timer->startTimer("Vfunction update");
+
       loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
+
       Utils::timer->stopTimer("Vfunction update");
 
       policy_->getStdev(stdev_o);
@@ -219,6 +217,7 @@ class PPO {
       }
 
       Utils::timer->stopTimer("Gradient computation");
+
       LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 
       Utils::timer->startTimer("Adam update");
@@ -244,7 +243,7 @@ class PPO {
 
 ///Logging
     LOG(INFO) << "Mean KL divergence = " << KLsum / n_epoch_;
-    LOG(INFO) << "KL coefficient = " << KL_coeff_;
+    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
     Utils::logger->appendData("Stdev", ld_.stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klcoef", ld_.stepsTaken(), KL_coeff_);
@@ -277,7 +276,6 @@ class PPO {
   int numOfBranchPerJunct_;
   int n_epoch_;
   Dtype cov_in;
-  Dtype cg_damping;
   Dtype termCost;
   Dtype discFactor;
   Dtype dt;

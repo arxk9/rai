@@ -29,12 +29,13 @@ class StochasticPolicy(pc.Policy):
         Stdev_assign = tf.assign(wo, tf.log(stdev_assign_placeholder), name='assignStdev')
         Stdev_get = tf.exp(wo, name='getStdev')
 
-        tangent_in = tf.placeholder(dtype, shape=[1, None], name='tangent')
+        tangent_in = tf.placeholder(dtype,  name='tangent')
         old_stdv = tf.placeholder(dtype, shape=[1, action_dim], name='stdv_o')  # TODO : Change to tf.Variable
         old_action_in = tf.placeholder(dtype, name='sampled_oa')
         old_action_noise_in = tf.placeholder(dtype, name='noise_oa')
         advantage_in = tf.placeholder(dtype, shape=[None], name='advantage')
 
+        tangent_ = tf.reshape(tangent_in, [1, -1])
         old_action_sampled = tf.reshape(old_action_in, [-1, action_dim])
         old_action_noise = tf.reshape(old_action_noise_in, [-1, action_dim])
         advantage = tf.reshape(advantage_in, shape=[-1])
@@ -98,7 +99,8 @@ class StochasticPolicy(pc.Policy):
                     return util.flatgrad(temp, gs.l_param_list)
 
                 # Conjugate Gradient Descent
-                out1, out2 = util.CG_tf(getfvp, tangent_in, 100, 1e-15)
+
+                out1, out2 = util.CG_tf(getfvp, tangent_, 100, 1e-15)
                 Ng = tf.identity(out1, name='Cg')
                 err = tf.identity(out2, name='Cgerror')
 

@@ -94,28 +94,21 @@ class TensorBase {
   template<int Rows, int Cols>
   operator Eigen::Matrix<Dtype, Rows, Cols>() {
     LOG_IF(FATAL,dim_.size()>2) << "This method works upto 2D Tensor";
-    LOG_IF(FATAL, Rows != dim_[0] || Cols != dim_[1]) << "dimension mismatch";
+//    LOG_IF(FATAL, Rows != dim_[0] || Cols != dim_[1]) << "dimension mismatch";
       EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
       return mat;
   };
-
-  operator Eigen::Matrix<Dtype, -1, -1>() const {
-    LOG_IF(FATAL,dim_.size()>2) << "This method works upto 2D Tensor";
-    if(dim_.size()==1){
-      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], 1);
-      return mat;
-    }else {
-      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
-      return mat;
-    }
-  };
-
-  operator Eigen::Matrix<Dtype, -1, 1>() {
-      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], 1);
-      return mat;
-  };
-
-
+//
+//  operator Eigen::Matrix<Dtype, -1, -1>() const {
+//    LOG_IF(FATAL,dim_.size()>2) << "This method works upto 2D Tensor";
+//    if(dim_.size()==1){
+//      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], 1);
+//      return mat;
+//    }else {
+//      EigenMat mat(namedTensor_.second.flat<Dtype>().data(), dim_[0], dim_[1]);
+//      return mat;
+//    }
+//  };
 
   operator EigenTensor() {
     EigenTensor mat(namedTensor_.second.flat<Dtype>().data(), esizes_);

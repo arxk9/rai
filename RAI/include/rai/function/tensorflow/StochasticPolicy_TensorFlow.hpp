@@ -60,74 +60,85 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
   ///TRPO
   //batch
-  virtual void TRPOpg(StateBatch &states,
-                      ActionBatch &actionBat,
-                      ActionBatch &actionNoise,
+  virtual void TRPOpg(Tensor3D &states,
+                      Tensor3D &actions,
+                      Tensor3D &actionNoise,
                       Advantages &advs,
                       Action &Stdev,
                       VectorXD &grad) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states},
-                    {"sampled_oa", actionBat},
-                    {"noise_oa", actionNoise},
-                    {"advantage", advs},
-                    {"stdv_o", Stdev}
-                   },
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+
+    this->tf_->run({states,
+                    actions,
+                    actionNoise,
+                    advsT,
+                    StdevT},
                    {"Algo/TRPO/Pg"},
                    {},
                    vectorOfOutputs);
-    grad = vectorOfOutputs[0];
+    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
 
-  virtual Dtype TRPOcg(StateBatch &states,
-                       ActionBatch &actionBat,
-                       ActionBatch &actionNoise,
+  virtual Dtype TRPOcg(Tensor3D &states,
+                       Tensor3D &actions,
+                       Tensor3D &actionNoise,
                        Advantages &advs,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states},
-                    {"sampled_oa", actionBat},
-                    {"noise_oa", actionNoise},
-                    {"advantage", advs},
-                    {"stdv_o", Stdev},
-                    {"tangent", grad}
-                   },
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+    Tensor1D gradT(grad, {grad.rows()}, "tangent");
+    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+
+    this->tf_->run({states,
+                    actions,
+                    actionNoise,
+                    advsT,
+                    StdevT,
+                    gradT},
                    {"Algo/TRPO/Cg", "Algo/TRPO/Cgerror"}, {}, vectorOfOutputs);
-    getng = vectorOfOutputs[0];
-    return vectorOfOutputs[1](0);
+    std::memcpy(getng.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * getng.size());
+//    Dtype loss = *(vectorOfOutputs[1].flat<Dtype>().data());
+    Dtype loss = 0;
+    return loss;
   }
-  virtual Dtype TRPOloss(StateBatch &states,
-                         ActionBatch &actionBat,
-                         ActionBatch &actionNoise,
+
+  virtual Dtype TRPOloss(Tensor3D &states,
+                         Tensor3D &actions,
+                         Tensor3D &actionNoise,
                          Advantages &advs,
                          Action &Stdev) {
-    rai::Vector<MatrixXD> loss;
-    this->tf_->run({{"state", states},
-                    {"sampled_oa", actionBat},
-                    {"noise_oa", actionNoise},
-                    {"advantage", advs},
-                    {"stdv_o", Stdev}
-                   },
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+
+    this->tf_->run({states,
+                    actions,
+                    actionNoise,
+                    advsT,
+                    StdevT},
                    {"Algo/TRPO/loss"},
-                   {}, loss);
-    return loss[0](0);
+                   {}, vectorOfOutputs);
+    Dtype loss = *(vectorOfOutputs[0].flat<Dtype>().data());
+    return loss;
   }
 
   ///PPO
   virtual void PPOpg(Tensor3D &states,
-                     Tensor3D &action,
+                     Tensor3D &actions,
                      Tensor3D &actionNoise,
                      Advantages &advs,
                      Action &Stdev,
                      Tensor1D &len,
-                     VectorXD &grad){
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 1> advsT(advs,{advs.cols()}, "advantage");
+                     VectorXD &grad) {
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
 
     this->tf_->run({states,
-                    action,
+                    actions,
                     actionNoise,
                     advsT,
                     StdevT},
@@ -136,16 +147,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual void PPOpg_kladapt(Tensor3D  &states,
+  virtual void PPOpg_kladapt(Tensor3D &states,
                              Tensor3D &action,
                              Tensor3D &actionNoise,
                              Advantages &advs,
                              Action &Stdev,
                              Tensor1D &len,
-                             VectorXD &grad){
+                             VectorXD &grad) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 1> advsT(advs,{advs.cols()}, "advantage");
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
 
     this->tf_->run({states, action, actionNoise, advsT, StdevT},
                    {"Algo/PPO/Pg2"},
@@ -156,15 +167,14 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   virtual Dtype PPOgetkl(Tensor3D &states,
-                         Tensor3D &action,
+                         Tensor3D &actions,
                          Tensor3D &actionNoise,
                          Action &Stdev,
-                         Tensor1D &len)
-  {
+                         Tensor1D &len) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({states, action, actionNoise, StdevT},
+    this->tf_->run({states, actions, actionNoise, StdevT},
                    {"Algo/PPO/kl_mean"},
                    {},
                    vectorOfOutputs);
@@ -187,7 +197,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     VectorXD input;
     input.resize(3);
     input << kl_coeff, ent_coeff, clip_param;
-    
+
     this->tf_->run({{"PPO_params_placeholder", input}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
 
@@ -203,12 +213,10 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     rai::Vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", state}},
                        {"action"}, vectorOfOutputs);
-
     action = vectorOfOutputs[0];
   }
 
-  ///
-  virtual void forward(Tensor3D &states,Tensor3D &actions) {
+  virtual void forward(Tensor3D &states, Tensor3D &actions) {
     rai::Vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"action"}, vectorOfOutputs);
     actions.copyDataFrom(vectorOfOutputs[0]);
