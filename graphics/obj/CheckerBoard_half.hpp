@@ -19,7 +19,7 @@ class CheckerBoard_half : public Object {
 
  public:
 
-  CheckerBoard_half(int gridSize, float width, float length, rai::Vector<float> color1);
+  CheckerBoard_half(int gridSize, float width, float length, std::vector<float> color1);
 
 };
 

@@ -60,7 +60,7 @@ public:
     appendNewData(data);
   }
 
-  const rai::Vector<rai::Vector<float> >& getData(){
+  const std::vector<std::vector<float> >& getData(){
     return data_;
   }
 
@@ -84,7 +84,7 @@ private:
   int dimension_ = 1;
   std::string name_;
   std::string description_;
-  rai::Vector<rai::Vector<float> > data_;
+  std::vector<std::vector<float> > data_;
   int dimension_idx = 0;
 
 };

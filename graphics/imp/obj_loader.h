@@ -19,20 +19,20 @@ struct OBJIndex {
 
 class IndexedModel {
  public:
-  rai::Vector<glm::vec3> positions;
-  rai::Vector<glm::vec2> texCoords;
-  rai::Vector<glm::vec3> normals;
-  rai::Vector<unsigned int> indices;
+  std::vector<glm::vec3> positions;
+  std::vector<glm::vec2> texCoords;
+  std::vector<glm::vec3> normals;
+  std::vector<unsigned int> indices;
 
   void CalcNormals();
 };
 
 class OBJModel {
  public:
-  rai::Vector<OBJIndex> OBJIndices;
-  rai::Vector<glm::vec3> vertices;
-  rai::Vector<glm::vec2> uvs;
-  rai::Vector<glm::vec3> normals;
+  std::vector<OBJIndex> OBJIndices;
+  std::vector<glm::vec3> vertices;
+  std::vector<glm::vec2> uvs;
+  std::vector<glm::vec3> normals;
   bool hasUVs;
   bool hasNormals;
 
@@ -40,7 +40,7 @@ class OBJModel {
 
   IndexedModel ToIndexedModel();
  private:
-  unsigned int FindLastVertexIndex(const rai::Vector<OBJIndex *> &indexLookup,
+  unsigned int FindLastVertexIndex(const std::vector<OBJIndex *> &indexLookup,
                                    const OBJIndex *currentIndex,
                                    const IndexedModel &result);
   void CreateOBJFace(const std::string &line);

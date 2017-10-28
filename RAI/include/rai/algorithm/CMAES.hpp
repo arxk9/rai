@@ -227,7 +227,7 @@ class CMAES {
 
   ///// donot call this method if you are using CMAES. This is only for adapting covariance only
   template<typename Derived, typename Dtype>
-  void useCovarianceUpdate(rai::Vector<Eigen::Matrix<Derived, 4, 1> > &samples, rai::Vector<Dtype> &values) {
+  void useCovarianceUpdate(std::vector<Eigen::Matrix<Derived, 4, 1> > &samples, std::vector<Dtype> &values) {
     LOG_IF(FATAL, samples.size() != arx.cols())<<"sample number don't match";
     for(int i=0; i< samples.size(); i++){
       arx.col(i) = samples[i].cwiseQuotient(StandardDev);

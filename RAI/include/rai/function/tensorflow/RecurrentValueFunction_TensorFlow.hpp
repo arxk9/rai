@@ -36,7 +36,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   ~RecurrentValueFunction_TensorFlow() {};
 
   virtual void forward(State &state, RecurrentState &rcrntState, Dtype &value) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", state},
                     {"init_rcrnt_state", rcrntState},
                     {"updateBNparams", this->notUpdateBN}},
@@ -45,7 +45,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   }
 
   virtual void forward(StateBatch &states, RecurrentStateBatch &rcrntStates, ValueBatch &values) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
                     {"init_rcrnt_state", rcrntStates}
                        { "updateBNparams", this->notUpdateBN }},
@@ -53,10 +53,10 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
     values = vectorOfOutputs[0];
   }
 
-  virtual Dtype performOneSolverIter(rai::Vector<StateBatch> &states,
-                                     rai::Vector<RecurrentStateBatch> &rcrntStates,
-                                     rai::Vector<ValueBatch> &values) {
-    rai::Vector<MatrixXD> loss, dummy;
+  virtual Dtype performOneSolverIter(std::vector<StateBatch> &states,
+                                     std::vector<RecurrentStateBatch> &rcrntStates,
+                                     std::vector<ValueBatch> &values) {
+    std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
                     {"targetValue", values},
                     {"new_rcrnt_state", rcrntStates},

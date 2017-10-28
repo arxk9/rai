@@ -25,10 +25,10 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
   using ReplayMemory_ = Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
 
  public:
-  virtual Dtype acquire(rai::Vector<Task_ *> &taskset,
+  virtual Dtype acquire(std::vector<Task_ *> &taskset,
                         Policy_ *policy,
-                        rai::Vector<Noise_ *> &noise,
-                        rai::Vector<Trajectory> &trajectorySet,
+                        std::vector<Noise_ *> &noise,
+                        std::vector<Trajectory> &trajectorySet,
                         StateBatch &startingState,
                         double timeLimit,
                         bool countStep,

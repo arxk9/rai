@@ -32,8 +32,7 @@ class NormalDistributionNoise : public Noise<Dtype, noiseVectorDimension> {
   virtual NoiseVector &noisify(NoiseVector &originalVector) {
     for (int dimID = 0; dimID < noiseVectorDimension; dimID++)
       noiseVector_(dimID) = rn_.sampleNormal() * this->noiseLevel_;
-    noiseVector_ = chol_ * noiseVector_;
-    originalVector = originalVector + chol_ * noiseVector_;
+    originalVector += chol_ * noiseVector_;
     return originalVector;
   }
 

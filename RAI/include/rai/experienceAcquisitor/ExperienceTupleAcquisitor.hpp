@@ -23,9 +23,9 @@ class ExperienceTupleAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> 
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
  public:
-  virtual void acquire(rai::Vector<Task_ *> &task,
+  virtual void acquire(std::vector<Task_ *> &task,
                        Policy_ *policy,
-                       rai::Vector<Noise_ *> &noise,
+                       std::vector<Noise_ *> &noise,
                        ReplayMemory_ *memory,
                        unsigned stepsToTake) = 0;
 

@@ -27,10 +27,10 @@ class TrajectoryAcquisitor_MultiThreadBatch : public TrajectoryAcquisitor<Dtype,
   using ReplayMemory_ = Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
 
  public:
-  Dtype acquire(rai::Vector<Task_ *> &taskset,
+  Dtype acquire(std::vector<Task_ *> &taskset,
                 Policy_ *policy,
-                rai::Vector<Noise_ *> &noise,
-                rai::Vector<Trajectory_> &trajectorySet,
+                std::vector<Noise_ *> &noise,
+                std::vector<Trajectory_> &trajectorySet,
                 StateBatch &startingState,
                 double timeLimit,
                 bool countStep,

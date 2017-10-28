@@ -30,7 +30,7 @@ Pole_Visualizer::Pole_Visualizer() :
 
   Eigen::Vector3d relPos;
   relPos << -3, 0, 0;
-  rai::Vector<float> pos = {-100, 0, 0}, spec = {0.7, 0.7, 0.7}, amb = {0.7, 0.7, 0.7}, diff = {0.7, 0.7, 0.7};
+  std::vector<float> pos = {-100, 0, 0}, spec = {0.7, 0.7, 0.7}, amb = {0.7, 0.7, 0.7}, diff = {0.7, 0.7, 0.7};
 
   Graphics::RAI_graphics::LightProp lprop;
   lprop.amb_light = amb;

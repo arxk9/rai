@@ -24,8 +24,8 @@ class Background {
   void draw();
 
  private:
-  rai::Vector<std::string> faces;
-  GLuint loadCubemap(rai::Vector<std::string>& faces);
+  std::vector<std::string> faces;
+  GLuint loadCubemap(std::vector<std::string>& faces);
   GLuint skyboxVAO, skyboxVBO;
   GLuint cubemapTexture;
   GLfloat skyboxVertices[108] = {

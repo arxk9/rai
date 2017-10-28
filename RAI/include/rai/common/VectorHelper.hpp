@@ -18,7 +18,7 @@ class VectorHelper {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   template<typename Dtype, int stateDim, int actionDim, typename Derived>
-  static void collectTerminalStates(rai::Vector<Memory::Trajectory < Dtype, stateDim, actionDim>
+  static void collectTerminalStates(std::vector<Memory::Trajectory < Dtype, stateDim, actionDim>
   > &trajSet,
   Eigen::MatrixBase<Derived> &output
   ) {
@@ -27,10 +27,10 @@ class VectorHelper {
   }
 
   template<typename Dtype, int stateDim, int actionDim, typename Derived>
-  static void sampleRandomStates(rai::Vector<Memory::Trajectory < Dtype, stateDim, actionDim>> &trajSet,
+  static void sampleRandomStates(std::vector<Memory::Trajectory < Dtype, stateDim, actionDim>> &trajSet,
   Eigen::MatrixBase<Derived> &output,
   int tailSteps,
-      rai::Vector<std::pair<int, int> >
+      std::vector<std::pair<int, int> >
   &indx) {
     RandomNumberGenerator <Dtype> rn_;
     int sampleNumber = output.cols();
@@ -46,7 +46,7 @@ class VectorHelper {
   }
 
   template<typename Dtype, int stateDim, int actionDim, typename Derived>
-  static void collectNthStates(int n, rai::Vector<Memory::Trajectory < Dtype, stateDim, actionDim>
+  static void collectNthStates(int n, std::vector<Memory::Trajectory < Dtype, stateDim, actionDim>
   > &trajSet,
   Eigen::MatrixBase<Derived> &output
   ) {
@@ -55,7 +55,7 @@ class VectorHelper {
   }
 
   template<typename Dtype>
-  static Dtype computeAverage(rai::Vector<Dtype> vec) {
+  static Dtype computeAverage(std::vector<Dtype> vec) {
     Dtype sum = Dtype(0);
     for (auto &elem : vec)
       sum += elem;
@@ -63,7 +63,7 @@ class VectorHelper {
   }
 
   template<typename Dtype, int Dim>
-  static void VectorofMatricestoTensor3D(const rai::Vector<Eigen::Matrix<Dtype,Dim,-1> > &input, Eigen::Tensor<Dtype,3> &output){
+  static void VectorofMatricestoTensor3D(const std::vector<Eigen::Matrix<Dtype,Dim,-1> > &input, Eigen::Tensor<Dtype,3> &output){
 
     int len = input[0].cols();
     int batchnum = input.size();
@@ -76,7 +76,7 @@ class VectorHelper {
   }
 
   template<typename Dtype, int Dim>
-  static void Tensor3DtoVectorofMatrices(const Eigen::Tensor<Dtype,3> &input, rai::Vector<Eigen::Matrix<Dtype,Dim,-1> > &output){
+  static void Tensor3DtoVectorofMatrices(const Eigen::Tensor<Dtype,3> &input, std::vector<Eigen::Matrix<Dtype,Dim,-1> > &output){
     output.clear();
     //(dim,maxlen,batch)
     int len = input.dimension(1);

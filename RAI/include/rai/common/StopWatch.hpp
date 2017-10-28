@@ -41,8 +41,8 @@ class StopWatch{
  private:
   timeval timevalNow;
   double startTime;
-  rai::Vector<std::string> names;
-  rai::Vector<double> startTimes;
+  std::vector<std::string> names;
+  std::vector<double> startTimes;
 
 };
 

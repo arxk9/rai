@@ -39,21 +39,21 @@ class DeterministicModel_TensorFlow : public virtual DeterministicModel<Dtype, i
   }
 
   virtual void forward(Input &input, Output &output) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"input", input}},
                        {"output"}, vectorOfOutputs);
     output = vectorOfOutputs[0];
   }
 
   virtual void forward(InputBatch &inputs, OutputBatch &outputs) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"input", inputs}},
                        {"output"}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
   }
 
   virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &outputs) {
-    rai::Vector<MatrixXD> loss, dummy;
+    std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"input", inputs},
                     {"targetOutput", outputs},
                     {"squareLoss/learningRate", this->learningRate_}}, {"squareLoss/loss"},

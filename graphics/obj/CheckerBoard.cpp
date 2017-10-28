@@ -8,7 +8,7 @@ namespace rai {
 namespace Graphics {
 namespace Obj {
 
-CheckerBoard::CheckerBoard(int gridSize, float width, float length, rai::Vector<float> color1, rai::Vector<float> color2):
+CheckerBoard::CheckerBoard(int gridSize, float width, float length, std::vector<float> color1, std::vector<float> color2):
 board1(gridSize, width, length, color1), board2(gridSize, width, length, color2){
   objs.push_back(&board1);
   objs.push_back(&board2);

@@ -24,7 +24,6 @@
  *
  */
 
-
 namespace rai {
 template<typename Dtype, int NDim>
 class TensorBase {
@@ -41,22 +40,22 @@ class TensorBase {
   }
 
   // empty data constructor
-  TensorBase(const rai::Vector<int> dim, const std::string name = "") {
+  TensorBase(const std::vector<int> dim, const std::string name = "") {
     init(dim, name);
   }
 
   // constant constructor
-  TensorBase(const rai::Vector<int> dim, const Dtype constant, const std::string name = "") {
+  TensorBase(const std::vector<int> dim, const Dtype constant, const std::string name = "") {
     init(dim, name);
     eTensor().setConstant(constant);
   }
 
 
-///Eigen Tensor constructor is abigous with rai::Vector<int> constructor ...
+///Eigen Tensor constructor is abigous with std::vector<int> constructor ...
 //  // copy constructor from Eigen Tensor
 //  Tensor(const Eigen::Tensor<Dtype, NDim> &etensor, const std::string name = "") {
 //    auto dims = etensor.dimensions();
-//    rai::Vector<int> dim(dims.size());
+//    std::vector<int> dim(dims.size());
 //    for (int i = 0; i < dims.size(); i++)
 //      dim[i] = dims[i];
 //    Tensor(dim, name);
@@ -67,14 +66,14 @@ class TensorBase {
   template<int Rows, int Cols>
   TensorBase(const Eigen::Matrix<Dtype, Rows, Cols> &emat, const std::string name = "") {
     LOG_IF(FATAL, NDim != 2) << "Specify the shape";
-    rai::Vector<int> dim = {emat.rows(), emat.cols()};
+    std::vector<int> dim = {emat.rows(), emat.cols()};
     init(dim, name);
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
   }
 
   // this constructor is used when the resulting tensor dim is not 2D
   template<int Rows, int Cols>
-  TensorBase(const Eigen::Matrix<Dtype, Rows, Cols> &emat, rai::Vector<int> dim, const std::string name = "") {
+  TensorBase(const Eigen::Matrix<Dtype, Rows, Cols> &emat, std::vector<int> dim, const std::string name = "") {
     init(dim, name);
     LOG_IF(FATAL, emat.size() != size_) << "size mismatch";
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
@@ -145,7 +144,7 @@ class TensorBase {
     return namedTensor_.second;
   }
 
-  rai::Vector<tensorflow::Tensor> &output() {
+  std::vector<tensorflow::Tensor> &output() {
     return vecTens;
   }
 
@@ -203,14 +202,14 @@ class TensorBase {
   ///////////////////////////////
   const std::string &getName() const { return namedTensor_.first; }
   void setName(const std::string &name) { namedTensor_.first = name; }
-  const rai::Vector<int> &dim() const { return dim_; }
+  const std::vector<int> &dim() const { return dim_; }
   const int dim(int idx) const { return dim_[idx]; }
   int rows() { return dim_[0]; }
   int cols() { return dim_[1]; }
   int batches() { return dim_[2]; }
 
   /// you lose all data calling resize
-  void resize(const rai::Vector<int> dim) {
+  void resize(const std::vector<int> dim) {
     LOG_IF(FATAL, NDim != dim.size()) << "tensor rank mismatch";
     dim_inv_.Clear();
     size_ = 1;
@@ -227,7 +226,7 @@ class TensorBase {
 
  protected:
 
-  void init(const rai::Vector<int> dim, const std::string name = "") {
+  void init(const std::vector<int> dim, const std::string name = "") {
     LOG_IF(FATAL, dim.size() != NDim)
     << "specified dimension differs from the Dimension in the template parameter";
     namedTensor_.first = name;
@@ -252,11 +251,11 @@ class TensorBase {
 
   tensorflow::DataType dtype_;
   std::pair<std::string, tensorflow::Tensor> namedTensor_;
-  rai::Vector<int> dim_;
+  std::vector<int> dim_;
   tensorflow::TensorShape dim_inv_; /// tensorflow dimension
   long int size_;
   Eigen::DSizes<Eigen::DenseIndex, NDim> esizes_;
-  rai::Vector<tensorflow::Tensor> vecTens;
+  std::vector<tensorflow::Tensor> vecTens;
 };
 
 /// Tensor methods
@@ -302,7 +301,7 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
 
   /// you lose all data calling resize
   void resize(int n) {
-    rai::Vector<int> dim = {n};
+    std::vector<int> dim = {n};
     resize(dim);
   }
 };
@@ -347,7 +346,7 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
   /// you lose all data calling resize
   void resize(int rows, int cols) {
-    rai::Vector<int> dim = {rows, cols};
+    std::vector<int> dim = {rows, cols};
     resize(dim);
   }
 
@@ -357,7 +356,7 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
     memcpy(Temp.flat<Dtype>().data(),
            namedTensor_.second.template flat<Dtype>().data(),
            sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
-    rai::Vector<int> dim = {rows, cols};
+    std::vector<int> dim = {rows, cols};
     resize(dim);
     if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
       eTensor().setZero();
@@ -414,7 +413,7 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
 
   /// you lose all data calling resize
   void resize(int rows, int cols, int batches) {
-    rai::Vector<int> dim = {rows, cols, batches};
+    std::vector<int> dim = {rows, cols, batches};
     resize(dim);
   }
 
@@ -423,7 +422,7 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
     memcpy(Temp.flat<Dtype>().data(),
            namedTensor_.second.template flat<Dtype>().data(),
            sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
-    rai::Vector<int> dim = {rows, cols, batches};
+    std::vector<int> dim = {rows, cols, batches};
     resize(dim);
     if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
       eTensor().setZero();
@@ -497,7 +496,7 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   }
 
   template<int rows>
-  void partiallyFillBatch(int batchId, rai::Vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN = 0) {
+  void partiallyFillBatch(int batchId, std::vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN = 0) {
     LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
     for (int colId = 0; colId < eMatVec.size() - ignoreLastN; colId++)
       batch(batchId).col(colId) = eMatVec[colId];

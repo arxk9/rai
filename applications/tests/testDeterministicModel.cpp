@@ -36,7 +36,7 @@ int main() {
 
   target.read((char*)targetT.data(), 575916*sizeof(double));
   target.close();
-  rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+  std::vector<tensorflow::Tensor> vectorOfOutputs;
 
   rai::Utils::Graph::FigProp2D prop("time", "torque", "model");
   prop.size = "1200,800";

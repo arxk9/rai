@@ -113,7 +113,7 @@ class RandomNumberGenerator {
   }
 
   template<typename Derived>
-  void shuffleSTDVector(rai::Vector<Derived> &order) {
+  void shuffleSTDVector(std::vector<Derived> &order) {
     boost::variate_generator<boost::mt19937 &, boost::uniform_int<> >
         random_number_shuffler(rngGenerator, boost::uniform_int<>());
     std::random_shuffle(order.begin(), order.end(), random_number_shuffler);
@@ -125,8 +125,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix.cols());
 
     /// sampling the order
-    rai::Vector<int> order;
-    rai::Vector<bool> needSuffling(colSize, true);
+    std::vector<int> order;
+    std::vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;
@@ -150,8 +150,8 @@ class RandomNumberGenerator {
     }
   }
 
-  rai::Vector<unsigned> getNrandomSubsetIdx (unsigned nOfElem, unsigned nOfSubElem) {
-    rai::Vector<unsigned> memoryIdx(nOfSubElem);
+  std::vector<unsigned> getNrandomSubsetIdx (unsigned nOfElem, unsigned nOfSubElem) {
+    std::vector<unsigned> memoryIdx(nOfSubElem);
     ///// randomly sampling memory indeces
     for (unsigned i = 0; i < nOfSubElem; i++) {
       memoryIdx[i] = intRand(0, nOfElem - 1);
@@ -174,8 +174,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix1.cols());
 
     /// sampling the order
-    rai::Vector<int> order;
-    rai::Vector<bool> needSuffling(colSize, true);
+    std::vector<int> order;
+    std::vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;
@@ -216,8 +216,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix1.cols());
 
     /// sampling the order
-    rai::Vector<int> order;
-    rai::Vector<bool> needSuffling(colSize, true);
+    std::vector<int> order;
+    std::vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;
@@ -263,8 +263,8 @@ class RandomNumberGenerator {
     int colSize = int(matrix1.cols());
 
     /// sampling the order
-    rai::Vector<int> order;
-    rai::Vector<bool> needSuffling(colSize, true);
+    std::vector<int> order;
+    std::vector<bool> needSuffling(colSize, true);
 
     order.resize(colSize);
     for (int i = 0; i < colSize; i++) order[i] = i;

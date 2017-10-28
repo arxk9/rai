@@ -15,7 +15,7 @@ int main() {
 
   OrnsteinUhlenbeck ou(0.15, 0.3);
 
-  rai::Vector<Dtype> x, noiseSamples;
+  std::vector<Dtype> x, noiseSamples;
   for (int i = 0; i < 1000; ++i) {
     x.push_back(i);
     Action action = Action::Zero();

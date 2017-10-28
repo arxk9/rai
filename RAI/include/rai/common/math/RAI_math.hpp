@@ -234,7 +234,7 @@ class MathFunc {
   }
 
   template<typename Dtype>
-  static inline void normalize(rai::Vector<Dtype> &samples) {
+  static inline void normalize(std::vector<Dtype> &samples) {
     Eigen::Matrix<Dtype, 1, -1> sampleEigen(1, samples.size());
     memcpy(sampleEigen.data(), &samples[0], sizeof(Dtype) * samples.size());
     normalize(sampleEigen);
@@ -259,7 +259,7 @@ class MathFunc {
   /// keeping track of the indices. if you do not care about index, use std::sort
   /// assending order
   template<typename Dtype, typename IndType>
-  static inline void sort ( rai::Vector<Dtype>& value, rai::Vector<IndType>& indx){
+  static inline void sort ( std::vector<Dtype>& value, std::vector<IndType>& indx){
     unsigned i, j,  flag = 1;    // set flag to 1 to start first pass
     Dtype temp; // holding variable
     IndType temp2;

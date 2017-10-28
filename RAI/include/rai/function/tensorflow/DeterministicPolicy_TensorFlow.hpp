@@ -43,27 +43,27 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
   }
 
   virtual void forward(State &state, Action &action) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", state}},
                        {"action"}, vectorOfOutputs);
     action = vectorOfOutputs[0];
   }
 
   virtual void forward(StateBatch &states, ActionBatch &actions) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", states}},
                        {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];
   }
 
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"action"}, vectorOfOutputs);
     actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-    rai::Vector<MatrixXD> loss, dummy;
+    std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
                     {"targetAction", actions},
                     {"trainUsingTargetAction/learningRate", this->learningRate_}}, {"trainUsingTargetAction/loss"},
@@ -80,7 +80,7 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     this->tf_->run({{"state", states},
                     {"trainUsingCritic/gradientFromCritic", gradients},
                     {"trainUsingCritic/learningRate", this->learningRate_}}, {},
@@ -96,8 +96,8 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-    rai::Vector<MatrixXD> output;
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> output;
+    std::vector<MatrixXD> dummy;
     this->tf_->run({{"state", states},
                     {"gradQwrtParamMethod/gradientFromCritic", gradients}},
                    {"gradQwrtParamMethod/gradientQwrtParam"},
@@ -107,13 +107,13 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
   }
 
   void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
-    rai::Vector<MatrixXD> temp;
+    std::vector<MatrixXD> temp;
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_Param"}, {}, temp);
     jacobian = temp[0];
   }
 
   void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
-    rai::Vector<MatrixXD> temp;
+    std::vector<MatrixXD> temp;
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_State"}, {}, temp);
     jacobian = temp[0];
   }

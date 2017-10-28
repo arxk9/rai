@@ -22,7 +22,7 @@ class Biped_simplified : public SuperObject {
   ~Biped_simplified();
   void init();
   void destroy();
-  void setPose(rai::Vector<HomogeneousTransform> &bodyPose);
+  void setPose(std::vector<HomogeneousTransform> &bodyPose);
   rai::Graphics::Obj::Object* basePtr(){ return &base; }
 
   rai::Graphics::Obj::Object* footlPtr(){ return &foot_l; }
@@ -46,7 +46,7 @@ class Biped_simplified : public SuperObject {
   rai::Graphics::Obj::Sphere foot_l;
   rai::Graphics::Obj::Sphere foot_r;
 
-  rai::Vector<HomogeneousTransform> defaultPose_;
+  std::vector<HomogeneousTransform> defaultPose_;
 };
 
 }

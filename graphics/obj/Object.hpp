@@ -49,9 +49,9 @@ class Object {
 
   void setTransform(Transform& trans);
 
-  void setLightProp(rai::Vector<float>& amb, rai::Vector<float>& diff, rai::Vector<float>& spec, float shine);
+  void setLightProp(std::vector<float>& amb, std::vector<float>& diff, std::vector<float>& spec, float shine);
 
-  void setColor(rai::Vector<float> colorL);
+  void setColor(std::vector<float> colorL);
 
   void setTransparency(float transparency);
 
@@ -73,10 +73,10 @@ class Object {
 
   void usingTempTransform(bool utt) {tempTransformOn = utt;};
 
-  void getColor(rai::Vector<float>& clr);
-  void getLightPropAmb(rai::Vector<float>& amb);
-  void getLightPropDiff(rai::Vector<float>& diff);
-  void getLightPropSpec(rai::Vector<float>& spec);
+  void getColor(std::vector<float>& clr);
+  void getLightPropAmb(std::vector<float>& amb);
+  void getLightPropDiff(std::vector<float>& diff);
+  void getLightPropSpec(std::vector<float>& spec);
   void getShiness(float& shine);
 
  protected:
@@ -85,18 +85,18 @@ class Object {
   Transform tempTransform;
   bool tempTransformOn = false;
   glm::mat4 scaleMat_;
-  rai::Vector<float> color_ = {0.7, 0.7, 0.7};
-  rai::Vector<float> amb_m = {0.3, 0.3, 0.3};
-  rai::Vector<float> diff_m = {1.0,1.0,1.0};
-  rai::Vector<float> spec_m = {1,1,1};
+  std::vector<float> color_ = {0.7, 0.7, 0.7};
+  std::vector<float> amb_m = {0.3, 0.3, 0.3};
+  std::vector<float> diff_m = {1.0,1.0,1.0};
+  std::vector<float> spec_m = {1,1,1};
   float transparency_ = 1.0;
   float shininess = 100;
-  rai::Vector<glm::vec3> colorsCoords;
+  std::vector<glm::vec3> colorsCoords;
   bool visible = true;
-  rai::Vector<glm::vec3> positions;
-  rai::Vector<glm::vec2> texCoords;
-  rai::Vector<glm::vec3> normals;
-  rai::Vector<unsigned int> indices;
+  std::vector<glm::vec3> positions;
+  std::vector<glm::vec2> texCoords;
+  std::vector<glm::vec3> normals;
+  std::vector<unsigned int> indices;
   static const unsigned int NUM_BUFFERS = 5;
   GLuint m_vertexArrayObject;
   GLuint m_vertexArrayBuffers[NUM_BUFFERS];

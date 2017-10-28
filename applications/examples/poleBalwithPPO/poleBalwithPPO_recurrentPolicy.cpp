@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
   omp_set_num_threads(nThread);
 
   ////////////////////////// Define task ////////////////////////////
-  rai::Vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
-  rai::Vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
+  std::vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
+  std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
   Dtype Stdev = 1;
 
   NoiseCovariance covariance = NoiseCovariance::Identity() * Stdev;
-  rai::Vector<Noise> noiseVec(nThread, Noise(covariance));
-  rai::Vector<Noise *> noiseVector;
+  std::vector<Noise> noiseVec(nThread, Noise(covariance));
+  std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
 

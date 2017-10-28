@@ -65,7 +65,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states}}, {"action", "stdev"}, {}, vectorOfOutputs);
     means = vectorOfOutputs[0];
     stdev = vectorOfOutputs[1].col(0);
@@ -81,7 +81,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                      VectorXD &grad) {
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor<Dtype, 1> advsT(advs, {advs.cols()}, "advantage");
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.batches()}, 0, "h_init");
 
     this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, len},
@@ -98,7 +98,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                              Tensor1D &len,
                              VectorXD &grad) {
     Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor<Dtype, 1> advsT(advs, {advs.cols()}, "advantage");
 
@@ -113,7 +113,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                          Tensor3D &actionNoise,
                          Action &Stdev,
                          Tensor1D &len) {
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
     Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
@@ -125,18 +125,18 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   virtual void setStdev(const Action &Stdev) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     this->tf_->run({{"Stdev_placeholder", Stdev}}, {}, {"assignStdev"}, dummy);
   }
 
   virtual void getStdev(Action &Stdev) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"Stdev_placeholder", Stdev}}, {"getStdev"}, {}, vectorOfOutputs);
     Stdev = vectorOfOutputs[0];
   }
 
   virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     VectorXD input;
     input.resize(3);
     input << kl_coeff, ent_coeff, clip_param;
@@ -144,14 +144,14 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   virtual void forward(State &state, Action &action) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", state}},
                        {"action"}, vectorOfOutputs);
     action = vectorOfOutputs[0];
   }
 
   virtual void forward(StateBatch &states, ActionBatch &actions) {
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     tensorflow::Tensor
         stateTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, stateDim}));
 
@@ -168,7 +168,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
 
   ///
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     rai::Tensor<Dtype, 1> len({states.batches()}, 1, "length");
 
     if (h.cols() != states.batches()) {
@@ -182,7 +182,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   virtual void trainUsingGrad(const VectorXD &grad) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
                     {"trainUsingGrad/learningRate", this->learningRate_}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
@@ -190,7 +190,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) { return 0; }
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     VectorXD inputrate(1);
     inputrate(0) = learningrate;
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
@@ -218,7 +218,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   virtual int getInnerStatesize() {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
     return vectorOfOutputs[0](0);
   }

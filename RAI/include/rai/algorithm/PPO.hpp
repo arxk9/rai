@@ -70,10 +70,10 @@ class PPO {
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
   using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
 
-  PPO(rai::Vector<Task_ *> &tasks,
+  PPO(std::vector<Task_ *> &tasks,
       ValueFunc_ *vfunction,
       Policy_ *policy,
-      rai::Vector<Noise_ *> &noises,
+      std::vector<Noise_ *> &noises,
       Acquisitor_ *acquisitor,
       Dtype lambda,
       int K,
@@ -261,9 +261,9 @@ class PPO {
   }
 
   /////////////////////////// Core //////////////////////////////////////////
-  rai::Vector<Task_ *> task_;
-  rai::Vector<Noise_ *> noise_;
-  rai::Vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
+  std::vector<Task_ *> task_;
+  std::vector<Noise_ *> noise_;
+  std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
   ValueFunc_ *vfunction_;
   Policy_ *policy_;
   Acquisitor_ *acquisitor_;

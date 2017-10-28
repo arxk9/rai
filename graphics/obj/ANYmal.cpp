@@ -23,10 +23,15 @@ ANYmal::ANYmal():
     shank_rf(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_shank_2_RF.dae", 0.001),
     shank_lh(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_shank_2_LH.dae", 0.001),
     shank_rh(std::string(getenv("RAI_ROOT")) + "/graphics/obj/ANYmal/anymal_shank_2_RH.dae", 0.001),
-    foot_lf(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
-    foot_rf(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
-    foot_lh(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
-    foot_rh(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001){
+//    foot_lf(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
+//    foot_rf(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
+//    foot_lh(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001),
+//    foot_rh(std::string(getenv("RAI_ROOT"))  + "/graphics/obj/ANYmal/anymal_optoforce.dae", 0.001)
+foot_lf(0.025),
+foot_rf(0.025),
+foot_lh(0.025),
+foot_rh(0.025)
+{
   objs.push_back(&base);
 
   objs.push_back(&hip_lf);
@@ -70,6 +75,7 @@ ANYmal::ANYmal():
   rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[11], -0.5*M_PI);
   rai::Math::MathFunc::rotateHTabout_x_axis(defaultPose_[11], M_PI);
   rai::Math::MathFunc::rotateHTabout_y_axis(defaultPose_[11], 0.5*M_PI);
+
 }
 
 ANYmal::~ANYmal(){}
@@ -86,7 +92,7 @@ void ANYmal::destroy(){
   delete shader;
 }
 
-void ANYmal::setPose(rai::Vector<HomogeneousTransform> &bodyPose) {
+void ANYmal::setPose(std::vector<HomogeneousTransform> &bodyPose) {
   for (int i = 0; i < objs.size(); i++) {
     HomogeneousTransform ht = bodyPose[i] * defaultPose_[i];
     objs[i]->setPose(ht);

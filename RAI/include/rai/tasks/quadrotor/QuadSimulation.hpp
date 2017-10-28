@@ -135,7 +135,7 @@ class QuadSimulation {
   double timebegin;
   int timeDiscrete = 0;
   double time = 0;
-  rai::Vector<std::pair<Dtype, Position> > traj;
+  std::vector<std::pair<Dtype, Position> > traj;
 
 };
 

@@ -39,13 +39,13 @@ void testTensorFlow(){
     Tensor b(DT_FLOAT, TensorShape());
     b.scalar<float>()() = 2.0;
 
-    rai::Vector<std::pair<string, tensorflow::Tensor>> inputs = {
+    std::vector<std::pair<string, tensorflow::Tensor>> inputs = {
             { "a", a },
             { "b", b },
     };
 
     // The session will initialize the outputs
-    rai::Vector<tensorflow::Tensor> outputs;
+    std::vector<tensorflow::Tensor> outputs;
 
     // Run the session, evaluating our "c" operation from the graph
     status = session->Run(inputs, {"c"}, {}, &outputs);

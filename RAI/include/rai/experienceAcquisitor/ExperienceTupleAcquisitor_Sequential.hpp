@@ -20,9 +20,9 @@ class ExperienceTupleAcquisitor_Sequential : public ExperienceTupleAcquisitor<Dt
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
  public:
-  virtual void acquire(rai::Vector<Task_ *> &task,
+  virtual void acquire(std::vector<Task_ *> &task,
                        Policy_ *policy,
-                       rai::Vector<Noise_ *> &noise,
+                       std::vector<Noise_ *> &noise,
                        ReplayMemory_ *memory,
                        unsigned stepsToTake) {
     for(int stepId = 0; stepId < stepsToTake; stepId++)
