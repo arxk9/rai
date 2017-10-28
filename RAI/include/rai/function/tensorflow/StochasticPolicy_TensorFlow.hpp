@@ -64,9 +64,10 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                       Advantages &advs,
                       Action &Stdev,
                       VectorXD &grad) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor1D advsT(advs, {advs.cols()}, "advantage");
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
 
     this->tf_->run({states,
                     actions,
@@ -85,10 +86,10 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                        Advantages &advs,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor1D advsT(advs, {advs.cols()}, "advantage");
     Tensor1D gradT(grad, {grad.rows()}, "tangent");
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
 
     this->tf_->run({states,
                     actions,
@@ -98,9 +99,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                     gradT},
                    {"Algo/TRPO/Cg", "Algo/TRPO/Cgerror"}, {}, vectorOfOutputs);
     std::memcpy(getng.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * getng.size());
-//    Dtype loss = *(vectorOfOutputs[1].flat<Dtype>().data());
-    Dtype loss = 0;
-    return loss;
+    return  *(vectorOfOutputs[1].flat<Dtype>().data());
   }
 
   virtual Dtype TRPOloss(Tensor3D &states,
@@ -108,9 +107,9 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                          Tensor3D &actionNoise,
                          Advantages &advs,
                          Action &Stdev) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor1D advsT(advs, {advs.cols()}, "advantage");
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
 
     this->tf_->run({states,
                     actions,
@@ -119,8 +118,8 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                     StdevT},
                    {"Algo/TRPO/loss"},
                    {}, vectorOfOutputs);
-    Dtype loss = *(vectorOfOutputs[0].flat<Dtype>().data());
-    return loss;
+
+    return *(vectorOfOutputs[0].flat<Dtype>().data());
   }
 
   ///PPO
@@ -131,9 +130,9 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                      Action &Stdev,
                      Tensor1D &len,
                      VectorXD &grad) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor1D advsT(advs, {advs.cols()}, "advantage");
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
 
     this->tf_->run({states,
                     actions,

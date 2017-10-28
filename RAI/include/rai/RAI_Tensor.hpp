@@ -13,7 +13,6 @@
 #include "glog/logging.h"
 #include <boost/utility/enable_if.hpp>
 #include <Eigen/StdVector>
-#include "RAI_Vector.hpp"
 /* RAI tensor follows EIGEN Tensor indexing
  * The data is stored in tensorflow tensor
  * It provides an interface to Eigen::Tensor and Eigen::Matrix/Vector
@@ -29,7 +28,7 @@ template<typename Dtype, int NDim>
 class TensorBase {
 
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
-  typedef Eigen::TensorMap<Eigen::Tensor<Dtype, NDim>, Eigen::Aligned> EigenTensor;
+  typedef Eigen::TensorMap<Eigen::Tensor<Dtype, NDim>> EigenTensor;
 
  public:
 

@@ -12,7 +12,6 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include "rai/RAI_Vector.hpp"
 
 namespace rai {
 namespace Graphics{

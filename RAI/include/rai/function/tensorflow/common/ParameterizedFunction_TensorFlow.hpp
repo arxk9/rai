@@ -91,21 +91,12 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
              {"output"}, {}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
   }
-<<<<<<< HEAD
 //  virtual void forward(InputTensor &inputs, OutputTensor &outputs) {
 //    std::vector<Tensor3D> vectorOfOutputs;
 //    tf_->run({{"input", inputs}},
 //             {"output"}, {}, vectorOfOutputs);
 //    outputs = vectorOfOutputs[0];
 //  }
-=======
-  virtual void forward(InputTensor &inputs, OutputTensor &outputs) {
-    std::vector<Tensor3D> vectorOfOutputs;
-    tf_->run({{"input", inputs}},
-             {"output"}, {}, vectorOfOutputs);
-    outputs = vectorOfOutputs[0];
-  }
->>>>>>> master
 
   virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &targetOutputs) {
     std::vector<MatrixXD> outputs, dummy;

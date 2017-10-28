@@ -9,7 +9,6 @@
 #include "glog/logging.h"
 #include <ctime>
 #include <fstream>
-#include "rai/RAI_Vector.hpp"
 
 class RAI_data{
 

@@ -8,7 +8,7 @@
 #include <rai/common/TypeDef.hpp>
 #include "SuperObject.hpp"
 #include "Mesh.hpp"
-#include "rai/RAI_Vector.hpp"
+
 #include "Sphere.hpp"
 
 namespace rai {

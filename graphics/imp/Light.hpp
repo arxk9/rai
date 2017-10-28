@@ -9,7 +9,6 @@
 #include "Eigen/Core"
 #include "mutex"
 #include "iostream"
-#include "rai/RAI_Vector.hpp"
 
 namespace rai{
 namespace Graphics{

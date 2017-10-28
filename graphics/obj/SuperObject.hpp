@@ -9,7 +9,7 @@
 #include "../imp/shader.hpp"
 #include "../imp/shader_basic.h"
 #include "rai/common/TypeDef.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Graphics {

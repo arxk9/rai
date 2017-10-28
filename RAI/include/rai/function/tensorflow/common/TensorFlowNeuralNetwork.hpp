@@ -87,7 +87,7 @@ class TensorFlowNeuralNetwork {
   //tensor to tensor
   inline void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
                   const std::vector<std::string> &outputTensorNames,
-                  const  std::vector<std::string> &targetNodeNames,  std::vector<Tensor3D> &outputs) {
+                  const  std::vector<std::string> &targetNodeNames,  std::vector<tensorflow::Tensor> &outputs) {
 
     std::vector<tensorflow::Tensor> outputTensorFlowTensors;
     std::vector<std::string> targetNodeNamesModified = targetNodeNames;

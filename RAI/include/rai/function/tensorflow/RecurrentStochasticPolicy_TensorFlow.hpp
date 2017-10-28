@@ -77,12 +77,12 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                      Tensor3D &actionNoise,
                      Advantages &advs,
                      Action &Stdev,
-                     Tensor<Dtype, 1> &len,
+                     Tensor1D &len,
                      VectorXD &grad) {
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 1> advsT(advs, {advs.cols()}, "advantage");
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.batches()}, 0, "h_init");
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+    Tensor2D hiddenState({hiddenStateDim(), states.batches()}, 0, "h_init");
 
     this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, len},
                    {"Algo/PPO/Pg"},
@@ -97,10 +97,10 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                              Action &Stdev,
                              Tensor1D &len,
                              VectorXD &grad) {
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 1> advsT(advs, {advs.cols()}, "advantage");
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+    Tensor2D hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
 
     this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, len},
                    {"Algo/PPO/Pg2"},
@@ -114,8 +114,8 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                          Action &Stdev,
                          Tensor1D &len) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor2D hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
 
     this->tf_->run({states, action, actionNoise, hiddenState, StdevT, len},
                    {"Algo/PPO/kl_mean"},
@@ -152,16 +152,16 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
 
   virtual void forward(StateBatch &states, ActionBatch &actions) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    tensorflow::Tensor
-        stateTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, stateDim}));
+    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
+    Tensor1D len({states.cols()}, 1, "length");
+    stateT.copyDataFrom(states);
 
-    rai::Tensor<Dtype, 1> len({states.cols()}, 1, "length");
     if (h.cols() != states.cols()) {
       h.resize(hdim, states.cols());
       h.setZero();
     }
-    std::memcpy(stateTensor.flat<Dtype>().data(), states.data(), sizeof(Dtype) * states.size());
-    this->tf_->run({{"state", stateTensor}, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
+
+    this->tf_->run({stateT, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
     std::memcpy(actions.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * actions.size());
     h.copyDataFrom(vectorOfOutputs[1]);
   }
@@ -169,7 +169,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   ///
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    rai::Tensor<Dtype, 1> len({states.batches()}, 1, "length");
+    Tensor1D len({states.batches()}, 1, "length");
 
     if (h.cols() != states.batches()) {
       h.resize(hdim, states.batches());

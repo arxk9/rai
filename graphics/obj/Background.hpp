@@ -9,7 +9,7 @@
 #include <vector>
 #include "math.h"
 #include "rai/common/TypeDef.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Graphics {

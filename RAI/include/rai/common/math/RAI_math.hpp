@@ -7,7 +7,7 @@
 #include "../TypeDef.hpp"
 #include <iostream>
 #include <vector>
-#include "rai/RAI_Vector.hpp"
+
 #include "rai/RAI_Tensor.hpp"
 
 namespace rai {
