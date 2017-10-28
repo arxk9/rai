@@ -107,10 +107,10 @@ class CommonFunc {
 
   ////////////// this method is useful when forward of a policy is expensive ////////
   template<typename NoiseType>
-  static Result runEpisodeInBatch(rai::Vector<Task_ *> &task,
+  static Result runEpisodeInBatch(std::vector<Task_ *> &task,
                                   Policy_ *policy,
-                                  rai::Vector<NoiseType *> &noise,
-                                  rai::Vector<Trajectory_> &trajectorySet,
+                                  std::vector<NoiseType *> &noise,
+                                  std::vector<Trajectory_> &trajectorySet,
                                   StateBatch &startingState,
                                   double timeLimit,
                                   ReplayMemory_ *memory = nullptr) {
@@ -121,7 +121,7 @@ class CommonFunc {
     Result stat;
     StateBatch stateBatch, stateBatchReduced;
     ActionBatch actionBatch, actionBatchReduced;
-    rai::Vector<TerminationType> termTypeBatch;
+    std::vector<TerminationType> termTypeBatch;
     State state_tp1, state_t;
     Action action_t, noiseFreeAction, actionNoise;
     double episodeTime = 0.0;
@@ -229,10 +229,10 @@ class CommonFunc {
   }
 
   template<typename NoiseType>
-  static Result runEpisodeInBatchParallel(rai::Vector<Task_ *> &taskset,
+  static Result runEpisodeInBatchParallel(std::vector<Task_ *> &taskset,
                                           Policy_ *policy,
-                                          rai::Vector<NoiseType *> &noise,
-                                          rai::Vector<Trajectory_> &trajectorySet,
+                                          std::vector<NoiseType *> &noise,
+                                          std::vector<Trajectory_> &trajectorySet,
                                           StateBatch &startingState,
                                           double timeLimit,
                                           ReplayMemory_ *memory = nullptr) {
@@ -246,7 +246,7 @@ class CommonFunc {
     Result stat;
     StateBatch stateBatch, stateBatchReduced;
     ActionBatch actionBatch, actionBatchReduced;
-    rai::Vector<TerminationType> termTypeBatch;
+    std::vector<TerminationType> termTypeBatch;
     State state_tp;
     Action action_tp;
     int stepCount = 0;
@@ -412,9 +412,9 @@ class CommonFunc {
   }
 
   template<typename NoiseType>
-  static void takeOneStep(rai::Vector<Task_ *> &task,
+  static void takeOneStep(std::vector<Task_ *> &task,
                           Policy_ *policy,
-                          rai::Vector<NoiseType *> &noise,
+                          std::vector<NoiseType *> &noise,
                           ReplayMemory_ *memory) {
     State state_t;
     Action action_t;
@@ -436,9 +436,9 @@ class CommonFunc {
   }
 
   template<typename NoiseType>
-  static void takeOneStepInBatch(rai::Vector<Task_ *> &tasks,
+  static void takeOneStepInBatch(std::vector<Task_ *> &tasks,
                                  Policy_ *policy,
-                                 rai::Vector<NoiseType *> &noises,
+                                 std::vector<NoiseType *> &noises,
                                  ReplayMemory_ *memory) {
     unsigned threadN = tasks.size();
 

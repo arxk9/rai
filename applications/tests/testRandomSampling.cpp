@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
   rai::Utils::graph->waitForEnter();
 
 
-  rai::Vector<int> order;
+  std::vector<int> order;
   order.resize(5);
   for(int i=0; i< 5; i++) order[i] = i;
   int sum = 0;

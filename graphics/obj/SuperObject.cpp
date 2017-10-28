@@ -25,19 +25,19 @@ void SuperObject::showGhosts(int maxGhosts, float transparency){
 
 void SuperObject::addGhostsNow() {
   if (ghosts.size() < maxGhostN) {
-    rai::Vector<Transform> ghost(objs.size());
+    std::vector<Transform> ghost(objs.size());
     ghosts.push_back(ghost);
   }
   getTrans(ghosts[oldestGhost]);
   oldestGhost = (oldestGhost + 1) % maxGhostN;
 }
 
-void SuperObject::setTrans(rai::Vector<Transform>& trans){
+void SuperObject::setTrans(std::vector<Transform>& trans){
   for(int i = 0; i < objs.size(); i++)
     objs[i]->setTempTransform(trans[i]);
 }
 
-void SuperObject::getTrans(rai::Vector<Transform>& trans){
+void SuperObject::getTrans(std::vector<Transform>& trans){
   for(int i = 0; i < objs.size(); i++)
     objs[i]->getTransform(trans[i]);
 }

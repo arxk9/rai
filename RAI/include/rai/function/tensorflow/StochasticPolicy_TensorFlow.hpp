@@ -54,7 +54,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states}}, {"action", "stdev"}, {}, vectorOfOutputs);
     means = vectorOfOutputs[0];
     stdev = vectorOfOutputs[1].col(0);
@@ -68,7 +68,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                       Advantages &adv,
                       Action &Stdev,
                       VectorXD &grad) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", state},
                     {"sampled_oa", action},
                     {"noise_oa", actionNoise},
@@ -88,7 +88,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                       Advantages &advs,
                       Action &Stdev,
                       VectorXD &grad) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
                     {"sampled_oa", actionBat},
                     {"noise_oa", actionNoise},
@@ -107,7 +107,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                        Advantages &advs,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getfvp) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
                     {"sampled_oa", actionBat},
                     {"noise_oa", actionNoise},
@@ -125,7 +125,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                        Advantages &advs,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
                     {"sampled_oa", actionBat},
                     {"noise_oa", actionNoise},
@@ -142,7 +142,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                          ActionBatch &actionNoise,
                          Advantages &advs,
                          Action &Stdev) {
-    rai::Vector<MatrixXD> loss;
+    std::vector<MatrixXD> loss;
     this->tf_->run({{"state", states},
                     {"sampled_oa", actionBat},
                     {"noise_oa", actionNoise},
@@ -161,7 +161,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                      Advantages &advs,
                      Action &Stdev,
                      VectorXD &grad) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
 
     this->tf_->run({{"state", states},
                     {"sampled_oa", actionBat},
@@ -180,7 +180,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                              Advantages &advs,
                              Action &Stdev,
                              VectorXD &grad) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
 
     this->tf_->run({{"state", states},
                     {"sampled_oa", actionBat},
@@ -198,7 +198,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                          ActionBatch &actionBat,
                          ActionBatch &actionNoise,
                          Action &Stdev) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
 
     this->tf_->run({{"state", states},
                     {"sampled_oa", actionBat},
@@ -213,18 +213,18 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   virtual void setStdev(const Action &Stdev) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     this->tf_->run({{"Stdev_placeholder", Stdev}}, {}, {"assignStdev"}, dummy);
   }
 
   virtual void getStdev(Action &Stdev) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"Stdev_placeholder", Stdev}}, {"getStdev"}, {}, vectorOfOutputs);
     Stdev = vectorOfOutputs[0];
   }
 
   virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     VectorXD input;
     input.resize(3);
     input << kl_coeff, ent_coeff, clip_param;
@@ -233,7 +233,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   virtual void forward(State &state, Action &action) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", state}},
                        {"action"}, vectorOfOutputs);
 
@@ -241,20 +241,20 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   virtual void forward(StateBatch &states, ActionBatch &actions) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->forward({{"state", states}},
                        {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];
   }
 
   virtual void forward(StateTensor &states, ActionTensor &actions) {
-    rai::Vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-    rai::Vector<MatrixXD> loss, dummy;
+    std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
                     {"targetAction", actions},
                     {"trainUsingTargetAction/learningRate", this->learningRate_}}, {"trainUsingTargetAction/loss"},
@@ -264,13 +264,13 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     return loss[0](0);
   }
   void trainUsingGrad(const VectorXD &grad) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
                     {"trainUsingGrad/learningRate", this->learningRate_}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     VectorXD inputrate(1);
     inputrate(0) = learningrate;
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
@@ -278,13 +278,13 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
   virtual void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
-    rai::Vector<MatrixXD> temp;
+    std::vector<MatrixXD> temp;
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_Param"}, {}, temp);
     jacobian = temp[0];
   }
 
   virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
-    rai::Vector<MatrixXD> temp;
+    std::vector<MatrixXD> temp;
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_State"}, {}, temp);
     jacobian = temp[0];
   }

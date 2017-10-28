@@ -15,7 +15,7 @@ namespace Obj {
 CheckerBoard_half::CheckerBoard_half(int gridSize,
                            float width,
                            float length,
-                           rai::Vector<float> color) {
+                           std::vector<float> color) {
 
   for(int i=-width/2/gridSize; i<width/2/gridSize; i++)
     for(int j=-length/2/gridSize; j<length/2/gridSize; j++){

@@ -48,7 +48,7 @@ void Shader_basic::UnBind() {
 
 void Shader_basic::Update(Camera *camera, Light *light, Obj::Object* obj) {
   Transform trans;
-  rai::Vector<float> clr, amb, diff, spec, ambl, diffl, specl, posl;
+  std::vector<float> clr, amb, diff, spec, ambl, diffl, specl, posl;
   float shine;
 
   obj->getTransform(trans);

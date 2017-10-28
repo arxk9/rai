@@ -41,13 +41,13 @@ class TensorFlowNeuralNetwork {
     delete session;
   }
   //mat to mat
-  inline void run(const rai::Vector<std::pair<std::string, MatrixXD>> &inputs,
-                  const rai::Vector<std::string> &outputTensorNames,
-                  const rai::Vector<std::string> &targetNodeNames, rai::Vector<MatrixXD> &outputs) {
-    rai::Vector<std::pair<std::string, tensorflow::Tensor> > namedInputTensorFlowTensors;
+  inline void run(const std::vector<std::pair<std::string, MatrixXD>> &inputs,
+                  const std::vector<std::string> &outputTensorNames,
+                  const std::vector<std::string> &targetNodeNames, std::vector<MatrixXD> &outputs) {
+    std::vector<std::pair<std::string, tensorflow::Tensor> > namedInputTensorFlowTensors;
     namedEigenMatricesToNamedTFTensors(inputs, namedInputTensorFlowTensors);
-    rai::Vector<tensorflow::Tensor> outputTensorFlowTensors;
-    rai::Vector<std::string> outputTensorNamesModified = outputTensorNames;
+    std::vector<tensorflow::Tensor> outputTensorFlowTensors;
+    std::vector<std::string> outputTensorNamesModified = outputTensorNames;
 
     auto status = session->Run(namedInputTensorFlowTensors, outputTensorNamesModified, targetNodeNames,
                                &outputTensorFlowTensors);
@@ -56,15 +56,15 @@ class TensorFlowNeuralNetwork {
   }
 
   //tensor to tensor
-  inline void run(const rai::Vector<std::pair<std::string, Tensor3D>> &inputs,
-                  const  rai::Vector<std::string> &outputTensorNames,
-                  const  rai::Vector<std::string> &targetNodeNames,  rai::Vector<Tensor3D> &outputs) {
-    rai::Vector<std::pair<std::string, tensorflow::Tensor> > namedInputTensorFlowTensors;
+  inline void run(const std::vector<std::pair<std::string, Tensor3D>> &inputs,
+                  const  std::vector<std::string> &outputTensorNames,
+                  const  std::vector<std::string> &targetNodeNames,  std::vector<Tensor3D> &outputs) {
+    std::vector<std::pair<std::string, tensorflow::Tensor> > namedInputTensorFlowTensors;
 
     namedEigenTensorsToNamedTFTensors(inputs, namedInputTensorFlowTensors);
 
-    rai::Vector<tensorflow::Tensor> outputTensorFlowTensors;
-    rai::Vector<std::string> targetNodeNamesModified = targetNodeNames;
+    std::vector<tensorflow::Tensor> outputTensorFlowTensors;
+    std::vector<std::string> targetNodeNamesModified = targetNodeNames;
     auto status = session->Run(namedInputTensorFlowTensors, outputTensorNames, targetNodeNamesModified,
                                &outputTensorFlowTensors);
     LOG_IF(FATAL, !status.ok()) << status.ToString();
@@ -73,47 +73,47 @@ class TensorFlowNeuralNetwork {
   }
 
   //tensor to tensor
-  inline void run(const rai::Vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
-                  const rai::Vector<std::string> &outputTensorNames,
-                  const  rai::Vector<std::string> &targetNodeNames,  rai::Vector<Tensor3D> &outputs) {
+  inline void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
+                  const std::vector<std::string> &outputTensorNames,
+                  const  std::vector<std::string> &targetNodeNames,  std::vector<Tensor3D> &outputs) {
 
-    rai::Vector<tensorflow::Tensor> outputTensorFlowTensors;
-    rai::Vector<std::string> targetNodeNamesModified = targetNodeNames;
+    std::vector<tensorflow::Tensor> outputTensorFlowTensors;
+    std::vector<std::string> targetNodeNamesModified = targetNodeNames;
     auto status = session->Run(inputs, outputTensorNames, targetNodeNamesModified, &outputTensorFlowTensors);
     LOG_IF(FATAL, !status.ok()) << status.ToString();
     tfTensorsToEigenTensors(outputTensorFlowTensors, outputs);
   }
 
   //tensor to tensor
-  inline void run(const rai::Vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
-                  const  rai::Vector<std::string> &outputTensorNames,
-                  const  rai::Vector<std::string> &targetNodeNames,  rai::Vector<tensorflow::Tensor> &outputs) {
+  inline void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
+                  const  std::vector<std::string> &outputTensorNames,
+                  const  std::vector<std::string> &targetNodeNames,  std::vector<tensorflow::Tensor> &outputs) {
 
-    rai::Vector<tensorflow::Tensor> outputTensorFlowTensors;
-    rai::Vector<std::string> targetNodeNamesModified = targetNodeNames;
+    std::vector<tensorflow::Tensor> outputTensorFlowTensors;
+    std::vector<std::string> targetNodeNamesModified = targetNodeNames;
     auto status = session->Run(inputs, outputTensorNames, targetNodeNamesModified, &outputTensorFlowTensors);
     LOG_IF(FATAL, !status.ok()) << status.ToString();
     outputs = outputTensorFlowTensors;
   }
 
-  void runTargetNodes(const rai::Vector<std::pair<std::string, MatrixXD>> &inputs,
-                      const rai::Vector<std::string> &targetNodeNames) {
-    rai::Vector<MatrixXD> dummyOutputs;
+  void runTargetNodes(const std::vector<std::pair<std::string, MatrixXD>> &inputs,
+                      const std::vector<std::string> &targetNodeNames) {
+    std::vector<MatrixXD> dummyOutputs;
     run(inputs, {}, targetNodeNames, dummyOutputs);
   }
 
-  void forward(const rai::Vector<std::pair<std::string, MatrixXD>> &inputs, const rai::Vector<std::string> &outputNames,
-               rai::Vector<MatrixXD> &outputs) {
+  void forward(const std::vector<std::pair<std::string, MatrixXD>> &inputs, const std::vector<std::string> &outputNames,
+               std::vector<MatrixXD> &outputs) {
     run(inputs, outputNames, {}, outputs);
   }
 
-  void forward(const rai::Vector<std::pair<std::string, tensorflow::Tensor>> &inputs, const rai::Vector<std::string> &outputNames,
-               rai::Vector<tensorflow::Tensor> &outputs) {
+  void forward(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs, const std::vector<std::string> &outputNames,
+               std::vector<tensorflow::Tensor> &outputs) {
     run(inputs, outputNames, {}, outputs);
   }
 
-  void forward(const rai::Vector<std::pair<std::string, Tensor3D>> &inputs, const rai::Vector<std::string> &outputNames,
-               rai::Vector<Tensor3D> &outputs) {
+  void forward(const std::vector<std::pair<std::string, Tensor3D>> &inputs, const std::vector<std::string> &outputNames,
+               std::vector<Tensor3D> &outputs) {
     run(inputs, outputNames, {}, outputs);
   }
 
@@ -222,7 +222,7 @@ class TensorFlowNeuralNetwork {
     memcpy(Eigtensor.data(), tensor.flat<Dtype>().data(), sizeof(Dtype) * tensor.shape().num_elements());
   }
 
-  static void tfTensorsToEigenMatrices(const rai::Vector<tensorflow::Tensor> &input, rai::Vector<MatrixXD> &output) {
+  static void tfTensorsToEigenMatrices(const std::vector<tensorflow::Tensor> &input, std::vector<MatrixXD> &output) {
     output.clear();
     for (auto &element : input) {
       MatrixXD matrix;
@@ -231,7 +231,7 @@ class TensorFlowNeuralNetwork {
     }
   }
 
-  static void tfTensorsToEigenTensors(const rai::Vector<tensorflow::Tensor> &input, rai::Vector<Tensor3D> &output) {
+  static void tfTensorsToEigenTensors(const std::vector<tensorflow::Tensor> &input, std::vector<Tensor3D> &output) {
     output.clear();
     for (auto &element : input) {
       Tensor3D Eigtensor;
@@ -241,8 +241,8 @@ class TensorFlowNeuralNetwork {
   }
 
   static void namedEigenMatricesToNamedTFTensors(
-      const rai::Vector<std::pair<std::string, MatrixXD>> &input,
-      rai::Vector<std::pair<std::string, tensorflow::Tensor>> &output) {
+      const std::vector<std::pair<std::string, MatrixXD>> &input,
+      std::vector<std::pair<std::string, tensorflow::Tensor>> &output) {
     output.clear();
     for (auto &element : input) {
       tensorflow::Tensor tensor(getTensorFlowDataType(),
@@ -252,8 +252,8 @@ class TensorFlowNeuralNetwork {
     }
   }
   static void namedEigenTensorsToNamedTFTensors(
-      const rai::Vector<std::pair<std::string, Tensor3D >> &input,
-      rai::Vector<std::pair<std::string, tensorflow::Tensor>> &output) {
+      const std::vector<std::pair<std::string, Tensor3D >> &input,
+      std::vector<std::pair<std::string, tensorflow::Tensor>> &output) {
     output.clear();
     for (auto &element : input) {
       tensorflow::Tensor tensor(getTensorFlowDataType(),
@@ -273,7 +273,7 @@ class TensorFlowNeuralNetwork {
   }
 
   void getLP(tensorflow::Tensor &param) const {
-    rai::Vector<tensorflow::Tensor> paramV;
+    std::vector<tensorflow::Tensor> paramV;
     auto status = this->session->Run({}, {"LP"}, {}, &paramV);
     param = paramV[0];
     LOG_IF(FATAL, !status.ok()) << status.ToString();
@@ -294,7 +294,7 @@ class TensorFlowNeuralNetwork {
   }
 
   void getAP(tensorflow::Tensor &param) const {
-    rai::Vector<tensorflow::Tensor> paramV;
+    std::vector<tensorflow::Tensor> paramV;
     auto status = this->session->Run({}, {"AP"}, {}, &paramV);
     param = paramV[0];
     LOG_IF(FATAL, !status.ok()) << status.ToString();
@@ -308,7 +308,7 @@ class TensorFlowNeuralNetwork {
   }
 
   tensorflow::Session *session;
-  rai::Vector<std::string> namesOfAllParameters;
+  std::vector<std::string> namesOfAllParameters;
 
   static tensorflow::DataType getTensorFlowDataType() {
     if (typeid(Dtype) == typeid(float))
@@ -323,10 +323,10 @@ class TensorFlowNeuralNetwork {
 
  protected:
   tensorflow::GraphDef graphDef_;
-  rai::Vector<std::string> numericsOpNames_;
+  std::vector<std::string> numericsOpNames_;
   bool checkNumerics_;
-  rai::Vector<tensorflow::Tensor> APvec_;
-  rai::Vector<tensorflow::Tensor> LPvec_;
+  std::vector<tensorflow::Tensor> APvec_;
+  std::vector<tensorflow::Tensor> LPvec_;
   int numOfAP_;
   int numOfLP_;
 
@@ -363,7 +363,7 @@ class TensorFlowNeuralNetwork {
   void updateParams() {
     auto status = session->Run({}, {}, {"initializeAllVariables"}, {});
     LOG_IF(FATAL, !status.ok()) << status.ToString();
-    rai::Vector<tensorflow::Tensor> netShape;
+    std::vector<tensorflow::Tensor> netShape;
     status = session->Run({}, {"numberOfAP", "numberOfLP"}, {}, &netShape);
     LOG_IF(FATAL, !status.ok()) << status.ToString();
     numOfAP_ = netShape[0].scalar<int>()();

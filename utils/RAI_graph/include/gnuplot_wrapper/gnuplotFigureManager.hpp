@@ -182,8 +182,8 @@ class GnuplotFigureManager {
   /*No figure(), no drawFigure()*/
   template<typename Dtype>
   void drawPieChart(int figureNumber,
-                    rai::Vector<Dtype> &time,
-                    rai::Vector<std::string> &name,
+                    std::vector<Dtype> &time,
+                    std::vector<std::string> &name,
                     std::string title,
                     std::string unit,
                     std::string style = "rgb 33,13,10", std::string position = "", std::string size = "") {
@@ -220,8 +220,8 @@ class GnuplotFigureManager {
     return idx;
   }
 
-  rai::Vector<Figure *> figures_;
-  rai::Vector<int> figureID_;
+  std::vector<Figure *> figures_;
+  std::vector<int> figureID_;
   std::string log_path_;
 
 };

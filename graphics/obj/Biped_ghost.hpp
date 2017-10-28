@@ -21,7 +21,7 @@ class Biped_ghost : public SuperObject {
   ~Biped_ghost();
   void init();
   void destroy();
-  void setPose(rai::Vector<HomogeneousTransform> &bodyPose);
+  void setPose(std::vector<HomogeneousTransform> &bodyPose);
   rai::Graphics::Obj::Object* basePtr(){ return &base; }
   rai::Graphics::Obj::Object* footlPtr(){ return &foot_l; }
   rai::Graphics::Obj::Object* footrPtr(){ return &foot_r; }
@@ -45,7 +45,7 @@ class Biped_ghost : public SuperObject {
   rai::Graphics::Obj::Sphere foot_l;
   rai::Graphics::Obj::Sphere foot_r;
 
-  rai::Vector<HomogeneousTransform> defaultPose_;
+  std::vector<HomogeneousTransform> defaultPose_;
 };
 
 }

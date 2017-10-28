@@ -192,8 +192,8 @@ class Task {
   bool videoRecordingEnabled_ = false;
 
   std::string videoDir_;
-  rai::Vector<State> constraintsNormal_;
-  rai::Vector<Dtype> constraintsOffset_;
+  std::vector<State> constraintsNormal_;
+  std::vector<Dtype> constraintsOffset_;
   State constraintBoxUpper_;
   State constraintBoxLower_;
   bool isBoxConstrained_ = false;

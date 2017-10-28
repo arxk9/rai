@@ -66,10 +66,10 @@ class AG_tree {
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
-  AG_tree(rai::Vector<Task_*> &task,
+  AG_tree(std::vector<Task_*> &task,
           FuncApprox::ValueFunction<Dtype, StateDim> *vfunction,
           FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy,
-          rai::Vector<Noise_*> &noise,
+          std::vector<Noise_*> &noise,
           Acquisitor_* acquisitor,
           int numOfInitialTra,
           int numOfBranches,
@@ -88,7 +88,7 @@ class AG_tree {
       initialTraj_(numOfInitialTra),
       junctionTraj_(numOfBranches),
       testTrajectory_(nOfTestTraj),
-      branchTraj_(noiseDepth, rai::Vector<Trajectory_>(numOfBranches)),
+      branchTraj_(noiseDepth, std::vector<Trajectory_>(numOfBranches)),
       noiseDepth_(noiseDepth),
       initialTrajTailTime_(initialTrajTailTime),
       branchTrajTime_(branchTrajLength),
@@ -154,13 +154,13 @@ class AG_tree {
 
     ///////////////////////// stage 1: simulation //////////////////
     Utils::timer->startTimer("simulation");
-    rai::Vector<rai::Vector<Dtype> > valueJunction(noiseDepth_ + 1, rai::Vector<Dtype>(numOfBranches_));
-    rai::Vector<State> advTuple_state;
-    rai::Vector<Dtype> advTuple_advantage;
-    rai::Vector<Dtype> advTuple_importance;
-    rai::Vector<Dtype> advTuple_MD2;
-    rai::Vector<Action> advTuple_actionNoise;
-    rai::Vector<Action> advTuple_gradient;
+    std::vector<std::vector<Dtype> > valueJunction(noiseDepth_ + 1, std::vector<Dtype>(numOfBranches_));
+    std::vector<State> advTuple_state;
+    std::vector<Dtype> advTuple_advantage;
+    std::vector<Dtype> advTuple_importance;
+    std::vector<Dtype> advTuple_MD2;
+    std::vector<Action> advTuple_actionNoise;
+    std::vector<Action> advTuple_gradient;
 
     /// run initial Trajectories
     StateBatch startStateOrg(StateDim, numOfInitialTra_);
@@ -184,7 +184,7 @@ class AG_tree {
 
     /// sample random starting points along initial trajectories and run episodes
     StateBatch startStateJunct(StateDim, numOfBranches_);
-    rai::Vector<std::pair<int, int> > indx;
+    std::vector<std::pair<int, int> > indx;
     rai::Op::VectorHelper::sampleRandomStates(initialTraj_, startStateJunct, int(initialTrajTailTime_ / dt), indx);
 
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
@@ -326,20 +326,20 @@ class AG_tree {
   StateBatch &getStateBatch() { return stateAdvantage_; }
   StateBatch &getValueTrainStateBatch() { return StateBatchVtrain_; }
   ValueBatch &getValueTrainValueBatch() { return valueBatchVtrain_; }
-  rai::Vector<rai::Vector<Trajectory_> > getBranchTraj() { return branchTraj_; }
+  std::vector<std::vector<Trajectory_> > getBranchTraj() { return branchTraj_; }
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
 
  private:
 
   /////////////////////////// Core //////////////////////////////////////////
-  rai::Vector<Task_*> task_;
+  std::vector<Task_*> task_;
   FuncApprox::ValueFunction<Dtype, StateDim> *vfunction_;
   FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy_;
   Acquisitor_* acquisitor_;
-  rai::Vector<Noise_*> noise_;
-  rai::Vector<Noise::Noise<Dtype, ActionDim>* > noNoise_;
-  rai::Vector<Noise::NoNoise<Dtype, ActionDim> > noNoiseRaw_;
-  rai::Vector<Noise::Noise<Dtype, ActionDim>* > noiseBasePtr_;
+  std::vector<Noise_*> noise_;
+  std::vector<Noise::Noise<Dtype, ActionDim>* > noNoise_;
+  std::vector<Noise::NoNoise<Dtype, ActionDim> > noNoiseRaw_;
+  std::vector<Noise::Noise<Dtype, ActionDim>* > noiseBasePtr_;
   Dtype learningRate_;
   int iterNumber_ = 0;
 
@@ -350,9 +350,9 @@ class AG_tree {
   double initialTrajTailTime_, branchTrajTime_;
 
   /////////////////////////// trajectories //////////////////////
-  rai::Vector<Trajectory_> initialTraj_, junctionTraj_;
-  rai::Vector<rai::Vector<Trajectory_> > branchTraj_;
-  rai::Vector<Trajectory_> testTrajectory_;
+  std::vector<Trajectory_> initialTraj_, junctionTraj_;
+  std::vector<std::vector<Trajectory_> > branchTraj_;
+  std::vector<Trajectory_> testTrajectory_;
 
   /////////////////////////// FIM related variables
   FimInActionSapce fimInActionSpace_, fimInActionSpaceCholesky_;

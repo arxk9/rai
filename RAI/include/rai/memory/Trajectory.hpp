@@ -179,10 +179,10 @@ class Trajectory {
 
   /// prepend a section of other trajectory to this trajectory
   void prependAsectionOfTraj (Trajectory& otherTraj, unsigned startingId, unsigned endId) {
-    rai::Vector<Action> actionTraj_cpy = actionTraj;
-    rai::Vector<State> stateTraj_cpy = stateTraj;
-    rai::Vector<Action> actionNoiseTraj_cpy = actionNoiseTraj;
-    rai::Vector<Dtype> costTraj_cpy = costTraj;
+    std::vector<Action> actionTraj_cpy = actionTraj;
+    std::vector<State> stateTraj_cpy = stateTraj;
+    std::vector<Action> actionNoiseTraj_cpy = actionNoiseTraj;
+    std::vector<Dtype> costTraj_cpy = costTraj;
 
     unsigned currentSize = size();
     unsigned sectionSize = endId - startingId + 1;
@@ -208,11 +208,11 @@ class Trajectory {
     gaeUpdated = false;
   }
 
-  rai::Vector<State> stateTraj;
-  rai::Vector<Action> actionTraj;
-  rai::Vector<Action> actionNoiseTraj;
-  rai::Vector<Dtype> costTraj, accumCostTraj;
-  rai::Vector<Dtype> valueTraj;
+  std::vector<State> stateTraj;
+  std::vector<Action> actionTraj;
+  std::vector<Action> actionNoiseTraj;
+  std::vector<Dtype> costTraj, accumCostTraj;
+  std::vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;
   CostBatch valueMat, bellmanErr, advantage;
   Dtype terminalValue_ = Dtype(0);

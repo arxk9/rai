@@ -19,7 +19,7 @@ class Timer_items {
 
   }
 
-  void add_item(std::string name, int id, rai::Vector<int> parentsID) {
+  void add_item(std::string name, int id, std::vector<int> parentsID) {
     totalChildren_++;
 
     if (parentsID.size() == 0) {
@@ -53,7 +53,7 @@ class Timer_items {
   std::string name_;
   double time_sum_;
   int id_;
-  rai::Vector<Timer_items> subItems_;
+  std::vector<Timer_items> subItems_;
   int totalChildren_ = 0;
   int maximum_depth = 0;
 };

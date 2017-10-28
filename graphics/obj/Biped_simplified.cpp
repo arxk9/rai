@@ -31,10 +31,10 @@ Biped_simplified::Biped_simplified() :
 //    foot_r(std::string(getenv("RAI_ROOT")) + "/RAI/taskModules/bipedLocomotion/cadModel/biped/Foot_V1.dae", 0.001)
 {
 
-  rai::Vector<float> red = {1, 0, 0};
-  rai::Vector<float> white = {1, 1, 1};
-  rai::Vector<float> blue = {0, 0.5, 1};
-  rai::Vector<float> gray = {0.7, 0.7, 0.7};
+  std::vector<float> red = {1, 0, 0};
+  std::vector<float> white = {1, 1, 1};
+  std::vector<float> blue = {0, 0.5, 1};
+  std::vector<float> gray = {0.7, 0.7, 0.7};
   base.setColor(white);
   haa_l.setColor(gray);
   hfe_l.setColor(blue);
@@ -99,7 +99,7 @@ void Biped_simplified::destroy() {
   delete shader;
 }
 
-void Biped_simplified::setPose(rai::Vector<HomogeneousTransform> &bodyPose) {
+void Biped_simplified::setPose(std::vector<HomogeneousTransform> &bodyPose) {
   for (int i = 0; i < objs.size(); i++) {
     HomogeneousTransform ht = bodyPose[i] * defaultPose_[i];
     objs[i]->setPose(ht);

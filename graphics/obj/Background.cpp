@@ -34,7 +34,7 @@ void Background::init() {
   glBindVertexArray(0);
 }
 
-GLuint Background::loadCubemap(rai::Vector<std::string>& faces)
+GLuint Background::loadCubemap(std::vector<std::string>& faces)
 {
   GLuint textureID;
   glGenTextures(1, &textureID);

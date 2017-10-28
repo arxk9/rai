@@ -35,8 +35,8 @@ class PerformanceTester {
     Utils::logger->addVariableToLog(2, "PerformanceTester/performance", "");
   }
 
-  void testPerformance(rai::Vector<Task_ *> &task,
-                       rai::Vector<Noise_ *> &noise,
+  void testPerformance(std::vector<Task_ *> &task,
+                       std::vector<Noise_ *> &noise,
                        Policy_ *policy,
                        double timeLimit,
                        int testingTrajN,
@@ -84,7 +84,7 @@ class PerformanceTester {
   }
 
  private:
-  void sampleBatchOfInitial(StateBatch &initial, rai::Vector<Task_ *> &task_) {
+  void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task_) {
     for (int trajID = 0; trajID < initial.cols(); trajID++) {
       State state;
       task_[0]->setToInitialState();
@@ -93,7 +93,7 @@ class PerformanceTester {
     }
   }
 
-  rai::Vector<Trajectory_> testTraj_;
+  std::vector<Trajectory_> testTraj_;
   Acquisitor_ acquisitor_;
   Policy_ *policy_;
 

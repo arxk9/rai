@@ -9,6 +9,7 @@
 #include "SuperObject.hpp"
 #include "Mesh.hpp"
 #include "rai/RAI_Vector.hpp"
+#include "Sphere.hpp"
 
 namespace rai {
 namespace Graphics {
@@ -22,7 +23,7 @@ class ANYmal : public SuperObject {
   ~ANYmal();
   void init();
   void destroy();
-  void setPose(rai::Vector<HomogeneousTransform> &bodyPose);
+  void setPose(std::vector<HomogeneousTransform> &bodyPose);
   rai::Graphics::Obj::Object* basePtr(){ return &base; }
 
  private:
@@ -43,11 +44,16 @@ class ANYmal : public SuperObject {
   rai::Graphics::Obj::Mesh shank_lh;
   rai::Graphics::Obj::Mesh shank_rh;
 
-  rai::Graphics::Obj::Mesh foot_lf;
-  rai::Graphics::Obj::Mesh foot_rf;
-  rai::Graphics::Obj::Mesh foot_lh;
-  rai::Graphics::Obj::Mesh foot_rh;
-  rai::Vector<HomogeneousTransform> defaultPose_;
+//  rai::Graphics::Obj::Mesh foot_lf;
+//  rai::Graphics::Obj::Mesh foot_rf;
+//  rai::Graphics::Obj::Mesh foot_lh;
+//  rai::Graphics::Obj::Mesh foot_rh;
+
+  rai::Graphics::Obj::Sphere foot_lf;
+  rai::Graphics::Obj::Sphere foot_rf;
+  rai::Graphics::Obj::Sphere foot_lh;
+  rai::Graphics::Obj::Sphere foot_rh;
+  std::vector<HomogeneousTransform> defaultPose_;
 };
 
 }

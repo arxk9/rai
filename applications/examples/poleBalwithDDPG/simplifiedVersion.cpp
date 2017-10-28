@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
   Qfunction_TensorFlow qfunction_target("cpu", "MLP2", "relu 1e-3 3 1 32 32 1", 1e-3);
 
   ////////////////////////// Algorithm ////////////////////////////////
-  rai::Vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
-  rai::Vector<Noise*> noiseVector = {&noise};
+  std::vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
+  std::vector<Noise*> noiseVector = {&noise};
   rai::Algorithm::DDPG<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &qfunction, &qfunction_target, &policy, &policy_target, noiseVector, &acquisitor, &replayMemorySARS, 80, 1, 1e-3);
   algorithm.setVisualizationLevel(1);

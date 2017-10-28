@@ -35,7 +35,7 @@ class RAI_contact_solver2 {
 
   ~RAI_contact_solver2() {}
 
-  void solve(rai::Vector<UnilateralContact *> &uniContacts,
+  void solve(std::vector<UnilateralContact *> &uniContacts,
              const MatrixXd &M_inv, const VectorXd &tauStar) {
 
     uniContacts_ = &uniContacts;
@@ -45,9 +45,9 @@ class RAI_contact_solver2 {
     alpha = 1.0;
     oneMinusAlpha = 1.0-alpha;
 
-    rai::Vector<Vector3d> c(contactN);
-    rai::Vector<Vector3d> normVec(contactN);
-    rai::Vector<std::string> slipCondtion(contactN);
+    std::vector<Vector3d> c(contactN);
+    std::vector<Vector3d> normVec(contactN);
+    std::vector<std::string> slipCondtion(contactN);
     double negativeMuSquared[contactN];
 
     inertia.resize(contactN);
@@ -161,11 +161,11 @@ class RAI_contact_solver2 {
     return (T(0) < val) - (val < T(0));
   }
 
-  rai::Vector<rai::Vector<Matrix3d> > inertiaInv;
-  rai::Vector<Mat32d> inertiaInv_red;
-  rai::Vector<double> n2_mu;
+  std::vector<std::vector<Matrix3d> > inertiaInv;
+  std::vector<Mat32d> inertiaInv_red;
+  std::vector<double> n2_mu;
 
-  rai::Vector<Matrix3d> inertia;
+  std::vector<Matrix3d> inertia;
   Vector3d rest, originalImpulse, newRest;
   Vec2d oldImpulseTan;
   double alpha, oneMinusAlpha;
@@ -178,7 +178,7 @@ class RAI_contact_solver2 {
   Vector3d direction, gradient, newdirection;
   double gradient1D, newgradient1D, angleStep;
   Vector3d oldImpulse, nextImpulse;
-  rai::Vector<UnilateralContact *> *uniContacts_;
+  std::vector<UnilateralContact *> *uniContacts_;
 
 };
 

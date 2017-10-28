@@ -76,10 +76,10 @@ class TRPO_gae {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
-  TRPO_gae(rai::Vector<Task_ *> &tasks,
+  TRPO_gae(std::vector<Task_ *> &tasks,
                 ValueFunc_ *vfunction,
                 Policy_ *policy,
-                rai::Vector<Noise_ *> &noises,
+                std::vector<Noise_ *> &noises,
                 Acquisitor_ *acquisitor,
                 Dtype lambda,
                 int K = 0,
@@ -268,11 +268,11 @@ class TRPO_gae {
   }
 
   /////////////////////////// Core //////////////////////////////////////////
-  rai::Vector<Task_ *> task_;
-  rai::Vector<Noise_ *> noise_;
-  rai::Vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
-  rai::Vector<Noise::Noise<Dtype, ActionDim> *> noNoise_;
-  rai::Vector<Noise::NoNoise<Dtype, ActionDim>> noNoiseRaw_;
+  std::vector<Task_ *> task_;
+  std::vector<Noise_ *> noise_;
+  std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
+  std::vector<Noise::Noise<Dtype, ActionDim> *> noNoise_;
+  std::vector<Noise::NoNoise<Dtype, ActionDim>> noNoiseRaw_;
   ValueFunc_ *vfunction_;
   Policy_ *policy_;
   Acquisitor_ *acquisitor_;

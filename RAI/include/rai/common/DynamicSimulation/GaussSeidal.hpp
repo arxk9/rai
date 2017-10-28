@@ -33,7 +33,7 @@ class SOR {
 
   ~SOR() {}
 
-  void solve(rai::Vector<UnilateralContact *> &uniContacts,
+  void solve(std::vector<UnilateralContact *> &uniContacts,
              const MatrixXd &M_inv, const VectorXd &tauStar) {
 
     unsigned contact3 = 3 * uniContacts.size();
@@ -41,9 +41,9 @@ class SOR {
     unsigned stateDim = M_inv.cols();
     double alpha = 0.5;
 
-    rai::Vector<Vector3d> c(contactN);
-    rai::Vector<rai::Vector<Matrix3d> > inertiaInv(contactN);
-    rai::Vector<Vector3d> r(contactN);
+    std::vector<Vector3d> c(contactN);
+    std::vector<std::vector<Matrix3d> > inertiaInv(contactN);
+    std::vector<Vector3d> r(contactN);
     VectorXd progress(contact3);
     Vector3d rest;
     MatrixXd temp(3, stateDim);
@@ -69,7 +69,7 @@ class SOR {
 
       /// Gauss-Seidal
     int counterToBreak = 0;
-    rai::Vector<Vector3d> correctionImpulse;
+    std::vector<Vector3d> correctionImpulse;
     correctionImpulse.resize(contactN);
     double error = 0.0;
     while (true) {

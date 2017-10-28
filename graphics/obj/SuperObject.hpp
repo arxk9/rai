@@ -30,16 +30,16 @@ class SuperObject{
 
  protected:
 
-  void setTrans(rai::Vector<Transform>& trans);
-  void getTrans(rai::Vector<Transform>& trans);
+  void setTrans(std::vector<Transform>& trans);
+  void getTrans(std::vector<Transform>& trans);
   void turnOnGhost(bool ghostOn);
   void drawSnapshot(Camera *camera,  Light *light, float transparency);
 
   bool visible = true;
-  rai::Vector<Object*> objs;
+  std::vector<Object*> objs;
   Shader* shader = nullptr;
-  rai::Vector<rai::Vector<Transform> > ghosts;
-  rai::Vector<Transform> currentPose;
+  std::vector<std::vector<Transform> > ghosts;
+  std::vector<Transform> currentPose;
   float ghostTransparency;
   int maxGhostN = 0;
   int oldestGhost = 0;

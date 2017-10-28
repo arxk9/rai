@@ -71,12 +71,12 @@ class DDPG {
   using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
  // using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
 
-  DDPG(rai::Vector<Task_ *> &task,
+  DDPG(std::vector<Task_ *> &task,
        Qfunction_ *qfunction,
        Qfunction_ *qfunction_target,
        Policy_ *policy,
        Policy_ *policy_target,
-       rai::Vector<Noise_ *> &noise,
+       std::vector<Noise_ *> &noise,
        Acquisitor_ *acquisitor,
        ReplayMemory_ *memory,
        unsigned batchSize,
@@ -196,13 +196,13 @@ class DDPG {
   }
 
   /////////////////////////// Core ///////////////////////////////
-  rai::Vector<Task_ *> task_;
+  std::vector<Task_ *> task_;
   Qfunction_ *qfunction_, *qfunction_target_;
   Policy_ *policy_, *policy_target_;
   Noise::NoNoise<Dtype, ActionDim> noNoise_;
   Acquisitor_ *acquisitor_;
   ReplayMemory_ *memorySARS_;
-  rai::Vector<Noise_ *> noise_;
+  std::vector<Noise_ *> noise_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
 
   unsigned batSize_;

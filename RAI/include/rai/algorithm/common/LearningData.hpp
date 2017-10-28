@@ -52,8 +52,8 @@ class LearningData {
   }
   LearningData(TupleAcquisitor_ *acq) : tupleAcquisitor_(acq) {}
 
-  void acquireVineTrajForNTimeSteps(rai::Vector<Task_ *> &task,
-                                    rai::Vector<Noise_ *> &noise,
+  void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
+                                    std::vector<Noise_ *> &noise,
                                     Policy_ *policy,
                                     int numOfSteps,
                                     int numofjunct,
@@ -62,7 +62,7 @@ class LearningData {
                                     int vis_lv = 0) {
     Utils::timer->startTimer("Simulation");
 
-    rai::Vector<Trajectory_> trajectories;
+    std::vector<Trajectory_> trajectories;
     double dt = task[0]->dt();
     double timeLimit = task[0]->timeLimit();
 
@@ -91,7 +91,7 @@ class LearningData {
 
     if (numOfSteps > stepsInThisLoop) {
       int stepsneeded = numOfSteps - stepsInThisLoop;
-      rai::Vector<Trajectory_> tempTraj_;
+      std::vector<Trajectory_> tempTraj_;
       while (1) {
         int numofnewtraj = std::ceil(1.5 * stepsneeded * dt / timeLimit); // TODO: fix
 
@@ -129,7 +129,7 @@ class LearningData {
     StateBatch rolloutstartState(StateDim, numofjunct * numOfBranchPerJunct);
     trajectories.resize(numofjunct * numOfBranchPerJunct);
     rolloutstartState.setOnes();
-    rai::Vector<std::pair<int, int> > indx;
+    std::vector<std::pair<int, int> > indx;
     rai::Op::VectorHelper::sampleRandomStates(traj, VineStartPosition, int(0.1 * timeLimit / dt), indx);
 
     for (int dataID = 0; dataID < numofjunct; dataID++)
@@ -216,8 +216,8 @@ class LearningData {
     Utils::timer->stopTimer("Simulation");
   }
 
-  void acquireTrajForNTimeSteps(rai::Vector<Task_ *> &task,
-                                rai::Vector<Noise_ *> &noise,
+  void acquireTrajForNTimeSteps(std::vector<Task_ *> &task,
+                                std::vector<Noise_ *> &noise,
                                 Policy_ *policy,
                                 int numOfSteps,
                                 ValueFunc_ *vfunction = nullptr,
@@ -237,7 +237,7 @@ class LearningData {
   /////////////////////////// Core
   TrajAcquisitor_ *trajAcquisitor_ = nullptr;
   TupleAcquisitor_ *tupleAcquisitor_ = nullptr;
-  rai::Vector<Trajectory_> traj;
+  std::vector<Trajectory_> traj;
 
   /////////////////////////// batches
   StateBatch stateBat, termStateBat;
@@ -252,7 +252,7 @@ class LearningData {
   Tensor<Dtype, 3> actionNoiseTensor;
 
  private:
-  void sampleBatchOfInitial(StateBatch &initial, rai::Vector<Task_ *> &task) {
+  void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
     for (int trajID = 0; trajID < initial.cols(); trajID++) {
       State state;
       task[0]->setToInitialState();

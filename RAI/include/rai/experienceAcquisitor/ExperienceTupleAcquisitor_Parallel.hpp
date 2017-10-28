@@ -20,9 +20,9 @@ class ExperienceTupleAcquisitor_Parallel : public ExperienceTupleAcquisitor<Dtyp
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
  public:
-  virtual void acquire(rai::Vector<Task_*> &task,
+  virtual void acquire(std::vector<Task_*> &task,
                        Policy_ *policy,
-                       rai::Vector<Noise_*> &noise,
+                       std::vector<Noise_*> &noise,
                        ReplayMemory_ *memory,
                        unsigned stepsToTake) {
     for(unsigned stepId = 0; stepId < stepsToTake / task.size(); stepId++)

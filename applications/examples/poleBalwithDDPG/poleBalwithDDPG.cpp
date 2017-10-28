@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   omp_set_num_threads(nThread);
 
   ////////////////////////// Define task ////////////////////////////
-  rai::Vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
-  rai::Vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
+  std::vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
+  std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
@@ -84,9 +84,9 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Define Noise Model //////////////////////
-  rai::Vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
+  std::vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
       noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.15, 0.3));
-  rai::Vector<Noise *> noiseVector;
+  std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
   ////////////////////////// Define Memory ////////////////////////////

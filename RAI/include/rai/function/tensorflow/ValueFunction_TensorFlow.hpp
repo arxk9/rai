@@ -35,7 +35,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   ~ValueFunction_TensorFlow() {};
 
   virtual void forward(State &state, Dtype &value) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", state},
                     {"updateBNparams", this->notUpdateBN}},
                    {"value"}, {}, vectorOfOutputs);
@@ -43,7 +43,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   }
 
   virtual void forward(StateBatch &states, ValueBatch &values) {
-    rai::Vector<MatrixXD> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
                     {"updateBNparams", this->notUpdateBN}},
                    {"value"}, {}, vectorOfOutputs);
@@ -51,7 +51,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ValueBatch &values) {
-    rai::Vector<MatrixXD> loss, dummy;
+    std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
                     {"targetValue", values},
                     {"trainUsingTargetValue/learningRate", this->learningRate_},
@@ -62,7 +62,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   }
 
   virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
-    rai::Vector<MatrixXD> loss, dummy;
+    std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
                     {"targetValue", values},
                     {"predictedValue", old_values},
@@ -74,7 +74,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   }
 
   virtual Dtype performOneSolverIter_infimum(StateBatch &states, ValueBatch &values, Dtype linSlope) {
-    rai::Vector<MatrixXD> loss, dummy;
+    std::vector<MatrixXD> loss, dummy;
     auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
     this->tf_->run({{"state", states},
                     {"targetValue", values},
@@ -87,7 +87,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   }
 
   void setClipRate(const Dtype param_in){
-    rai::Vector<MatrixXD> dummy;
+    std::vector<MatrixXD> dummy;
     Eigen::VectorXd input;
     input << param_in;
     this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_param_assign"}, dummy);

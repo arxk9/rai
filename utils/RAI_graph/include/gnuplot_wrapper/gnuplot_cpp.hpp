@@ -253,8 +253,8 @@ class Figure {
   }
 
   template<typename Dtype>
-  void drawPieChart(rai::Vector<Dtype> time,
-                    rai::Vector<std::string> name,
+  void drawPieChart(std::vector<Dtype> time,
+                    std::vector<std::string> name,
                     std::string palette,
                     std::string title,
                     std::string unit,
@@ -262,7 +262,7 @@ class Figure {
                     std::string size) {
 
     Dtype A_sum = Dtype(0);
-    rai::Vector<std::string> nameNoSpace;
+    std::vector<std::string> nameNoSpace;
     nameNoSpace.resize(name.size());
     for (int i = 0; i < name.size(); i++)
       nameNoSpace[i] = space2underscore(name[i]);
@@ -344,8 +344,8 @@ class Figure {
 
     double squareSize = std::min(3., 3. / items.totalChildren_ * 10.0);
     double fontSize = std::min(10.0, 15.0 / items.totalChildren_ * 10.0);
-    rai::Vector<double> time;
-    rai::Vector<std::string> name;
+    std::vector<double> time;
+    std::vector<std::string> name;
     double xposition = 1.05;
     double yposition = 0.9;
     double yDecrement = 1.8 / (items.totalChildren_ - 1 + 0.001);
@@ -701,8 +701,8 @@ class Figure {
     fclose(tempData_);
   }
   template<typename Dtype>
-  void write2file(rai::Vector<std::string> name,
-                  rai::Vector<Dtype> time) {
+  void write2file(std::vector<std::string> name,
+                  std::vector<Dtype> time) {
     std::string
         randomFileName = "/tmp/gnuplotTempData" + std::to_string(figID) + "--" + std::to_string(fileNumber_++);
     tempfiles_.push_back(randomFileName.c_str());
@@ -725,7 +725,7 @@ class Figure {
   }
 
   FILE *pipe_, *tempData_;
-  rai::Vector<std::string> tempfiles_;
+  std::vector<std::string> tempfiles_;
   FigureType figureType_ = FigureType::No_figure;
   int figID = 0;
   int fileNumber_ = 0;
@@ -733,7 +733,7 @@ class Figure {
   std::map<PlotMethods2D, std::string> plottingMethodsEnumToStringMap_;
   std::map<PlotMethods3D, std::string> plottingMethods3DEnumToStringMap_;
   std::map<OutputFormat, std::string> OutputFormatStringMap_;
-  rai::Vector<std::string> position_ = {"0,0", "685,0", "1300,0", "0,645", "685,645", "1300,645"};
+  std::vector<std::string> position_ = {"0,0", "685,0", "1300,0", "0,645", "685,645", "1300,645"};
   int timeID_ = 0;
 
   bool multiPlotOn_ = false;
