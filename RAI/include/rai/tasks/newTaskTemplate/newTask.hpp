@@ -1,5 +1,5 @@
 #include <rai/tasks/common/Task.hpp>
-#include <enumeration.hpp>
+#include <rai/common/enumeration.hpp>
 
 #pragma once
 
