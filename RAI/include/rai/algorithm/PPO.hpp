@@ -56,13 +56,8 @@ class PPO {
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, 1> Value;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
-  typedef Eigen::Matrix<Dtype, StateDim, ActionDim> JacobianStateResAct;
-  typedef Eigen::Matrix<Dtype, 1, ActionDim> JacobianCostResAct;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> JacobianActResParam;
-  typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> FimInActionSapce;
   typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> Covariance;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
@@ -99,7 +94,6 @@ class PPO {
       KL_adapt_(KL_adapt),
       n_epoch_(n_epoch),
       cov_in(Cov),
-      cg_damping(0.1),
       KL_thres_(KL_thres),
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
@@ -149,6 +143,7 @@ class PPO {
                                      numOfBranchPerJunct_,
                                      vfunction_,
                                      vis_lv_);
+
     LOG(INFO) << "PPO Updater";
     PPOUpdater();
   }
@@ -165,7 +160,7 @@ class PPO {
     /// Update Advantage
     advantage_.resize(ld_.stateBat.cols());
     bellmanErr_.resize(ld_.stateBat.cols());
-    ValueBatch valuePred(ld_.stateBat.cols()), valueTest(ld_.stateBat.cols());
+    ValueBatch valuePred(ld_.stateBat.cols());
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
 
@@ -177,7 +172,9 @@ class PPO {
       bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
       dataID += advTra.cols();
     }
+    Eigen::Matrix<Dtype,-1,1> temp;
     rai::Math::MathFunc::normalize(advantage_);
+
     Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
@@ -185,17 +182,23 @@ class PPO {
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0, KLsum = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
+
+    ValueBatch testt;
+    testt.setZero();
+    vfunction_->forward(ld_.stateBat,testt);
+
     for (int i = 0; i < n_epoch_; i++) {
 
       Utils::timer->startTimer("Vfunction update");
+
       loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
+
       Utils::timer->stopTimer("Vfunction update");
 
       policy_->getStdev(stdev_o);
       LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
       Utils::timer->startTimer("Gradient computation");
       if (KL_adapt_) {
-        if (policy_->isRecurrent())
           policy_->PPOpg_kladapt(ld_.stateTensor,
                                  ld_.actionTensor,
                                  ld_.actionNoiseTensor,
@@ -203,10 +206,7 @@ class PPO {
                                  stdev_o,
                                  ld_.trajLength,
                                  policy_grad);
-        else
-          policy_->PPOpg_kladapt(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, advantage_, stdev_o, policy_grad);
       } else {
-        if (policy_->isRecurrent())
           policy_->PPOpg(ld_.stateTensor,
                          ld_.actionTensor,
                          ld_.actionNoiseTensor,
@@ -214,21 +214,17 @@ class PPO {
                          stdev_o,
                          ld_.trajLength,
                          policy_grad);
-        else
-          policy_->PPOpg(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, advantage_, stdev_o, policy_grad);
       }
 
       Utils::timer->stopTimer("Gradient computation");
+
       LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 
       Utils::timer->startTimer("Adam update");
       policy_->trainUsingGrad(policy_grad);
       Utils::timer->stopTimer("Adam update");
 
-      if (policy_->isRecurrent())
-        KL = policy_->PPOgetkl(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, stdev_o, ld_.trajLength);
-      else
-        KL = policy_->PPOgetkl(ld_.stateBat, ld_.actionBat, ld_.actionNoiseBat, stdev_o);
+      KL = policy_->PPOgetkl(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, stdev_o, ld_.trajLength);
 
       LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       KLsum += KL;
@@ -247,7 +243,7 @@ class PPO {
 
 ///Logging
     LOG(INFO) << "Mean KL divergence = " << KLsum / n_epoch_;
-    LOG(INFO) << "KL coefficient = " << KL_coeff_;
+    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
     Utils::logger->appendData("Stdev", ld_.stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klcoef", ld_.stepsTaken(), KL_coeff_);
@@ -280,7 +276,6 @@ class PPO {
   int numOfBranchPerJunct_;
   int n_epoch_;
   Dtype cov_in;
-  Dtype cg_damping;
   Dtype termCost;
   Dtype discFactor;
   Dtype dt;
@@ -292,7 +287,7 @@ class PPO {
   bool KL_adapt_;
 
   /////////////////////////// batches
-  ValueBatch advantage_, bellmanErr_;
+  ValueBatch advantage_ , bellmanErr_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;

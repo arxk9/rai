@@ -15,7 +15,6 @@ class StochasticPolicy(pc.Policy):
         action_dim = int(gs.output.shape[-1])
         state_dim = int(gs.input.shape[-1])
         action = tf.identity(gs.output, name=self.output_names[0])
-
         # standard deviation layer
         with tf.name_scope('stdevconcatOutput'):
             wo = tf.Variable(tf.zeros(shape=[1, action_dim], dtype=dtype), name='W',
@@ -30,11 +29,16 @@ class StochasticPolicy(pc.Policy):
         Stdev_assign = tf.assign(wo, tf.log(stdev_assign_placeholder), name='assignStdev')
         Stdev_get = tf.exp(wo, name='getStdev')
 
-        tangent_in = tf.placeholder(dtype, shape=[1, None], name='tangent')
+        tangent_in = tf.placeholder(dtype,  name='tangent')
         old_stdv = tf.placeholder(dtype, shape=[1, action_dim], name='stdv_o')  # TODO : Change to tf.Variable
-        old_action_sampled = tf.placeholder(dtype, shape=[None, action_dim], name='sampled_oa')
-        old_action_noise = tf.placeholder(dtype, shape=[None, action_dim], name='noise_oa')
-        advantage_in = tf.placeholder(dtype, shape=[None, 1], name='advantage')
+        old_action_in = tf.placeholder(dtype, name='sampled_oa')
+        old_action_noise_in = tf.placeholder(dtype, name='noise_oa')
+        advantage_in = tf.placeholder(dtype, shape=[None], name='advantage')
+
+        tangent_ = tf.reshape(tangent_in, [1, -1])
+        old_action_sampled = tf.reshape(old_action_in, [-1, action_dim])
+        old_action_noise = tf.reshape(old_action_noise_in, [-1, action_dim])
+        advantage = tf.reshape(advantage_in, shape=[-1])
 
         # Algorithm params
 
@@ -76,13 +80,12 @@ class StochasticPolicy(pc.Policy):
             logp_n = util.log_likelihood(action, action_stdev, old_action_sampled)
             logp_old = util.log_likelihood(old_action_noise, old_stdv)
             ratio = tf.exp(logp_n - logp_old)
-            adv = tf.reshape(advantage_in, shape=[-1])
             ent = tf.reduce_sum(wo + .5 * tf.cast(tf.log(2.0 * np.pi * np.e), dtype=dtype), axis=-1)
             mean_ent = tf.reduce_mean(ent)
 
             with tf.name_scope('TRPO'):
                 # Surrogate Loss
-                surr = tf.reduce_mean(tf.multiply(ratio, adv), name='loss')
+                surr = tf.reduce_mean(tf.multiply(ratio, advantage), name='loss')
                 policy_gradient = tf.identity(util.flatgrad(surr, gs.l_param_list), name='Pg')  # flatgrad
 
                 # Hessian Vector Product
@@ -96,15 +99,16 @@ class StochasticPolicy(pc.Policy):
                     return util.flatgrad(temp, gs.l_param_list)
 
                 # Conjugate Gradient Descent
-                out1, out2 = util.CG_tf(getfvp, tangent_in, 100, 1e-15)
+
+                out1, out2 = util.CG_tf(getfvp, tangent_, 100, 1e-15)
                 Ng = tf.identity(out1, name='Cg')
                 err = tf.identity(out2, name='Cgerror')
 
             with tf.name_scope('PPO'):
                 # PPO's pessimistic surrogate (L^CLIP)
-                surr1 = tf.multiply(ratio, adv)  # negative, smaller the better
+                surr1 = tf.multiply(ratio, advantage)  # negative, smaller the better
                 clip_rate = clip_param[0]
-                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), adv)
+                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))
 
                 # KL divergence

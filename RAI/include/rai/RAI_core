@@ -14,7 +14,6 @@
 #include <glog/logging.h>
 #include <omp.h>
 #include "RAI_Tensor.hpp"
-#include "RAI_Vector.hpp"
 
 std::string RAI_LOG_PATH; /// logging directory
 std::string RAI_ROOT_PATH; /// the main RAI directory

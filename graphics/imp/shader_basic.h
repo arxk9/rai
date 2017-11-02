@@ -2,7 +2,7 @@
 #define SHADER_BASIC_INCLUDED_H
 
 #include "shader.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Graphics {

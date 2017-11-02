@@ -7,7 +7,7 @@
 
 #include "SuperObject.hpp"
 #include "CheckerBoard_half.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Graphics {

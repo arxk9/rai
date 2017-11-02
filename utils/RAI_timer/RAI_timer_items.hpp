@@ -4,7 +4,6 @@
 
 #ifndef RAI_RAI_TIMER_ITEMS_HPP
 #define RAI_RAI_TIMER_ITEMS_HPP
-#include "rai/RAI_Vector.hpp"
 #include <string>
 #include <algorithm>
 

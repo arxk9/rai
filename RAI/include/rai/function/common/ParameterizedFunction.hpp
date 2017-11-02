@@ -34,10 +34,10 @@ class ParameterizedFunction {
   typedef Eigen::Matrix<Dtype, outputDimension, Eigen::Dynamic> JacobianWRTparam;
 
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic> InnerState;
-  typedef rai::Tensor<Dtype, 3> InputTensor;
-  typedef rai::Tensor<Dtype, 3> OutputTensor;
-//  typedef std::vector<InputBatch> InputVector;
-//  typedef std::vector<OutputBatch> OutputVector;
+
+  typedef rai::Tensor<Dtype, 1> Tensor1D;
+  typedef rai::Tensor<Dtype, 2> Tensor2D;
+  typedef rai::Tensor<Dtype, 3> Tensor3D;
 
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> Parameter;
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> ParameterGradient;
@@ -56,7 +56,10 @@ class ParameterizedFunction {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
 
-  virtual void forward(InputTensor &intputs, OutputTensor &outputs) {
+  virtual void forward(Tensor2D &intputs, Tensor2D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
+  virtual void forward(Tensor3D &intputs, Tensor3D &outputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
 

@@ -14,8 +14,11 @@ class MLP_inputBottleneck(bc.GraphStructure):
         dimension = [int(i) for i in param[2:]]
         nonlin = getattr(tf.nn, nonlin_str)
 
+        # input
+        self.input = tf.placeholder(dtype, name=fn.input_names[0])
+        self.input = tf.reshape(self.input, [-1, dimension[0]]) # reshape must be done
+
         # network
-        self.input = tf.placeholder(dtype, shape=[None, dimension[0]], name=fn.input_names[0])
         top = self.input
         layer_n = 0
 

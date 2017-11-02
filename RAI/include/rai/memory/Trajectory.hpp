@@ -11,7 +11,7 @@
 #include <Eigen/StdVector>
 #include "rai/common/enumeration.hpp"
 #include "rai/function/common/ValueFunction.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Memory {

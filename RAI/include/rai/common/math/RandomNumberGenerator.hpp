@@ -16,7 +16,6 @@
 #include <mutex>
 #include <Eigen/Core>
 #include <glog/logging.h>
-#include <rai/RAI_Vector.hpp>
 
 namespace rai {
 

@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
-    task.setRealTimeFactor(1.5);
+    task.setRealTimeFactor(2);
     task.setTimeLimitPerEpisode(25.0);
     taskVector.push_back(&task);
   }
@@ -121,10 +121,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  constexpr int loggingInterval = 10;
+  constexpr int loggingInterval = 50;
   ////////////////////////// Learning /////////////////////////////////
 
-  for (int iterationNumber = 0; iterationNumber < 100; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 101; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(2000);
+    algorithm.runOneLoop(5000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

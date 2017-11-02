@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "tensorflow/core/public/session.h"
-#include "rai/RAI_Vector.hpp"
+
 
 using namespace tensorflow;
 

@@ -26,7 +26,6 @@ public:
   typedef typename FunctionBase::OutputBatch ValueBatch;
   typedef typename FunctionBase::Gradient Gradient;
   typedef typename FunctionBase::Jacobian Jacobian;
-  typedef typename FunctionBase::InputTensor StateTensor;
   ValueFunction(){};
   virtual ~ValueFunction(){};
 

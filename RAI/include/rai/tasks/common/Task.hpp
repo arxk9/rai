@@ -29,13 +29,13 @@
 #include <Eigen/StdVector>
 #include <Eigen/SVD>
 
-#include "rai/RAI_Vector.hpp"
+
 #include "rai/common/enumeration.hpp"
 #include "rai/common/TypeDef.hpp"
 
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Task {

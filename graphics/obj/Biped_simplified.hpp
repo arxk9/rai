@@ -8,7 +8,7 @@
 #include "SuperObject.hpp"
 #include "Mesh.hpp"
 #include "Sphere.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Graphics {

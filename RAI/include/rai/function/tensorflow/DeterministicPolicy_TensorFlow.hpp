@@ -26,6 +26,9 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
   typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
   typedef typename PolicyBase::JacoqWRTparam JacoqWRTparam;
+  typedef typename PolicyBase::Tensor1D Tensor1D;
+  typedef typename PolicyBase::Tensor2D Tensor2D;
+  typedef typename PolicyBase::Tensor3D Tensor3D;
 
   DeterministicPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -51,6 +54,12 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     this->tf_->forward({{"state", states}},
                        {"action"}, vectorOfOutputs);
     actions = vectorOfOutputs[0];
+  }
+
+  virtual void forward(Tensor3D &states, Tensor3D &actions) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {

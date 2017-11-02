@@ -34,8 +34,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim>;
-  using Qfunction_tensorflow = Qfunction_TensorFlow<Dtype, stateDim, actionDim>;
-  using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
 
   typedef typename PolicyBase::State State;
@@ -47,8 +45,10 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
-  typedef typename PolicyBase::StateTensor StateTensor;
-  typedef typename PolicyBase::ActionTensor ActionTensor;
+
+  typedef typename PolicyBase::Tensor1D Tensor1D;
+  typedef typename PolicyBase::Tensor2D Tensor2D;
+  typedef typename PolicyBase::Tensor3D Tensor3D;
 
   RecurrentStochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -59,7 +59,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                                        std::string graphParam,
                                        Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
-          "RecurrentStochasticPolicy", computeMode, graphName, graphParam, learningRate) {
+          "RecurrentStochasticPolicy", computeMode, graphName, graphParam, learningRate), h("h_init") {
     hdim = this->getInnerStatesize();
     h.resize(hdim, 0);
   }
@@ -72,61 +72,52 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   ///PPO
-  virtual void PPOpg(StateTensor &states,
-                     ActionTensor &action,
-                     ActionTensor &actionNoise,
+  virtual void PPOpg(Tensor3D &states,
+                     Tensor3D &action,
+                     Tensor3D &actionNoise,
                      Advantages &advs,
                      Action &Stdev,
-                     VectorXD &len,
+                     Tensor1D &len,
                      VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+    Tensor2D hiddenState({hiddenStateDim(), states.batches()}, 0, "h_init");
 
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)}, "h_init");
-    hiddenState.setZero();
-    Tensor<Dtype, 3> advsT(advs, {advs.cols(),1,1}, "advantage");
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 3> lenT(len, {1,1,len.size()}, "length");
-    Tensor<Dtype, 1> gradT(grad, {grad.rows()}, "Algo/PPO/Pg2");
-
-    this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, lenT},
+    this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, len},
                    {"Algo/PPO/Pg"},
                    {},
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual void PPOpg_kladapt(StateTensor  &states,
-                             ActionTensor &action,
-                             ActionTensor &actionNoise,
+  virtual void PPOpg_kladapt(Tensor3D &states,
+                             Tensor3D &action,
+                             Tensor3D &actionNoise,
                              Advantages &advs,
                              Action &Stdev,
-                             VectorXD &len,
+                             Tensor1D &len,
                              VectorXD &grad) {
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)}, "h_init");
-    hiddenState.setZero();
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 3> advsT(advs, {advs.cols(),1,1}, "advantage");
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 3> lenT(len, {1,1,len.size()}, "length");
-    Tensor<Dtype, 1> gradT(grad, {grad.rows()}, "Algo/PPO/Pg2");
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+    Tensor2D hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
 
-    this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, lenT},
+    this->tf_->run({states, action, actionNoise, hiddenState, advsT, StdevT, len},
                    {"Algo/PPO/Pg2"},
                    {},
                    vectorOfOutputs);
-    std::memcpy(grad.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual Dtype PPOgetkl(Tensor<Dtype, 3> &states,
-                         Tensor<Dtype, 3> &action,
-                         Tensor<Dtype, 3> &actionNoise,
+  virtual Dtype PPOgetkl(Tensor3D &states,
+                         Tensor3D &action,
+                         Tensor3D &actionNoise,
                          Action &Stdev,
-                         VectorXD &len) {
+                         Tensor1D &len) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor<Dtype, 2> hiddenState({hiddenStateDim(), states.dim(2)}, "h_init");
-    hiddenState.setZero();
-    Tensor<Dtype, 1> StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor<Dtype, 3> lenT(len, {1,1,len.size()}, "length");
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor2D hiddenState({hiddenStateDim(), states.dim(2)},0, "h_init");
 
-    this->tf_->run({states, action, actionNoise, hiddenState, StdevT, lenT},
+    this->tf_->run({states, action, actionNoise, hiddenState, StdevT, len},
                    {"Algo/PPO/kl_mean"},
                    {},
                    vectorOfOutputs);
@@ -160,37 +151,34 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   virtual void forward(StateBatch &states, ActionBatch &actions) {
-    std::vector<Tensor3D> vectorOfOutputs;
-    // Step
-    // input shape = [dim, #batch]
-    // state shape = [state_size, #batch]
-    tensorflow::Tensor stateTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, stateDim}));
-    tensorflow::Tensor hTensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), hdim}));
-    tensorflow::Tensor len_tensor(this->tf_->getTensorFlowDataType(), tensorflow::TensorShape({states.cols(), 1, 1}));
-    VectorXD len_vec = VectorXD::Constant(states.cols(), 1);
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
+    Tensor1D len({states.cols()}, 1, "length");
+    stateT.copyDataFrom(states);
+
     if (h.cols() != states.cols()) {
       h.resize(hdim, states.cols());
       h.setZero();
     }
 
-    std::memcpy(len_tensor.flat<Dtype>().data(), len_vec.data(), sizeof(Dtype) * len_vec.size());
-    std::memcpy(stateTensor.flat<Dtype>().data(), states.data(), sizeof(Dtype) * states.size());
-    std::memcpy(hTensor.flat<Dtype>().data(), h.data(), sizeof(Dtype) * h.size());
-    this->tf_->run({{"state", stateTensor}, {"h_init", hTensor}, {"length", len_tensor}}, {"action", "h_state"}, {}, vectorOfOutputs);
-    std::memcpy(actions.data(), vectorOfOutputs[0].data(), sizeof(Dtype) * actions.size());
-    std::memcpy(h.data(), vectorOfOutputs[1].data(), sizeof(Dtype) * h.size());
+    this->tf_->run({stateT, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
+    std::memcpy(actions.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * actions.size());
+    h.copyDataFrom(vectorOfOutputs[1]);
   }
 
-  virtual void forward(StateTensor &states, ActionTensor &actions) {
+  ///
+  virtual void forward(Tensor3D &states, Tensor3D &actions) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
-  }
+    Tensor1D len({states.batches()}, 1, "length");
 
-  virtual void test(StateTensor &states, ActionTensor &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
+    if (h.cols() != states.batches()) {
+      h.resize(hdim, states.batches());
+      h.setZero();
+    }
+
+    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
+    h.copyDataFrom(vectorOfOutputs[1]);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual void trainUsingGrad(const VectorXD &grad) {
@@ -210,14 +198,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
 
-  virtual void test(StateBatch &states, ActionBatch &actions) {
-    std::vector<MatrixXD> vectorOfOutputs;
-
-    this->tf_->forward({{"state", states}},
-                       {"testout"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
-  }
-
   virtual bool isRecurrent() {
     return true;
   }
@@ -234,12 +214,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     int coldim = h.cols() - 1;
     LOG_IF(FATAL, coldim < 0) << "Initialize Innerstates first (Call reset)";
     LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
-
-    if (n < coldim) {
-      h.block(0, n, hdim, coldim - n) =
-          h.block(0, n + 1, hdim, coldim - n);
-    }
-    h.conservativeResize(hdim, coldim);
+    h.removeCol(n);
   }
 
   virtual int getInnerStatesize() {
@@ -248,13 +223,12 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     return vectorOfOutputs[0](0);
   }
 
-  int hiddenStateDim (){ return hdim; }
+  int hiddenStateDim() { return hdim; }
 
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
-  using Tensor3D = Eigen::Tensor<Dtype, 3>;
   int hdim = 0;
-  MatrixXD h;
+  Tensor2D h;
 };
 }//namespace FuncApprox
 }//namespace rai

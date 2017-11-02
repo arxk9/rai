@@ -18,7 +18,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   typedef typename ValueFunctionBase::ValueBatch ValueBatch;
   typedef typename ValueFunctionBase::Gradient Gradient;
   typedef typename ValueFunctionBase::Jacobian Jacobian;
-  typedef typename ValueFunctionBase::StateTensor StateTensor;
 
   ValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {

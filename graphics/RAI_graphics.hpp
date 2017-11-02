@@ -13,7 +13,7 @@
 #include "imp/shader_background.hpp"
 #include "rai/common/StopWatch.hpp"
 #include <mutex>
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Graphics {

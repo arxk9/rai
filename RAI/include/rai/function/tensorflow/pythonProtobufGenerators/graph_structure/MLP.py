@@ -15,8 +15,11 @@ class MLP(bc.GraphStructure):
         dimension = [int(i) for i in param[2:]]
         nonlin = getattr(tf.nn, nonlin_str)
 
+        # input
+        self.input = tf.placeholder(dtype, name=fn.input_names[0])
+        self.input = tf.reshape(self.input, [-1, dimension[0]]) # reshape must be done
+
         # network
-        self.input = tf.placeholder(dtype, shape=[None, dimension[0]], name=fn.input_names[0])
         top = self.input
         layer_n = 0
 
@@ -28,7 +31,9 @@ class MLP(bc.GraphStructure):
         with tf.name_scope('output_layer'):
             wo = tf.Variable(tf.random_uniform(dtype=dtype, shape=[dimension[-2], dimension[-1]], minval=-float(weight), maxval=float(weight)))
             bo = tf.Variable(tf.random_uniform(dtype=dtype, shape=[dimension[-1]], minval=-float(weight), maxval=float(weight)))
+            top = tf.matmul(top, wo) + bo
 
-        self.output = tf.add(tf.matmul(top, wo), bo, name=fn.output_names[0])
+        self.output = tf.identity(top)
+
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         self.a_param_list = self.l_param_list

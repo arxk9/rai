@@ -7,7 +7,9 @@
 #include "../TypeDef.hpp"
 #include <iostream>
 #include <vector>
-#include "rai/RAI_Vector.hpp"
+
+#include "rai/RAI_Tensor.hpp"
+
 namespace rai {
 namespace Math {
 class MathFunc {
@@ -215,6 +217,13 @@ class MathFunc {
   static inline Dtype standardDev(Eigen::Matrix<Dtype, 1, -1> &samples) {
     Eigen::Matrix<Dtype, 1, -1> centered = samples.array() - samples.mean();
     return std::sqrt(centered.array().square().sum() / (samples.cols() - 1));
+  }
+
+  template<typename Dtype>
+  static inline void normalize(Eigen::Matrix<Dtype, -1, 1> &samples) {
+    Eigen::Matrix<Dtype, -1, 1> centered = samples.array() - samples.mean();
+    Dtype std = std::sqrt(centered.array().square().sum() / (samples.cols() - 1));
+    samples = centered / std;
   }
 
   template<typename Dtype>

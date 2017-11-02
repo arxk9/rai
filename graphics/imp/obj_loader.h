@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 #include "glog/logging.h"
-#include "rai/RAI_Vector.hpp"
 
 namespace rai {
 namespace Graphics {

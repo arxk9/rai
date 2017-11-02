@@ -11,7 +11,7 @@
 #include "enumeration.hpp"
 #include "Trajectory.hpp"
 #include "math/RandomNumberGenerator.hpp"
-#include "rai/RAI_Vector.hpp"
+
 
 namespace rai {
 namespace Memory {

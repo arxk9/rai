@@ -21,6 +21,7 @@
 #include "rai/noiseModel/Noise.hpp"
 #include "rai/function/common/Policy.hpp"
 #include <rai/RAI_core>
+#include <rai/RAI_Tensor.hpp>
 
 #include <omp.h>
 
@@ -41,6 +42,8 @@ class CommonFunc {
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> RowVectorXD;
   typedef Eigen::Matrix<Dtype, 2, 1> Result;
+  typedef rai::Tensor<Dtype,3> StateTensor;
+  typedef rai::Tensor<Dtype,3> ActionTensor;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, CommandDim>;
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
@@ -119,8 +122,9 @@ class CommonFunc {
     noise[0]->initializeNoise();
 
     Result stat;
-    StateBatch stateBatch, stateBatchReduced;
-    ActionBatch actionBatch, actionBatchReduced;
+    StateTensor states("state");
+    ActionTensor actions("action");
+
     std::vector<TerminationType> termTypeBatch;
     State state_tp1, state_t;
     Action action_t, noiseFreeAction, actionNoise;
@@ -131,18 +135,17 @@ class CommonFunc {
     int idx[numOfTraj];
     bool Reduce[numOfTraj];
 
-    stateBatch = startingState;
-    actionBatch.resize(ActionDim, numOfTraj);
-    termTypeBatch.resize(numOfTraj);
-    stateBatchReduced.resize(StateDim, numOfTraj);
-    actionBatchReduced.resize(ActionDim, numOfTraj);
 
-    stateBatchReduced = stateBatch;
+    termTypeBatch.resize(numOfTraj);
+    states.resize(StateDim,1,numOfTraj);
+    actions.resize(ActionDim,1,numOfTraj);
+
+    states.copyDataFrom(startingState);
 
     for (int trajID = 0; trajID < numOfTraj; trajID++) {
       Reduce[trajID] = false;
       idx[trajID] = trajID;
-      state_tp1 = stateBatch.col(trajID);
+      state_tp1 = startingState.col(trajID);
       if (policy->isRecurrent()) policy->reset(trajID);
 
       if (task[0]->isTerminalState(state_tp1)) {
@@ -164,35 +167,31 @@ class CommonFunc {
       for (int cnt = IDXbefore - 1; cnt > -1; cnt--) {
         if (Reduce[cnt]) {
           int target = cnt;
-//          LOG(INFO) << target << "kill";
           // remove column(target) from reduced batch
           // if recurrent, policy.kill(target)
           if (target < reducedIdx - 1) {
-            //state
-            stateBatchReduced.block(0, target, StateDim, reducedIdx - target - 1) =
-                stateBatchReduced.block(0, target + 1, StateDim, reducedIdx - target - 1);
             //idx
             for (int i = target; i < reducedIdx - 1; i++)
               idx[i] = idx[i + 1];
           }
+          states.removeBatch(target);
           policy->terminate(target);
           reducedIdx -= 1;
-          stateBatchReduced.conservativeResize(StateDim, reducedIdx);
           Reduce[cnt] = false;
         }
       }
       if (reducedIdx == 0) /// Termination : No more job to do
         break;
 
-      actionBatchReduced.conservativeResize(ActionDim, reducedIdx);
+      actions.resize(ActionDim,1,reducedIdx);
       timer->startTimer("Policy evaluation");
-      policy->forward(stateBatchReduced, actionBatchReduced);
+      policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
       for (int trajID = 0; trajID < reducedIdx; trajID++) {
         actionNoise = noise[0]->sampleNoise();
-        state_t = stateBatchReduced.col(trajID);
-        action_t = actionBatchReduced.col(trajID) + actionNoise;
+        state_t = states.batch(trajID);
+        action_t = actions.batch(trajID) + actionNoise;
         task[0]->setToParticularState(state_t);
         termType = TerminationType::not_terminated;
         timer->startTimer("dynamics");
@@ -201,7 +200,7 @@ class CommonFunc {
         timer->stopTimer("dynamics");
         stepCount++;
         costInThisEpisode += costInThisStep;
-        stateBatchReduced.col(trajID) = state_tp1;
+        states.batch(trajID) = state_tp1;
         termTypeBatch[idx[trajID]] = termType;
         trajectorySet[idx[trajID]].pushBackTrajectory(state_t,
                                                       action_t,
@@ -243,9 +242,10 @@ class CommonFunc {
     for (auto &noise_ : noise)
       noise_->initializeNoise();
 
+    StateTensor states("state");
+    ActionTensor actions("action");
+
     Result stat;
-    StateBatch stateBatch, stateBatchReduced;
-    ActionBatch actionBatch, actionBatchReduced;
     std::vector<TerminationType> termTypeBatch;
     State state_tp;
     Action action_tp;
@@ -269,11 +269,9 @@ class CommonFunc {
     Dtype cost[ThreadN];
     int trajcnt;
 
-    stateBatch = startingState;
-    actionBatch.resize(ActionDim, numOfTraj);
     termTypeBatch.resize(numOfTraj);
-    stateBatchReduced.resize(StateDim, ThreadN);
-    actionBatchReduced.resize(ActionDim, ThreadN);
+    states.resize(StateDim,1,ThreadN);
+    actions.resize(ActionDim,1,ThreadN);
     Occupied.resize(ThreadN);
 
     for (int i = 0; i < ThreadN; i++) {
@@ -284,7 +282,8 @@ class CommonFunc {
 
     /////////////check initial states & initialize termTypeBatch
     for (int trajID = 0; trajID < numOfTraj; trajID++) {
-      state_tp = stateBatch.col(trajID);
+      state_tp = startingState.col(trajID);
+
       if (taskset[0]->isTerminalState(state_tp)) {
         termTypeBatch[trajID] = TerminationType::terminalState;
         trajectorySet[trajID].terminateTrajectoryAndUpdateValueTraj(
@@ -307,11 +306,11 @@ class CommonFunc {
 //            LOG(INFO) << "taskNo :" << i << " trajNo :" << trajcnt << " / " << numOfTraj;
               if (policy->isRecurrent()) policy->reset(i);
               Occupied(i) = true;
-              state_t[i] = stateBatch.col(trajcnt);
+              state_t[i] = startingState.col(trajcnt);
               idx[i] = trajcnt;
               taskset[i]->setToParticularState(state_t[i]);
               episodetime[i] = 0;
-              stateBatchReduced.col(i) = stateBatch.col(trajcnt);
+              states.batch(i) = state_t[i];
               break;
             }
           }
@@ -329,28 +328,24 @@ class CommonFunc {
             int target = cnt;
             // remove column(target) from reduced batch
             if (target < reducedIdx - 1) {
-              //state
-              stateBatchReduced.block(0, target, StateDim, reducedIdx - target - 1) =
-                  stateBatchReduced.block(0, target + 1, StateDim, reducedIdx - target - 1);
               //idx
               for (int i = target; i < reducedIdx - 1; i++)
                 idx[i] = idx[i + 1];
               //policy
             }
+            states.removeBatch(target);
             policy->terminate(target);
             reducedIdx -= 1;
             Occupied(cnt) = true;
           }
         }
-        stateBatchReduced.conservativeResize(StateDim, reducedIdx);
-        actionBatchReduced.resize(ActionDim, reducedIdx);
+      actions.resize(ActionDim,1,reducedIdx);
       }
       if (reducedIdx == 0) /// Termination : No more job to do
         break;
 
       timer->startTimer("Policy evaluation");
-      LOG_IF(FATAL,stateBatchReduced.cols() != actionBatchReduced.cols()) << stateBatchReduced.cols() << actionBatchReduced.cols();
-      policy->forward(stateBatchReduced, actionBatchReduced);
+      policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
       int colID = 0;
@@ -359,8 +354,9 @@ class CommonFunc {
       for (int taskID = 0; taskID < reducedIdx; taskID++) {
         cost[taskID] = 0;
         action_noise[taskID] = noise[taskID]->sampleNoise();
-        state_t[taskID] = stateBatchReduced.col(taskID);
-        action_t[taskID] = actionBatchReduced.col(taskID) + action_noise[taskID];
+        state_t[taskID] = states.batch(taskID);
+        action_t[taskID] = actions.batch(taskID) + action_noise[taskID];
+
       }
       timer->startTimer("dynamics");
 #pragma omp parallel for schedule(dynamic) reduction(+:stepCount)
@@ -377,7 +373,8 @@ class CommonFunc {
                                         state_t2[taskID],
                                         termtype_t[taskID]);
         stepCount++;
-        stateBatchReduced.col(taskID) = state_t2[taskID];
+        states.batch(taskID) = state_t2[taskID];
+
         trajectorySet[idx[taskID]].pushBackTrajectory(state_t[taskID],
                                                       action_t[taskID],
                                                       action_noise[taskID],
@@ -444,15 +441,16 @@ class CommonFunc {
 
     LOG_IF(FATAL, threadN != noises.size()) << "# Noise: " << noises.size() << ", # Thread: " << threadN << " mismatch";
 
-    StateBatch state_t_Batch(StateDim, threadN);
-    ActionBatch action_t_Batch(ActionDim, threadN);
+    StateTensor states({StateDim, 1 , threadN}, "state");
+    ActionTensor actions({ActionDim, 1 , threadN}, "action");
+
     State tempState;
     unsigned colId = 0;
     for (auto &task : tasks) {
       task->getState(tempState);
-      state_t_Batch.col(colId++) = tempState;
+      states.batch(colId++) = tempState;
     }
-    policy->forward(state_t_Batch, action_t_Batch);
+    policy->forward(states,actions);
 
     State state_t[threadN], state_tp1[threadN];
     Dtype cost[threadN];
@@ -461,8 +459,8 @@ class CommonFunc {
 
     for (int i = 0; i < threadN; i++) {
       termType_tp1[i] = TerminationType::not_terminated;
-      action_t[i] = action_t_Batch.col(i) + noises[i]->sampleNoise();
-      state_t[i] = state_t_Batch.col(i);
+      action_t[i] = actions.batch(i) + noises[i]->sampleNoise();
+      state_t[i] = states.batch(i);
     }
 
 #pragma omp parallel for schedule(dynamic)

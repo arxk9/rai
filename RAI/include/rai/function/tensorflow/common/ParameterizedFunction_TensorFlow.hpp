@@ -21,8 +21,9 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, inputDimension, outputDimension>;
   typedef typename PfunctionBase::Input Input;
   typedef typename PfunctionBase::InputBatch InputBatch;
-  typedef typename PfunctionBase::InputTensor InputTensor;
-  typedef typename PfunctionBase::OutputTensor OutputTensor;
+  typedef typename PfunctionBase::Tensor1D Tensor1D;
+  typedef typename PfunctionBase::Tensor2D Tensor2D;
+  typedef typename PfunctionBase::Tensor3D Tensor3D;
 
   typedef typename PfunctionBase::Output Output;
   typedef typename PfunctionBase::OutputBatch OutputBatch;
@@ -32,7 +33,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   typedef typename PfunctionBase::JacobianWRTparam JacobianWRTparam;
   typedef typename PfunctionBase::Parameter Parameter;
   typedef typename PfunctionBase::InnerState InnerState;
-
 
   /*
    * When setting nThreads = 0, TensorFlow uses the number of core to determine the number of threads.
@@ -91,12 +91,12 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
              {"output"}, {}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
   }
-  virtual void forward(InputTensor &inputs, OutputTensor &outputs) {
-    std::vector<Tensor3D> vectorOfOutputs;
-    tf_->run({{"input", inputs}},
-             {"output"}, {}, vectorOfOutputs);
-    outputs = vectorOfOutputs[0];
-  }
+//  virtual void forward(InputTensor &inputs, OutputTensor &outputs) {
+//    std::vector<Tensor3D> vectorOfOutputs;
+//    tf_->run({{"input", inputs}},
+//             {"output"}, {}, vectorOfOutputs);
+//    outputs = vectorOfOutputs[0];
+//  }
 
   virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &targetOutputs) {
     std::vector<MatrixXD> outputs, dummy;
@@ -244,8 +244,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
   using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;
-  using Tensor3D = Eigen::Tensor<Dtype, 3>;
-
 
   TensorFlowNeuralNetwork<Dtype> *tf_;
   MatrixXD learningRate_;
