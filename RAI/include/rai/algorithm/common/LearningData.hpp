@@ -47,9 +47,9 @@ class LearningData {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq),stateTensor("state"),
                                        actionTensor("sampled_oa"),
-                                       actionNoiseTensor("noise_oa"),trajLength("length"){
+                                       actionNoiseTensor("noise_oa"),
+                                       trajLength("length"),advantageTensor("advantage"){
   }
-  LearningData(TupleAcquisitor_ *acq) : tupleAcquisitor_(acq) {}
 
   void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
                                     std::vector<Noise_ *> &noise,
@@ -147,13 +147,76 @@ class LearningData {
     traj.reserve(traj.size() + trajectories.size());
     traj.insert(traj.end(), trajectories.begin(), trajectories.end());
 
-    int dataN = 0;
-    for (auto &tra : traj) dataN += tra.size() - 1;
+    processTrajs(task[0],policy,vfunction);
+    Utils::timer->stopTimer("Simulation");
+  }
 
-   stepsTaken = int(trajAcquisitor_->stepsTaken());
+  void acquireTrajForNTimeSteps(std::vector<Task_ *> &task,
+                                std::vector<Noise_ *> &noise,
+                                Policy_ *policy,
+                                int numOfSteps,
+                                ValueFunc_ *vfunction = nullptr,
+                                int vis_lv = 0) {
+    acquireVineTrajForNTimeSteps(task, noise, policy, numOfSteps, 0, 0, vfunction, vis_lv);
+  }
+
+  long int stepsTaken() {
+    long int steps = 0;
+    if (trajAcquisitor_)
+      steps += trajAcquisitor_->stepsTaken();
+    if (tupleAcquisitor_)
+      steps += tupleAcquisitor_->stepsTaken();
+    return steps;
+  }
+
+  void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda){
+    //compute advantage using GAE(lambda)
+    advantageTensor.resize(dataN);
+    int dataID = 0;
+
+    for (auto &tra : traj) {
+      ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
+//      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
+      bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
+      dataID += advTra.cols();
+    }
+      advantageTensor.fillData()
+  }
+
+  /////////////////////////// Core
+  TrajAcquisitor_ *trajAcquisitor_ = nullptr;
+  TupleAcquisitor_ *tupleAcquisitor_ = nullptr;
+  std::vector<Trajectory_> traj;
+  int dataN;
+
+  /////////////////////////// batches
+  StateBatch stateBat, termStateBat;
+  ValueBatch valueBat, termValueBat;
+
+  Tensor<Dtype, 1> trajLength;
+  Tensor<Dtype, 1> advantageTensor;
+  Tensor<Dtype, 3> stateTensor;
+  Tensor<Dtype, 3> hiddenStateTensor;
+  Tensor<Dtype, 3> actionTensor;
+  Tensor<Dtype, 3> actionNoiseTensor;
+
+ private:
+  void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
+    for (int trajID = 0; trajID < initial.cols(); trajID++) {
+      State state;
+      task[0]->setToInitialState();
+      task[0]->getState(state);
+      initial.col(trajID) = state;
+    }
+  }
+
+  void processTrajs(Task_ *task,
+                    Policy_ *policy,
+                    ValueFunc_ *vfunction = nullptr){
+
+    dataN = 0;
+    for (auto &tra : traj) dataN += tra.size() - 1;
     stateBat.resize(StateDim, dataN);
-//    actionBat.resize(ActionDim, dataN);
-//    actionNoiseBat.resize(ActionDim, dataN);
 
     int colID = 0;
     for (int traID = 0; traID < traj.size(); traID++) {
@@ -217,63 +280,15 @@ class LearningData {
 
       for (int traID = 0; traID < traj.size(); traID++)
         if (traj[traID].termType == TerminationType::timeout) {
-          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task[0]->discountFtr());
+          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID),task->discountFtr());
         }
 
-      int colID = 0;
+      colID = 0;
       for (int traID = 0; traID < traj.size(); traID++)
         for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
           valueBat(colID++) = traj[traID].valueTraj[timeID];
     }
-
-    Utils::timer->stopTimer("Simulation");
   }
-
-  void acquireTrajForNTimeSteps(std::vector<Task_ *> &task,
-                                std::vector<Noise_ *> &noise,
-                                Policy_ *policy,
-                                int numOfSteps,
-                                ValueFunc_ *vfunction = nullptr,
-                                int vis_lv = 0) {
-    acquireVineTrajForNTimeSteps(task, noise, policy, numOfSteps, 0, 0, vfunction, vis_lv);
-  }
-
-  long int stepsTaken() {
-    long int steps = 0;
-    if (trajAcquisitor_)
-      steps += trajAcquisitor_->stepsTaken();
-    if (tupleAcquisitor_)
-      steps += tupleAcquisitor_->stepsTaken();
-    return steps;
-  }
-
-  /////////////////////////// Core
-  TrajAcquisitor_ *trajAcquisitor_ = nullptr;
-  TupleAcquisitor_ *tupleAcquisitor_ = nullptr;
-  std::vector<Trajectory_> traj;
-
-  /////////////////////////// batches
-  StateBatch stateBat, termStateBat;
-  ValueBatch valueBat, termValueBat;
-  ActionBatch actionBat, actionNoiseBat;
-
-  /////////////////////////// Recurrent
-  Tensor<Dtype, 1> trajLength;
-  Tensor<Dtype, 3> stateTensor;
-  Tensor<Dtype, 3> hiddenStateTensor;
-  Tensor<Dtype, 3> actionTensor;
-  Tensor<Dtype, 3> actionNoiseTensor;
-
- private:
-  void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
-    for (int trajID = 0; trajID < initial.cols(); trajID++) {
-      State state;
-      task[0]->setToInitialState();
-      task[0]->getState(state);
-      initial.col(trajID) = state;
-    }
-  }
-
 };
 
 }

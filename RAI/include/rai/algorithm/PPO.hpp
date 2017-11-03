@@ -158,9 +158,9 @@ class PPO {
     Utils::timer->startTimer("GAE");
 
     /// Update Advantage
-    advantage_.resize(ld_.stateBat.cols());
-    bellmanErr_.resize(ld_.stateBat.cols());
-    ValueBatch valuePred(ld_.stateBat.cols());
+    advantage_.resize(ld_.dataN);
+    bellmanErr_.resize(ld_.dataN);
+    ValueBatch valuePred(ld_.dataN);
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
 
@@ -172,7 +172,6 @@ class PPO {
       bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
       dataID += advTra.cols();
     }
-    Eigen::Matrix<Dtype,-1,1> temp;
     rai::Math::MathFunc::normalize(advantage_);
 
     Utils::timer->stopTimer("GAE");
@@ -217,7 +216,6 @@ class PPO {
       }
 
       Utils::timer->stopTimer("Gradient computation");
-
       LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 
       Utils::timer->startTimer("Adam update");
@@ -225,7 +223,6 @@ class PPO {
       Utils::timer->stopTimer("Adam update");
 
       KL = policy_->PPOgetkl(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, stdev_o, ld_.trajLength);
-
       LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       KLsum += KL;
 

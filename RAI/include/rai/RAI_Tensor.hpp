@@ -248,6 +248,7 @@ class TensorBase {
       dtype_ = tensorflow::DataType::DT_DOUBLE;
   }
 
+
   tensorflow::DataType dtype_;
   std::pair<std::string, tensorflow::Tensor> namedTensor_;
   std::vector<int> dim_;
@@ -298,6 +299,13 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
     return mat;
   }
 
+  EigenMat segment(int startIdx, int size)
+  {
+    LOG_IF(FATAL, startIdx + size +1 > dim_[0]) << "requested segment exceeds Tensor dimension (startIdx+size v.s lastIdx = " << startIdx + size  << "v.s. "<<dim_[0] -1 ;
+    EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + startIdx, size, 1);
+    return mat;
+  }
+
   /// you lose all data calling resize
   void resize(int n) {
     std::vector<int> dim = {n};
@@ -310,6 +318,8 @@ template<typename Dtype>
 class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>, 0, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>> EigenMatStride;
+
   typedef Eigen::TensorMap<Eigen::Tensor<Dtype, 1>, Eigen::Aligned> EigenTensor;
   typedef rai::TensorBase<Dtype, 2> TensorBase;
   using TensorBase::namedTensor_;
@@ -335,6 +345,12 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
   typename EigenMat::RowXpr row(int rowId) {
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data(), dim_[0], dim_[1]);
     return mat.row(rowId);
+  }
+
+  EigenMatStride block(int rowStart, int colStart, int rowDim, int colDim)
+  {
+    EigenMatStride mat(namedTensor_.second.template flat<Dtype>().data() + rowStart + dim_[1] * colStart, rowDim, colDim, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
+    return mat;
   }
 
   EigenMat eMat() {

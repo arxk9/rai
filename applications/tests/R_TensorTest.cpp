@@ -7,11 +7,9 @@
 void test(Eigen::Matrix<float, -1, -1> ten2D);
 void test2(std::pair<std::string, tensorflow::Tensor> ten);
 
-
 int main() {
 
   rai::Tensor<float, 2> ten({3, 2}, "test tensor");
-
   Eigen::Matrix<float, 3, 2> eMat;
   Eigen::Tensor<float, 2> eigenTen(3, 2);
   tensorflow::Tensor tfTensor(tensorflow::DataType::DT_FLOAT, tensorflow::TensorShape({2, 3}));
@@ -34,8 +32,12 @@ int main() {
   Eigen::Vector3f eigenVec(7, 7, 7);
   Eigen::RowVector2f eigenVec2(4, 4);
 
+  ten.col(0) = eigenVec;
   ten.row(2) = eigenVec2;
   std::cout << "my tensor (first column should be 7, 3rd row is 4)" << std::endl << ten << std::endl;
+
+  std::cout << "ten block(0,0,2,2)" << std::endl << ten.block(0, 0, 2, 2) << std::endl;
+  std::cout << "ten block(1,0,2,2)" << std::endl << ten.block(1, 0, 2, 2) << std::endl;
 
   /// checking 3d methods
   rai::Tensor<float, 3> ten3D({3, 2, 4}, "testTensor");
@@ -61,15 +63,14 @@ int main() {
   for (int i = 0; i < ten1D.dim(0); i++)
     ten1D[i] = i;
   std::cout << "1D tensor" << std::endl << ten1D << std::endl;
-
   test(ten);
   test2(ten);
 }
 
-void test(Eigen::Matrix<float, -1, -1> ten2D){
-  std::cout <<"casting to eigenMat"  << std::endl << ten2D << std::endl;
+void test(Eigen::Matrix<float, -1, -1> ten2D) {
+  std::cout << "casting to eigenMat" << std::endl << ten2D << std::endl;
 }
 
-void test2(std::pair<std::string, tensorflow::Tensor> ten){
-std::cout <<"casting to tfTensor"  << std::endl << ten.first << std::endl;
+void test2(std::pair<std::string, tensorflow::Tensor> ten) {
+  std::cout << "casting to tfTensor" << std::endl << ten.first << std::endl;
 }
