@@ -158,22 +158,10 @@ class PPO {
     Utils::timer->startTimer("GAE");
 
     /// Update Advantage
-    advantage_.resize(ld_.dataN);
-    bellmanErr_.resize(ld_.dataN);
     ValueBatch valuePred(ld_.dataN);
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
-
-
-    int dataID = 0;
-    for (auto &tra : ld_.traj) {
-      ValueBatch advTra = tra.getGAE(vfunction_, discFactor, lambda_, termCost);
-      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
-      bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
-      dataID += advTra.cols();
-    }
-    rai::Math::MathFunc::normalize(advantage_);
-
+    ld_.computeAdvantage(task_[0],vfunction_,lambda_);
     Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
@@ -181,10 +169,6 @@ class PPO {
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0, KLsum = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
-
-    ValueBatch testt;
-    testt.setZero();
-    vfunction_->forward(ld_.stateBat,testt);
 
     for (int i = 0; i < n_epoch_; i++) {
 
@@ -197,22 +181,12 @@ class PPO {
       policy_->getStdev(stdev_o);
       LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
       Utils::timer->startTimer("Gradient computation");
+
       if (KL_adapt_) {
-          policy_->PPOpg_kladapt(ld_.stateTensor,
-                                 ld_.actionTensor,
-                                 ld_.actionNoiseTensor,
-                                 advantage_,
-                                 stdev_o,
-                                 ld_.trajLength,
-                                 policy_grad);
+        //TODO : ld_.Batch(?) instead of ld_
+        policy_->PPOpg_kladapt(ld_,stdev_o,policy_grad);
       } else {
-          policy_->PPOpg(ld_.stateTensor,
-                         ld_.actionTensor,
-                         ld_.actionNoiseTensor,
-                         advantage_,
-                         stdev_o,
-                         ld_.trajLength,
-                         policy_grad);
+        policy_->PPOpg(ld_,stdev_o,policy_grad);
       }
 
       Utils::timer->stopTimer("Gradient computation");
@@ -222,7 +196,7 @@ class PPO {
       policy_->trainUsingGrad(policy_grad);
       Utils::timer->stopTimer("Adam update");
 
-      KL = policy_->PPOgetkl(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, stdev_o, ld_.trajLength);
+      KL = policy_->PPOgetkl(ld_, stdev_o);
       LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       KLsum += KL;
 

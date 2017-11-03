@@ -154,10 +154,10 @@ int main(int argc, char *argv[]) {
   for (int iterationNumber = 0; iterationNumber < 250; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
-      algorithm.setVisualizationLevel(1);
+      algorithm.setVisualizationLevel(0);
       taskVector[0]->enableVideoRecording();
     }
-
+    LOG(INFO) << iterationNumber << "th Iteration";
     algorithm.runOneLoop(5000);
 
     if (iterationNumber % loggingInterval == 0) {

@@ -37,6 +37,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
+  typedef typename PolicyBase::LearningData_ LearningData_;
 
   StochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -58,21 +59,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
   ///TRPO
   //batch
-  virtual void TRPOpg(Tensor3D &states,
-                      Tensor3D &actions,
-                      Tensor3D &actionNoise,
-                      Advantages &advs,
+  virtual void TRPOpg(LearningData_ &ld,
                       Action &Stdev,
                       VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
 
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advsT,
+    this->tf_->run({ld.stateTensor,
+                    ld.actionTensor,
+                    ld.actionNoiseTensor,
+                    ld.advantageTensor,
                     StdevT},
                    {"Algo/TRPO/Pg"},
                    {},
@@ -80,21 +76,17 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
 
-  virtual Dtype TRPOcg(Tensor3D &states,
-                       Tensor3D &actions,
-                       Tensor3D &actionNoise,
-                       Advantages &advs,
+  virtual Dtype TRPOcg(LearningData_ &ld,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
     Tensor1D gradT(grad, {grad.rows()}, "tangent");
 
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advsT,
+    this->tf_->run({ld.stateTensor,
+                    ld.actionTensor,
+                    ld.actionNoiseTensor,
+                    ld.advantageTensor,
                     StdevT,
                     gradT},
                    {"Algo/TRPO/Cg", "Algo/TRPO/Cgerror"}, {}, vectorOfOutputs);
@@ -102,19 +94,15 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     return  *(vectorOfOutputs[1].flat<Dtype>().data());
   }
 
-  virtual Dtype TRPOloss(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Advantages &advs,
+  virtual Dtype TRPOloss(LearningData_ &ld,
                          Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
 
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advsT,
+    this->tf_->run({ld.stateTensor,
+                    ld.actionTensor,
+                    ld.actionNoiseTensor,
+                    ld.advantageTensor,
                     StdevT},
                    {"Algo/TRPO/loss"},
                    {}, vectorOfOutputs);
@@ -123,39 +111,34 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   ///PPO
-  virtual void PPOpg(Tensor3D &states,
-                     Tensor3D &actions,
-                     Tensor3D &actionNoise,
-                     Advantages &advs,
+  virtual void PPOpg(LearningData_ &ld,
                      Action &Stdev,
-                     Tensor1D &len,
                      VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
 
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advsT,
+    this->tf_->run({ld.stateTensor,
+                    ld.actionTensor,
+                    ld.actionNoiseTensor,
+                    ld.advantageTensor,
                     StdevT},
                    {"Algo/PPO/Pg"},
                    {},
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual void PPOpg_kladapt(Tensor3D &states,
-                             Tensor3D &action,
-                             Tensor3D &actionNoise,
-                             Advantages &advs,
+
+  virtual void PPOpg_kladapt(LearningData_ &ld,
                              Action &Stdev,
-                             Tensor1D &len,
                              VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
 
-    this->tf_->run({states, action, actionNoise, advsT, StdevT},
+    this->tf_->run({ld.stateTensor,
+                    ld.actionTensor,
+                    ld.actionNoiseTensor,
+                    ld.advantageTensor,
+                    StdevT},
                    {"Algo/PPO/Pg2"},
                    {},
                    vectorOfOutputs);
@@ -163,15 +146,15 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
 
-  virtual Dtype PPOgetkl(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Action &Stdev,
-                         Tensor1D &len) {
+  virtual Dtype PPOgetkl(LearningData_ &ld,
+                         Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({states, actions, actionNoise, StdevT},
+    this->tf_->run({ld.stateTensor,
+                    ld.actionTensor,
+                    ld.actionNoiseTensor,
+                    StdevT},
                    {"Algo/PPO/kl_mean"},
                    {},
                    vectorOfOutputs);

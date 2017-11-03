@@ -234,6 +234,14 @@ class MathFunc {
   }
 
   template<typename Dtype>
+  static inline void normalize(rai::Tensor<Dtype,1> &samples) {
+    Eigen::Matrix<Dtype, -1, 1> centered = samples.eMat();
+    centered = centered.array() - centered.mean();
+    Dtype std = std::sqrt(centered.array().square().sum() / (samples.rows() - 1));
+    samples = centered / std;
+  }
+
+  template<typename Dtype>
   static inline void normalize(std::vector<Dtype> &samples) {
     Eigen::Matrix<Dtype, 1, -1> sampleEigen(1, samples.size());
     memcpy(sampleEigen.data(), &samples[0], sizeof(Dtype) * samples.size());

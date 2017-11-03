@@ -45,10 +45,10 @@ class LearningData {
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq),stateTensor("state"),
+  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), stateTensor("state"),
                                        actionTensor("sampled_oa"),
                                        actionNoiseTensor("noise_oa"),
-                                       trajLength("length"),advantageTensor("advantage"){
+                                       trajLength("length"), advantageTensor("advantage") {
   }
 
   void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
@@ -147,7 +147,7 @@ class LearningData {
     traj.reserve(traj.size() + trajectories.size());
     traj.insert(traj.end(), trajectories.begin(), trajectories.end());
 
-    processTrajs(task[0],policy,vfunction);
+    processTrajs(task[0], policy, vfunction);
     Utils::timer->stopTimer("Simulation");
   }
 
@@ -169,18 +169,18 @@ class LearningData {
     return steps;
   }
 
-  void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda){
-    //compute advantage using GAE(lambda)
+  void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
+
     advantageTensor.resize(dataN);
     int dataID = 0;
-
     for (auto &tra : traj) {
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
-//      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
-      bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
+      advantageTensor.segment(dataID, advTra.cols()) = advTra.transpose();
       dataID += advTra.cols();
     }
-      advantageTensor.fillData()
+    if (normalize){
+      rai::Math::MathFunc::normalize(advantageTensor);
+    }
   }
 
   /////////////////////////// Core
@@ -212,7 +212,7 @@ class LearningData {
 
   void processTrajs(Task_ *task,
                     Policy_ *policy,
-                    ValueFunc_ *vfunction = nullptr){
+                    ValueFunc_ *vfunction = nullptr) {
 
     dataN = 0;
     for (auto &tra : traj) dataN += tra.size() - 1;
@@ -280,7 +280,7 @@ class LearningData {
 
       for (int traID = 0; traID < traj.size(); traID++)
         if (traj[traID].termType == TerminationType::timeout) {
-          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID),task->discountFtr());
+          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task->discountFtr());
         }
 
       colID = 0;

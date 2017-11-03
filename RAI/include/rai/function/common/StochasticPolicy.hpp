@@ -8,6 +8,7 @@
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"
+#include <rai/algorithm/common/LearningData.hpp>
 
 namespace rai {
 namespace FuncApprox {
@@ -23,6 +24,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
+  using LearningData_ = rai::Algorithm::LearningData<Dtype, stateDim, actionDim>;
 
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
@@ -40,60 +42,39 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
 
   ///TRPO
   //batch
-  virtual void TRPOpg(Tensor3D &states,
-                      Tensor3D &actions,
-                      Tensor3D &actionNoise,
-                      Advantages &advs,
+  virtual void TRPOpg(LearningData_ &ld,
                       Action &Stdev,
                       VectorXD &grad) { LOG(FATAL) << "Not implemented"; };
 
-  virtual Dtype TRPOcg(Tensor3D &states,
-                       Tensor3D &actions,
-                       Tensor3D &actionNoise,
-                       Advantages &advs,
+  virtual Dtype TRPOcg(LearningData_ &ld,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
 
-  virtual Dtype TRPOloss(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Advantages &advs,
+  virtual Dtype TRPOloss(LearningData_ &ld,
                          Action &Stdev) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
 
-  virtual void PPOpg(Tensor3D &states,
-                     Tensor3D &actions,
-                     Tensor3D &actionNoise,
-                     Advantages &advs,
+  virtual void PPOpg(LearningData_ &ld,
                      Action &Stdev,
-                     Tensor1D &len,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual void PPOpg_kladapt(Tensor3D &states,
-                             Tensor3D &actions,
-                             Tensor3D &actionNoise,
-                             Advantages &advs,
-                             Action &Stdev,
-                             Tensor1D &len,
-                             VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
+  virtual void PPOpg_kladapt(LearningData_ &ld,
+                     Action &Stdev,
+                     VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual Dtype PPOgetkl(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Action &Stdev,
-                         Tensor1D &len) {
+  virtual Dtype PPOgetkl(LearningData_ &ld,
+                         Action &Stdev) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
 
 
   /// common
-
   virtual void setStdev(const Action &Stdev) = 0;
 
   virtual void getStdev(Action &Stdev) = 0;

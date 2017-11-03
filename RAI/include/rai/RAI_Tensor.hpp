@@ -167,15 +167,6 @@ class TensorBase {
   }
 
   template<int rows, int cols>
-  void operator=(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
-    LOG_IF(FATAL, dim_.size() > 2) << "The dimension is higher than 2";
-    LOG_IF(FATAL, dim_[0] != eMat.rows() || dim_[1] != eMat.cols())
-    << "matrix size mismatch: " << dim_[0] << "X" << dim_[1] << "vs" << eMat.rows() << "X"
-    << eMat.cols();
-    std::memcpy(namedTensor_.second.flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * size_);
-  }
-
-  template<int rows, int cols>
   void copyDataFrom(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
     LOG_IF(FATAL, size_ != eMat.rows() * eMat.cols())
     << "Data size mismatch: " << size_ << "vs" << eMat.rows() * eMat.cols();
@@ -291,6 +282,23 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
   using TensorBase::operator=;
   using TensorBase::operator[];
 
+  ///////////////////////////////
+  ////////// operators //////////
+  ///////////////////////////////
+
+  template<int rows, int cols>
+  void operator=(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows())
+    << "matrix size mismatch: " << dim_[0] << "X1" << "vs" << eMat.rows() << "X1";
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
+
+  void operator=(const Eigen::Matrix<Dtype, -1, -1> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows())
+    << "matrix size mismatch: " << dim_[0] << "X1" << "vs" << eMat.rows() << "X1";
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
+
   ////////////////////////////
   /// Eigen Methods mirror ///
   ////////////////////////////
@@ -301,7 +309,7 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
 
   EigenMat segment(int startIdx, int size)
   {
-    LOG_IF(FATAL, startIdx + size +1 > dim_[0]) << "requested segment exceeds Tensor dimension (startIdx+size v.s lastIdx = " << startIdx + size  << "v.s. "<<dim_[0] -1 ;
+    LOG_IF(FATAL, startIdx + size > dim_[0]) << "requested segment exceeds Tensor dimension (startIdx+size v.s lastIdx = " << startIdx + size -1  << " v.s. "<<dim_[0] -1 ;
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + startIdx, size, 1);
     return mat;
   }
@@ -333,6 +341,25 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
   using TensorBase::resize;
   using TensorBase::operator=;
   using TensorBase::operator[];
+
+  ///////////////////////////////
+  ////////// operators //////////
+  ///////////////////////////////
+
+  template<int rows, int cols>
+  void operator=(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows() || dim_[1] != eMat.cols())
+    << "matrix size mismatch: " << dim_[0] << "X" << dim_[1] << "vs" << eMat.rows() << "X"
+    << eMat.cols();
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
+
+  void operator=(const Eigen::Matrix<Dtype, -1, -1> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows() || dim_[1] != eMat.cols())
+    << "matrix size mismatch: " << dim_[0] << "X" << dim_[1] << "vs" << eMat.rows() << "X"
+    << eMat.cols();
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
 
   ////////////////////////////
   /// Eigen Methods mirror ///

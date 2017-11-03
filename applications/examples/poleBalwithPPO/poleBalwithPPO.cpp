@@ -131,10 +131,10 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
-  for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
+  for (int iterationNumber = 1; iterationNumber <= 150; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
-      algorithm.setVisualizationLevel(1);
+      algorithm.setVisualizationLevel(0);
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
