@@ -88,7 +88,7 @@ class MLP_fullyconnected {
     noise_.updateCovariance(temp.asDiagonal());
   }
 
-  Action forward(State state) {
+  Action forward(State& state) {
     lo[0] = state;
     for (int cnt = 0; cnt < Ws.size() - 1; cnt++) {
       lo[cnt + 1] = Ws[cnt] * lo[cnt] + bs[cnt];
@@ -104,8 +104,9 @@ class MLP_fullyconnected {
 
     lo[lo.size() - 1] = Ws[Ws.size() - 1] * lo[lo.size() - 2] + bs[bs.size() - 1]; /// output layer
 
-    return lo[lo.size() - 1];
+    return lo.back();
   }
+
   Action noisify(Action actionMean) {
     return noise_.noisify(actionMean);
   }
