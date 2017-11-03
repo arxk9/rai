@@ -342,7 +342,6 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
     return mat;
   }
 
-
   /// you lose all data calling resize
   void resize(int rows, int cols) {
     std::vector<int> dim = {rows, cols};
