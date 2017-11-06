@@ -34,9 +34,9 @@
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor.hpp"
 
 // common
-#include "rai/common/enumeration.hpp"
-#include "rai/common/math/inverseUsingCholesky.hpp"
-#include "rai/common/math/ConjugateGradient.hpp"
+#include "raiCommon/enumeration.hpp"
+#include "raiCommon/math/inverseUsingCholesky.hpp"
+#include "raiCommon/math/ConjugateGradient.hpp"
 #include "rai/RAI_core"
 #include "CMAES.hpp"
 

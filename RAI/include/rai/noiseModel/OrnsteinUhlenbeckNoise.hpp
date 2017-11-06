@@ -6,7 +6,7 @@
 #define RAI_ORNSTEINUHLENBECKNOISE_HPP
 
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
-#include "rai/common/math/RandomNumberGenerator.hpp"
+#include "raiCommon/utils/RandomNumberGenerator.hpp"
 
 namespace rai {
 namespace Noise {

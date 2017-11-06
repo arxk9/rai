@@ -1,10 +1,11 @@
 
-#include "RAI_graphics.hpp"
-#include "obj/Mesh.hpp"
-#include "rai/common/math/RAI_math.hpp"
-#include "obj/Cylinder.hpp"
-#include "obj/Sphere.hpp"
-#include "obj/Arrow.hpp"
+#include "raiGraphics/RAI_graphics.hpp"
+#include "raiGraphics/obj/Mesh.hpp"
+#include "raiCommon/math/RAI_math.hpp"
+#include "raiCommon/TypeDef.hpp"
+#include "raiGraphics/obj/Cylinder.hpp"
+#include "raiGraphics/obj/Sphere.hpp"
+#include "raiGraphics/obj/Arrow.hpp"
 
 
 namespace rai {
@@ -20,16 +21,16 @@ class Pole_Visualizer {
 
   void setTerrain(std::string fileName);
   void drawWorld(HomogeneousTransform &bodyPose, double action);
-  Graphics::RAI_graphics* getGraphics();
+  rai_graphics::RAI_graphics* getGraphics();
 
 
  private:
-  Graphics::RAI_graphics graphics;
-  Graphics::Obj::Cylinder Pole;
-  Graphics::Obj::Sphere Dot;
-  Graphics::Obj::Sphere Dot2;
+  rai_graphics::RAI_graphics graphics;
+  rai_graphics::object::Cylinder Pole;
+  rai_graphics::object::Sphere Dot;
+  rai_graphics::object::Sphere Dot2;
 
-  rai::Graphics::Obj::Mesh arrow;
+  rai_graphics::object::Mesh arrow;
   HomogeneousTransform defaultPose_;
 };
 

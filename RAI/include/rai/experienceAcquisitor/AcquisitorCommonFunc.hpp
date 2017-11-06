@@ -15,7 +15,7 @@
 #include "rai/memory/ReplayMemorySARS.hpp"
 #include "rai/memory/ReplayMemoryS.hpp"
 #include "rai/tasks/common/Task.hpp"
-#include "rai/common/math/RandomNumberGenerator.hpp"
+#include "raiCommon/utils/RandomNumberGenerator.hpp"
 #include "rai/noiseModel/Noise.hpp"
 #include "rai/noiseModel/Noise.hpp"
 #include "rai/noiseModel/Noise.hpp"

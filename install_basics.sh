@@ -157,5 +157,11 @@ hg clone https://bitbucket.org/rbdl/rbdl
 cd rbdl/
 mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release ../ && make -j && sudo make install
 
+# RAI_Common
+cd $RAI_ROOT
+git clone git@bitbucket.org:jhwangbo/rai_common.git
+cd rai_common
+cmake .. && sudo make install -j
+
 cd $RAI_ROOT
 exit

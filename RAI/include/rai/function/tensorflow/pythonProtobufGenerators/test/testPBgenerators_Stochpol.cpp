@@ -10,7 +10,7 @@
 #include "rai/function/tensorflow/StochasticPolicy_TensorFlow.hpp"
 #include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
 #include "rai/function/common/Policy.hpp"
-#include "rai/common/math/RAI_math.hpp"
+#include "raiCommon/math/RAI_math.hpp"
 
 #include <math.h>
 #include <boost/random.hpp>

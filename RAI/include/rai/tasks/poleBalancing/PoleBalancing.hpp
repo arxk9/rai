@@ -1,13 +1,13 @@
 #include <thread>
 #include <rai/tasks/common/Task.hpp>
-#include <rai/common/enumeration.hpp>
-#include <rai/common/math/RandomNumberGenerator.hpp>
+#include <raiCommon/enumeration.hpp>
+#include <raiCommon/utils/RandomNumberGenerator.hpp>
 #include <rai/function/common/Policy.hpp>
 #include <rai/function/common/Qfunction.hpp>
 #include <rai/RAI_core>
-#include "rai/common/TypeDef.hpp"
+#include "raiCommon/TypeDef.hpp"
 #include "rai/tasks/poleBalancing/visualizer/Pole_Visualizer.hpp"
-#include "rai/common/StopWatch.hpp"
+#include "raiCommon/utils/StopWatch.hpp"
 
 #pragma once
 

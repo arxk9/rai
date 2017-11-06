@@ -21,6 +21,7 @@ set(CMAKEPACKAGE_INSTALL_DIR
         "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/RAI/cmake"
         CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where RAIConfig.cmake is installed"
         )
+
 set(PKGCONFIG_INSTALL_DIR
         "/${CMAKE_INSTALL_DATADIR}/pkgconfig"
         CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where RAI.pc is installed"
@@ -36,6 +37,12 @@ find_package(OpenMP REQUIRED)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+
+find_package(raiCommon CONFIG REQUIRED)
+include_directories(${RAI_COMMON_INCLUDE_DIR})
+
+find_package(raiGraphicsOpengl CONFIG REQUIRED)
+include_directories(${RAI_GRAPHICS_OPENGL_INCLUDE_DIRS})
 
 ################################
 ######## build options #########
@@ -63,16 +70,11 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tensorflowDependencies"
 ##### Include directories ######
 ################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/RAI/include)
-include_directories(utils)
-include_directories(graphics)
-set(RAI_LINK rai_logger rai_timer rai_graph ${RAI_LINK})
+set(RAI_LINK ${RAI_COMMON_LINK} ${RAI_LINK} ${RAI_GRAPHICS_OPENGL_LINK})
 
 ################################
 ####### sub directories ########
 ################################
-add_subdirectory(utils)
-set(RAI_Graphics)
-add_subdirectory(graphics)
 if (BUILD_TEST)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/applications/tests)
 endif ()
@@ -89,8 +91,6 @@ endif ()
 ################################
 include(CMakePackageConfigHelpers)
 
-install(EXPORT RAITargets DESTINATION ${CMAKEPACKAGE_INSTALL_DIR})
-
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/RAI/include DESTINATION ${CMAKE_BINARY_DIR})
 set(RAI_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include CACHE PATH "rai include directory")
 set(RAI_INCLUDE_DIR ${RAI_INCLUDE_DIR} ${TENSORFLOW_INCLUDE_DIRS})
@@ -102,9 +102,4 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RAIConfig.cmake.in
         )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/RAIConfig.cmake
         DESTINATION ${CMAKEPACKAGE_INSTALL_DIR}
-        )
-
-configure_file(RAI.pc.in RAI.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/RAI.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
         )

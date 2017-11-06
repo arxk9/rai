@@ -6,8 +6,8 @@
 #define RAI_VECTORHELPER_HPP
 #include "rai/memory/Trajectory.hpp"
 #include <vector>
-#include "math/RAI_math.hpp"
-#include "math/RandomNumberGenerator.hpp"
+#include "raiCommon/math/RAI_math.hpp"
+#include "raiCommon/utils/RandomNumberGenerator.hpp"
 
 namespace rai {
 namespace Op {

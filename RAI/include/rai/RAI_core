@@ -8,9 +8,9 @@
 #include <iostream>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "RAI_timer/RAI_timer_ToInclude.hpp"
-#include "RAI_logger/include/RAI_logger/RAI_logger_ToInclude.hpp"
-#include "RAI_graph/include/gnuplot_wrapper/gnuplotter.hpp"
+#include "raiCommon/utils/rai_timer/RAI_timer_ToInclude.hpp"
+#include "raiCommon/utils/rai_logger/RAI_logger_ToInclude.hpp"
+#include "raiCommon/utils/rai_graph/gnuplotter.hpp"
 #include <glog/logging.h>
 #include <omp.h>
 #include "RAI_Tensor.hpp"

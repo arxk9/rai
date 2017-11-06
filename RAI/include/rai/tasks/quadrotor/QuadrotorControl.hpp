@@ -13,7 +13,7 @@
 #include "math/RAI_math.hpp"
 #include "enumeration.hpp"
 #include <rai/RAI_core>
-#include "RAI_graphics.hpp"
+#include "raiGraphics/RAI_graphics.hpp"
 
 namespace rai {
 namespace Task {
@@ -372,9 +372,9 @@ class QuadrotorControl : public Task<Dtype,
   LinearVelocity v_I_;
   RandomNumberGenerator<Dtype> rn_;
   EulerVector w_IXdt_;
-  static Graphics::RAI_graphics graphics;
-  static Graphics::Objects::Quadrotor quadrotor;
-  static Graphics::Objects::Sphere target;
+  static rai_graphics::RAI_graphics graphics;
+  static rai_graphics::objectects::Quadrotor quadrotor;
+  static rai_graphics::objectects::Sphere target;
   static Position targetPosition;
   double visualizationTime = 0;
 
@@ -387,13 +387,13 @@ class QuadrotorControl : public Task<Dtype,
 } /// namespaces
 
 template<typename Dtype>
-rai::Graphics::RAI_graphics rai::Task::QuadrotorControl<Dtype>::graphics(
-"quad simulation", {800, 800}, {0, 0}, rai::Graphics::RAI_graphics::RAI_3D, {7.0, 5.0} );
+rai::rai_graphics::RAI_graphics rai::Task::QuadrotorControl<Dtype>::graphics(
+"quad simulation", {800, 800}, {0, 0}, rai::rai_graphics::rai_graphics::RAI_3D, {7.0, 5.0} );
 
 template<typename Dtype>
-rai::Graphics::Objects::Quadrotor rai::Task::QuadrotorControl<Dtype>::quadrotor( { 0.1, 0.1, 0.8 } );
+rai::rai_graphics::objectects::Quadrotor rai::Task::QuadrotorControl<Dtype>::quadrotor( { 0.1, 0.1, 0.8 } );
 template<typename Dtype>
-rai::Graphics::Objects::Sphere rai::Task::QuadrotorControl<Dtype>::target(0.05, { 0.9, 0.1, 0.1 } );
+rai::rai_graphics::objectects::Sphere rai::Task::QuadrotorControl<Dtype>::target(0.05, { 0.9, 0.1, 0.1 } );
 template<typename Dtype>
 rai::Position rai::Task::QuadrotorControl<Dtype>::targetPosition;
 #endif //RAI_QUADROTORCONTROL_HPP
