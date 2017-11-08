@@ -170,6 +170,8 @@ class PPO {
     Dtype KL = 0, KLsum = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
 
+    ld_.iterateBatch();
+
     for (int i = 0; i < n_epoch_; i++) {
 
       Utils::timer->startTimer("Vfunction update");
@@ -187,9 +189,8 @@ class PPO {
       } else {
         policy_->PPOpg(ld_,stdev_o,policy_grad);
       }
-      
-      ld_.iterateBatch();
-      
+
+
       Utils::timer->stopTimer("Gradient computation");
       LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 

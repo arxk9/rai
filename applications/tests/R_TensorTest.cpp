@@ -59,7 +59,9 @@ int main() {
   std::cout << "all 2nd rows(shape = {4,2}) [ten3D.row(1)]" << std::endl << ten3D.row(1) << std::endl;
   std::cout << "all 2nd columns(shape = {3,2}) [ten3D.col(1)]" << std::endl << ten3D.col(1) << std::endl;
 
-  rai::Tensor<float, 1> ten1D({4}, "testTensor");
+  rai::Tensor<float, 1> ten1D("testTensor");
+  ten1D.resize(4);
+
   for (int i = 0; i < ten1D.dim(0); i++)
     ten1D[i] = i;
   std::cout << "1D tensor" << std::endl << ten1D << std::endl;

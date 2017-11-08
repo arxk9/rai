@@ -208,8 +208,9 @@ class TensorBase {
       dim_inv_.AddDim(dim[i]);
       size_ *= dim[i];
     }
-    for (int d = 0; d < NDim; d++)
+    for (int d = 0; d < NDim; d++) {
       esizes_[d] = dim_[d];
+    }
     setDataType();
     namedTensor_.second = tensorflow::Tensor(dtype_, dim_inv_);
   }

@@ -48,15 +48,16 @@ class LearningData {
   LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), stateTensor("state"),
                                        actionTensor("sampled_oa"),
                                        actionNoiseTensor("noise_oa"),
-                                       trajLength("length"), advantageTensor("advantage"), cur_ID(0) {
+                                       trajLength("length"), advantageTensor("advantage"), cur_ID(0), cur_minibatch(){
   }
   struct tensorBatch{
-    Tensor<Dtype, 1> Len;
-    Tensor<Dtype, 1> Adv;
-    Tensor<Dtype, 3> States;
+    tensorBatch():len("length"),adv("advantage"), states("state"), hiddenStates("h_init"), actions("sampled_oa"), actionNoises("noise_oa"){};
+    Tensor<Dtype, 1> len;
+    Tensor<Dtype, 1> adv;
+    Tensor<Dtype, 3> states;
     Tensor<Dtype, 3> hiddenStates;
-    Tensor<Dtype, 3> Actions;
-    Tensor<Dtype, 3> ActionNoises;
+    Tensor<Dtype, 3> actions;
+    Tensor<Dtype, 3> actionNoises;
   };
 
   void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
@@ -199,17 +200,26 @@ class LearningData {
       end = true;
     }
 
-    int end_ID =  cur_ID + cur_batch_size;
+    int end_ID =  cur_ID + cur_batch_size-1;
     if (cur_ID == 0 && shuffle)
       ///this->shuffleBatch;
       ;
-    LOG(INFO) << end_ID;
+    LOG(INFO) << cur_batch_size;
+    cur_minibatch.states.resize(stateTensor.dim(0),stateTensor.dim(1),cur_batch_size);
+    cur_minibatch.actions.resize(actionTensor.dim(0),actionTensor.dim(1),cur_batch_size);
+    cur_minibatch.actionNoises.resize(actionNoiseTensor.dim(0),actionNoiseTensor.dim(1),cur_batch_size);
+    cur_minibatch.adv.resize(cur_batch_size);
+    cur_minibatch.len.resize(cur_batch_size);
 
-    cur_minibatch.States = stateTensor.batch(cur_ID, end_ID);
-    cur_minibatch.Actions = actionTensor.batch(cur_ID,end_ID);
-    cur_minibatch.ActionNoises = actionNoiseTensor.batch(cur_ID,end_ID);
-    cur_minibatch.Adv = advantageTensor.block(cur_ID,cur_batch_size);
-    cur_minibatch.Len = trajLength.block(cur_ID,cur_batch_size);
+    LOG(INFO) << cur_minibatch.adv.dim(0);
+    LOG(INFO) << advantageTensor.dim(0);
+
+    cur_minibatch.states = stateTensor.batch(cur_ID, end_ID);
+    cur_minibatch.actions = actionTensor.batch(cur_ID,end_ID);
+    cur_minibatch.actionNoises = actionNoiseTensor.batch(cur_ID,end_ID);
+    cur_minibatch.adv = advantageTensor.block(cur_ID,cur_batch_size);
+    cur_minibatch.len = trajLength.block(cur_ID,cur_batch_size);
+
     cur_ID +=cur_batch_size;
     if(end) cur_ID = 0;
     return end;
