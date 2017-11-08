@@ -48,8 +48,16 @@ class LearningData {
   LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), stateTensor("state"),
                                        actionTensor("sampled_oa"),
                                        actionNoiseTensor("noise_oa"),
-                                       trajLength("length"), advantageTensor("advantage") {
+                                       trajLength("length"), advantageTensor("advantage"), cur_ID(0) {
   }
+  struct tensorBatch{
+    Tensor<Dtype, 1> Len;
+    Tensor<Dtype, 1> Adv;
+    Tensor<Dtype, 3> States;
+    Tensor<Dtype, 3> hiddenStates;
+    Tensor<Dtype, 3> Actions;
+    Tensor<Dtype, 3> ActionNoises;
+  };
 
   void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
                                     std::vector<Noise_ *> &noise,
@@ -175,7 +183,7 @@ class LearningData {
     int dataID = 0;
     for (auto &tra : traj) {
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
-      advantageTensor.segment(dataID, advTra.cols()) = advTra.transpose();
+      advantageTensor.block(dataID, advTra.cols()) = advTra.transpose();
       dataID += advTra.cols();
     }
     if (normalize){
@@ -183,16 +191,43 @@ class LearningData {
     }
   }
 
+  bool iterateBatch(const int batchSize = 0, bool shuffle = false){
+    bool end = false;
+    int cur_batch_size;
+    if (batchSize >=  batchN - cur_ID || batchSize == 0) {
+      cur_batch_size =  batchN - cur_ID;
+      end = true;
+    }
+
+    int end_ID =  cur_ID + cur_batch_size;
+    if (cur_ID == 0 && shuffle)
+      ///this->shuffleBatch;
+      ;
+    LOG(INFO) << end_ID;
+
+    cur_minibatch.States = stateTensor.batch(cur_ID, end_ID);
+    cur_minibatch.Actions = actionTensor.batch(cur_ID,end_ID);
+    cur_minibatch.ActionNoises = actionNoiseTensor.batch(cur_ID,end_ID);
+    cur_minibatch.Adv = advantageTensor.block(cur_ID,cur_batch_size);
+    cur_minibatch.Len = trajLength.block(cur_ID,cur_batch_size);
+    cur_ID +=cur_batch_size;
+    if(end) cur_ID = 0;
+    return end;
+  };
+
   /////////////////////////// Core
   TrajAcquisitor_ *trajAcquisitor_ = nullptr;
   TupleAcquisitor_ *tupleAcquisitor_ = nullptr;
   std::vector<Trajectory_> traj;
   int dataN;
+  int cur_ID;
+  int batchN;
 
   /////////////////////////// batches
   StateBatch stateBat, termStateBat;
   ValueBatch valueBat, termValueBat;
 
+  tensorBatch cur_minibatch;
   Tensor<Dtype, 1> trajLength;
   Tensor<Dtype, 1> advantageTensor;
   Tensor<Dtype, 3> stateTensor;
@@ -232,17 +267,17 @@ class LearningData {
       for (auto &tra : traj)
         if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
 
-      int numtra = int(traj.size());
-      stateTensor.resize(StateDim, maxlen, numtra);
-      actionTensor.resize(ActionDim, maxlen, numtra);
-      actionNoiseTensor.resize(ActionDim, maxlen, numtra);
+      batchN= int(traj.size());
+      stateTensor.resize(StateDim, maxlen, batchN);
+      actionTensor.resize(ActionDim, maxlen, batchN);
+      actionNoiseTensor.resize(ActionDim, maxlen, batchN);
 
       stateTensor.setZero();
       actionTensor.setZero();
       actionNoiseTensor.setZero();
-      trajLength.resize(numtra);
+      trajLength.resize(batchN);
 
-      for (int i = 0; i < numtra; i++) {
+      for (int i = 0; i < batchN; i++) {
         trajLength[i] = traj[i].stateTraj.size() - 1;
         stateTensor.partiallyFillBatch(i, traj[i].stateTraj, 1);
         actionTensor.partiallyFillBatch(i, traj[i].actionTraj, 1);
@@ -257,6 +292,7 @@ class LearningData {
       actionNoiseTensor.setZero();
       trajLength.resize(1);
       trajLength[0] = dataN;
+      batchN = dataN;
 
       int pos = 0;
       for (int traID = 0; traID < traj.size(); traID++) {
@@ -272,7 +308,7 @@ class LearningData {
     if (vfunction) {
       termValueBat.resize(1, traj.size());
       termStateBat.resize(StateDim, traj.size());
-      valueBat.resize(dataN);
+      valueBat.resize(batchN);
 
       for (int traID = 0; traID < traj.size(); traID++)
         termStateBat.col(traID) = traj[traID].stateTraj.back();

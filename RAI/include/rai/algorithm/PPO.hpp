@@ -183,12 +183,13 @@ class PPO {
       Utils::timer->startTimer("Gradient computation");
 
       if (KL_adapt_) {
-        //TODO : ld_.Batch(?) instead of ld_
         policy_->PPOpg_kladapt(ld_,stdev_o,policy_grad);
       } else {
         policy_->PPOpg(ld_,stdev_o,policy_grad);
       }
-
+      
+      ld_.iterateBatch();
+      
       Utils::timer->stopTimer("Gradient computation");
       LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 

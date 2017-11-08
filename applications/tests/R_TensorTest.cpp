@@ -49,7 +49,7 @@ int main() {
   std::cout << "1st column fo the 2rd batch of tensor should be 7" << std::endl << ten3D << std::endl;
 
   ten3D.resize({3, 4, 2});
-  std::cout << "there should be 12 numbers" << std::endl << ten3D << std::endl;
+  std::cout << "there should be 24 numbers" << std::endl << ten3D << std::endl;
 
   ten3D.setZero();
   for (int i = 0; i < ten3D.batches(); i++) {
@@ -65,6 +65,13 @@ int main() {
   std::cout << "1D tensor" << std::endl << ten1D << std::endl;
   test(ten);
   test2(ten);
+
+  ten3D.resize(2,2,5);
+  for (int i = 0; i < ten3D.batches(); i++) {
+    ten3D.col(i, 1) << 1 + 3 * i, 2 + 3 * i;
+  }
+
+  std::cout << ten3D.batch(3,4) <<std::endl;
 }
 
 void test(Eigen::Matrix<float, -1, -1> ten2D) {
