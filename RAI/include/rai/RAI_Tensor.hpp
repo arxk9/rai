@@ -310,6 +310,9 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
 
   EigenMat block(int startIdx, int size)
   {
+    LOG(INFO) << dim_[0];
+    LOG(INFO) << namedTensor_.first;
+
     LOG_IF(FATAL, startIdx + size > dim_[0]) << "requested segment exceeds Tensor dimension (startIdx+size v.s lastIdx = " << startIdx + size -1  << " v.s. "<<dim_[0] -1 ;
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + startIdx, size, 1);
     return mat;

@@ -300,8 +300,8 @@ class LearningData {
       stateTensor.setZero();
       actionTensor.setZero();
       actionNoiseTensor.setZero();
-      trajLength.resize(1);
-      trajLength[0] = dataN;
+      trajLength.resize(dataN);
+//      trajLength.setConstant(1);
       batchN = dataN;
 
       int pos = 0;
