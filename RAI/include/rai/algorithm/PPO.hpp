@@ -176,10 +176,10 @@ class PPO {
     for (int i = 0; i < n_epoch_; i++) {
       while (ld_.iterateBatch(minibatchSize_, policy_->isRecurrent())) {
 
+//        policy_->test(ld_.cur_minibatch, stdev_o);
+
         Utils::timer->startTimer("Vfunction update");
-
         loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
-
         Utils::timer->stopTimer("Vfunction update");
 
         policy_->getStdev(stdev_o);

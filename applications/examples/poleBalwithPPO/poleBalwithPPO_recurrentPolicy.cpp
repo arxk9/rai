@@ -76,14 +76,15 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Function approximations //////////
   Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-  Policy_TensorFlow policy("cpu", "GRUNet", "relu 3 32 32 1", 0.001);
+//  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 3 32 / 32 32 1", 0.001);
+  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 30, 0, false);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 1000, false);
 
   algorithm.setVisualizationLevel(0);
 
@@ -150,11 +151,11 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 10;
+  constexpr int loggingInterval = 50;
   for (int iterationNumber = 0; iterationNumber < 250; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
-      algorithm.setVisualizationLevel(0);
+      algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";

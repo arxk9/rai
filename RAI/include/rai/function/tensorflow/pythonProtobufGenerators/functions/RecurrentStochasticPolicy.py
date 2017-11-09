@@ -36,8 +36,7 @@ class RecurrentStochasticPolicy(pc.Policy):
         old_stdv = tf.placeholder(dtype, shape=[1, action_dim], name='stdv_o')
         old_action_sampled = tf.placeholder(dtype, shape=[None, None, action_dim], name='sampled_oa')
         old_action_noise = tf.placeholder(dtype, shape=[None, None, action_dim], name='noise_oa')
-        advantage_in = tf.placeholder(dtype, shape=[None], name='advantage')
-        advantage = tf.reshape(advantage_in, shape=[-1])
+        advantage_in = tf.placeholder(dtype, shape=[None, None], name='advantage')
 
 
         # Algorithm params
@@ -76,7 +75,8 @@ class RecurrentStochasticPolicy(pc.Policy):
             mask = tf.sequence_mask(gs.seq_length, name='mask')
             logp_n = tf.boolean_mask(util.log_likelihood(action, action_stdev, old_action_sampled), mask)
             logp_old = tf.boolean_mask(util.log_likelihood(old_action_noise, old_stdv), mask)
-            ratio = tf.reshape(tf.exp(logp_n - logp_old), [-1])  # 1D
+            advantage = tf.boolean_mask(advantage_in, mask)
+            ratio = tf.exp(logp_n - logp_old)
             ent = tf.reduce_sum(wo + .5 * tf.cast(tf.log(2.0 * np.pi * np.e), dtype=dtype), axis=-1)
             meanent = tf.reduce_mean(ent)
 

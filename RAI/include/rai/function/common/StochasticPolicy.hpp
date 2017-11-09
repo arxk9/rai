@@ -74,6 +74,10 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   }
 
 
+  virtual void test(TensorBatch_ &minibatch,
+                    Action &Stdev) {
+
+  }
   /// common
   virtual void setStdev(const Action &Stdev) = 0;
 

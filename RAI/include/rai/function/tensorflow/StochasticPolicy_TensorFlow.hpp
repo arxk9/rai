@@ -112,6 +112,25 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   ///PPO
+  virtual void test(TensorBatch_ &minibatch,
+                     Action &Stdev) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    VectorXD test;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    ///Test function for debugging
+    this->tf_->run({minibatch.states,
+                    minibatch.actions,
+                    minibatch.actionNoises,
+                    minibatch.advantages,
+                    StdevT},
+                   {"test"},
+                   {},
+                   vectorOfOutputs);
+    test.resize(vectorOfOutputs[0].template flat<Dtype>().size());
+    std::memcpy(test.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * test.size());
+  LOG(INFO) << test.transpose();
+  }
+
   virtual void PPOpg(TensorBatch_ &minibatch,
                      Action &Stdev,
                      VectorXD &grad) {
