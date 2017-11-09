@@ -76,10 +76,12 @@ class PPO {
       std::vector<Noise_ *> &noises,
       Acquisitor_ *acquisitor,
       Dtype lambda,
-      int K,
-      int numofjunctions,
+      int numOfBranchPerJunction,
+      int numofJunctions,
       unsigned testingTrajN,
-      int n_epoch = 30, bool KL_adapt = true,
+      int n_epoch = 30,
+      int minibatchSize = 0,
+      bool KL_adapt = true,
       Dtype Cov = 1, Dtype Clip_param = 0.2, Dtype Ent_coeff = 0.01,
       Dtype KL_thres = 0.01, Dtype KL_coeff = 1) :
       task_(tasks),
@@ -88,11 +90,12 @@ class PPO {
       noise_(noises),
       acquisitor_(acquisitor),
       lambda_(lambda),
-      numOfBranchPerJunct_(K),
-      numOfJunct_(numofjunctions),
+      numOfBranchPerJunct_(numOfBranchPerJunction),
+      numOfJunct_(numofJunctions),
       testingTrajN_(testingTrajN),
       KL_adapt_(KL_adapt),
       n_epoch_(n_epoch),
+      minibatchSize_(minibatchSize),
       cov_in(Cov),
       KL_thres_(KL_thres),
       KL_coeff_(KL_coeff),
@@ -165,14 +168,13 @@ class PPO {
     Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
-    // TODO : Apply minibatch to mlp and rnn. To train rnn, we need to keep inner states for each minibatches.
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0, KLsum = 0;
     int cnt = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
 
     for (int i = 0; i < n_epoch_; i++) {
-      while (ld_.iterateBatch(1000, policy_->isRecurrent())) {
+      while (ld_.iterateBatch(minibatchSize_, policy_->isRecurrent())) {
 
         Utils::timer->startTimer("Vfunction update");
 
@@ -204,7 +206,6 @@ class PPO {
         cnt ++;
       }
      }
-      LOG(INFO) << KLsum << "," << cnt;
       KL = KLsum / cnt;
 
       if (KL_adapt_) {
@@ -253,7 +254,7 @@ class PPO {
   int numOfJunct_;
   int numOfBranchPerJunct_;
   int n_epoch_;
-  int n_minibatch_;
+  int minibatchSize_;
   Dtype cov_in;
   Dtype termCost;
   Dtype discFactor;
