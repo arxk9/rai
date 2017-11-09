@@ -378,7 +378,7 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
   EigenMatStride block(int rowStart, int colStart, int rowDim, int colDim)
   {
-    EigenMatStride mat(namedTensor_.second.template flat<Dtype>().data() + rowStart + dim_[1] * colStart, rowDim, colDim, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
+    EigenMatStride mat(namedTensor_.second.template flat<Dtype>().data() + rowStart + dim_[0] * colStart, rowDim, colDim, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
     return mat;
   }
 
