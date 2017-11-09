@@ -51,9 +51,9 @@ class LearningData {
                                        trajLength("length"), advantageTensor("advantage"), cur_ID(0), cur_minibatch(){
   }
   struct tensorBatch{
-    tensorBatch():len("length"),adv("advantage"), states("state"), hiddenStates("h_init"), actions("sampled_oa"), actionNoises("noise_oa"){};
+    tensorBatch():len("length"),advantages("advantage"), states("state"), hiddenStates("h_init"), actions("sampled_oa"), actionNoises("noise_oa"){};
     Tensor<Dtype, 1> len;
-    Tensor<Dtype, 1> adv;
+    Tensor<Dtype, 1> advantages;
     Tensor<Dtype, 3> states;
     Tensor<Dtype, 3> hiddenStates;
     Tensor<Dtype, 3> actions;
@@ -192,37 +192,34 @@ class LearningData {
     }
   }
 
-  bool iterateBatch(const int batchSize = 0, bool shuffle = false){
-    bool end = false;
-    int cur_batch_size;
-    if (batchSize >=  batchN - cur_ID || batchSize == 0) {
+  bool iterateBatch(const int batchSize = 0, bool isrecurrent = false, bool shuffle = false){
+    int cur_batch_size = batchSize;
+    if (cur_batch_size >=  batchN - cur_ID || cur_batch_size == 0) {
       cur_batch_size =  batchN - cur_ID;
-      end = true;
     }
-
-    int end_ID =  cur_ID + cur_batch_size-1;
+    if(cur_ID >= batchN){
+      cur_ID = 0;
+      return false;
+    }
+//    int end_ID =  cur_ID + cur_batch_size-1;
     if (cur_ID == 0 && shuffle)
       ///this->shuffleBatch;
       ;
-    LOG(INFO) << cur_batch_size;
+
     cur_minibatch.states.resize(stateTensor.dim(0),stateTensor.dim(1),cur_batch_size);
     cur_minibatch.actions.resize(actionTensor.dim(0),actionTensor.dim(1),cur_batch_size);
     cur_minibatch.actionNoises.resize(actionNoiseTensor.dim(0),actionNoiseTensor.dim(1),cur_batch_size);
-    cur_minibatch.adv.resize(cur_batch_size);
-    cur_minibatch.len.resize(cur_batch_size);
+    cur_minibatch.advantages.resize(cur_batch_size);
+    if(isrecurrent) cur_minibatch.len.resize(cur_batch_size);
 
-    LOG(INFO) << cur_minibatch.adv.dim(0);
-    LOG(INFO) << advantageTensor.dim(0);
-
-    cur_minibatch.states = stateTensor.batch(cur_ID, end_ID);
-    cur_minibatch.actions = actionTensor.batch(cur_ID,end_ID);
-    cur_minibatch.actionNoises = actionNoiseTensor.batch(cur_ID,end_ID);
-    cur_minibatch.adv = advantageTensor.block(cur_ID,cur_batch_size);
-    cur_minibatch.len = trajLength.block(cur_ID,cur_batch_size);
+    cur_minibatch.states = stateTensor.batchBlock(cur_ID, cur_batch_size);
+    cur_minibatch.actions = actionTensor.batchBlock(cur_ID,cur_batch_size);
+    cur_minibatch.actionNoises = actionNoiseTensor.batchBlock(cur_ID,cur_batch_size);
+    cur_minibatch.advantages = advantageTensor.block(cur_ID,cur_batch_size);
+    if(isrecurrent) cur_minibatch.len = trajLength.block(cur_ID,cur_batch_size);
 
     cur_ID +=cur_batch_size;
-    if(end) cur_ID = 0;
-    return end;
+    return true;
   };
 
   /////////////////////////// Core
@@ -300,8 +297,8 @@ class LearningData {
       stateTensor.setZero();
       actionTensor.setZero();
       actionNoiseTensor.setZero();
-      trajLength.resize(dataN);
-//      trajLength.setConstant(1);
+//      trajLength.resize(1);
+//      trajLength.setConstant(dataN);
       batchN = dataN;
 
       int pos = 0;

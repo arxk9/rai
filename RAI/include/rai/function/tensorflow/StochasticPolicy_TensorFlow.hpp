@@ -38,6 +38,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename PolicyBase::LearningData_ LearningData_;
+  typedef typename PolicyBase::TensorBatch_ TensorBatch_;
 
   StochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -111,16 +112,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   ///PPO
-  virtual void PPOpg(LearningData_ &ld,
+  virtual void PPOpg(TensorBatch_ &minibatch,
                      Action &Stdev,
                      VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({ld.stateTensor,
-                    ld.actionTensor,
-                    ld.actionNoiseTensor,
-                    ld.advantageTensor,
+    this->tf_->run({minibatch.states,
+                    minibatch.actions,
+                    minibatch.actionNoises,
+                    minibatch.advantages,
                     StdevT},
                    {"Algo/PPO/Pg"},
                    {},
@@ -128,16 +129,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
 
-  virtual void PPOpg_kladapt(LearningData_ &ld,
+  virtual void PPOpg_kladapt(TensorBatch_ &minibatch,
                              Action &Stdev,
                              VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({ld.stateTensor,
-                    ld.actionTensor,
-                    ld.actionNoiseTensor,
-                    ld.advantageTensor,
+    this->tf_->run({minibatch.states,
+                    minibatch.actions,
+                    minibatch.actionNoises,
+                    minibatch.advantages,
                     StdevT},
                    {"Algo/PPO/Pg2"},
                    {},
@@ -146,14 +147,14 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
 
-  virtual Dtype PPOgetkl(LearningData_ &ld,
+  virtual Dtype PPOgetkl(TensorBatch_ &minibatch,
                          Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({ld.stateTensor,
-                    ld.actionTensor,
-                    ld.actionNoiseTensor,
+    this->tf_->run({minibatch.states,
+                    minibatch.actions,
+                    minibatch.actionNoises,
                     StdevT},
                    {"Algo/PPO/kl_mean"},
                    {},

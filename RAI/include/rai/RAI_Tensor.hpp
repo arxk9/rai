@@ -310,9 +310,6 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
 
   EigenMat block(int startIdx, int size)
   {
-    LOG(INFO) << dim_[0];
-    LOG(INFO) << namedTensor_.first;
-
     LOG_IF(FATAL, startIdx + size > dim_[0]) << "requested segment exceeds Tensor dimension (startIdx+size v.s lastIdx = " << startIdx + size -1  << " v.s. "<<dim_[0] -1 ;
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + startIdx, size, 1);
     return mat;
@@ -533,9 +530,9 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
     return mat;
   }
 
-  EigenTensor batch(int startBatchID, int endBatchID){
-    LOG_IF(FATAL,endBatchID>dim_[2]-1) << "endBatchID exceeds last batch ID: "<< endBatchID << "vs" << dim_[2]-1;
-    EigenTensor ten(namedTensor_.second.template flat<Dtype>().data() + startBatchID * dim_[0] * dim_[1], dim_[0], dim_[1], endBatchID - startBatchID + 1);
+  EigenTensor batchBlock(int startBatchID, int size){
+    LOG_IF(FATAL,startBatchID + size >dim_[2]) << "endBatchID exceeds last batch ID: "<< startBatchID + size-1  << "vs" << dim_[2]-1;
+    EigenTensor ten(namedTensor_.second.template flat<Dtype>().data() + startBatchID * dim_[0] * dim_[1], dim_[0], dim_[1],size);
     return ten;
   }
 

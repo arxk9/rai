@@ -168,39 +168,44 @@ class PPO {
     // TODO : Apply minibatch to mlp and rnn. To train rnn, we need to keep inner states for each minibatches.
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0, KLsum = 0;
+    int cnt = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
 
-    ld_.iterateBatch();
-
     for (int i = 0; i < n_epoch_; i++) {
+      while (ld_.iterateBatch(1000, policy_->isRecurrent())) {
 
-      Utils::timer->startTimer("Vfunction update");
+        Utils::timer->startTimer("Vfunction update");
 
-      loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
+        loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
 
-      Utils::timer->stopTimer("Vfunction update");
+        Utils::timer->stopTimer("Vfunction update");
 
-      policy_->getStdev(stdev_o);
-      LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
-      Utils::timer->startTimer("Gradient computation");
+        policy_->getStdev(stdev_o);
+        LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
+        Utils::timer->startTimer("Gradient computation");
 
-      if (KL_adapt_) {
-        policy_->PPOpg_kladapt(ld_,stdev_o,policy_grad);
-      } else {
-        policy_->PPOpg(ld_,stdev_o,policy_grad);
+        if (KL_adapt_) {
+          policy_->PPOpg_kladapt(ld_.cur_minibatch, stdev_o, policy_grad);
+        } else {
+          policy_->PPOpg(ld_.cur_minibatch, stdev_o, policy_grad);
+        }
+
+        Utils::timer->stopTimer("Gradient computation");
+        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
+
+        Utils::timer->startTimer("Adam update");
+        policy_->trainUsingGrad(policy_grad);
+        Utils::timer->stopTimer("Adam update");
+
+        KL = policy_->PPOgetkl(ld_.cur_minibatch, stdev_o);
+        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
+
+        KLsum += KL;
+        cnt ++;
       }
-
-
-      Utils::timer->stopTimer("Gradient computation");
-      LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
-
-      Utils::timer->startTimer("Adam update");
-      policy_->trainUsingGrad(policy_grad);
-      Utils::timer->stopTimer("Adam update");
-
-      KL = policy_->PPOgetkl(ld_, stdev_o);
-      LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
-      KLsum += KL;
+     }
+      LOG(INFO) << KLsum << "," << cnt;
+      KL = KLsum / cnt;
 
       if (KL_adapt_) {
         if (KL > KL_thres_ * 1.5)
@@ -210,12 +215,12 @@ class PPO {
 
         policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
       }
-    }
+
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
 
 ///Logging
-    LOG(INFO) << "Mean KL divergence = " << KLsum / n_epoch_;
+    LOG(INFO) << "Mean KL divergence = " << KL;
     if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
     Utils::logger->appendData("Stdev", ld_.stepsTaken(), policy_grad.norm());
@@ -248,6 +253,7 @@ class PPO {
   int numOfJunct_;
   int numOfBranchPerJunct_;
   int n_epoch_;
+  int n_minibatch_;
   Dtype cov_in;
   Dtype termCost;
   Dtype discFactor;
