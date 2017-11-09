@@ -53,7 +53,7 @@ class LearningData {
   struct tensorBatch{
     tensorBatch():lengths("length"),advantages("advantage"), states("state"), hiddenStates("h_init"), actions("sampled_oa"), actionNoises("noise_oa"){};
     Tensor<Dtype, 1> lengths;
-    Tensor<Dtype, 1> advantages;
+    Tensor<Dtype, 2> advantages;
     Tensor<Dtype, 3> states;
     Tensor<Dtype, 3> hiddenStates;
     Tensor<Dtype, 3> actions;
@@ -179,15 +179,28 @@ class LearningData {
   }
 
   void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
-    int dataID = 0;
+    int batchID = 0;
+    advantageTensor.setZero();
+
     for (auto &tra : traj) {
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
-      advantageTensor.block(dataID, advTra.cols()) = advTra.transpose();
-      dataID += advTra.cols();
+      if (normalize){
+        rai::Math::MathFunc::normalize(advTra);
+      }
+      std::cout << advTra<< std::endl;
+
+      advantageTensor.block(0, batchID, advTra.cols(),1) = advTra.transpose();
+      std::cout << advantageTensor.block(0, batchID, advTra.cols(),1).transpose() << std::endl;
+
+      std::cout  << advantageTensor.col(batchID).transpose()<< std::endl;
+      batchID++;
+    LOG(INFO) << batchID;
+
     }
-    if (normalize){
-      rai::Math::MathFunc::normalize(advantageTensor);
-    }
+    LOG(INFO) << advantageTensor.rows();
+    LOG(INFO) << advantageTensor.cols();
+
+    LOG(INFO) << advantageTensor.eMat();
   }
 
   bool iterateBatch(const int batchSize = 0, bool isrecurrent = false, bool shuffle = false){
@@ -206,16 +219,15 @@ class LearningData {
     cur_minibatch.states.resize(stateTensor.dim(0),stateTensor.dim(1),cur_batch_size);
     cur_minibatch.actions.resize(actionTensor.dim(0),actionTensor.dim(1),cur_batch_size);
     cur_minibatch.actionNoises.resize(actionNoiseTensor.dim(0),actionNoiseTensor.dim(1),cur_batch_size);
-    cur_minibatch.advantages.resize(cur_batch_size);
+    cur_minibatch.advantages.resize(advantageTensor.dim(0),cur_batch_size);
     if(isrecurrent) cur_minibatch.lengths.resize(cur_batch_size);
 
     cur_minibatch.states = stateTensor.batchBlock(cur_ID, cur_batch_size);
     cur_minibatch.actions = actionTensor.batchBlock(cur_ID,cur_batch_size);
     cur_minibatch.actionNoises = actionNoiseTensor.batchBlock(cur_ID,cur_batch_size);
-    cur_minibatch.advantages = advantageTensor.block(cur_ID,cur_batch_size);
+    cur_minibatch.advantages = advantageTensor.block(0, cur_ID*advantageTensor.dim(0), advantageTensor.dim(0),cur_batch_size);
     if(isrecurrent) cur_minibatch.lengths = trajLength.block(cur_ID,cur_batch_size);
 
-    LOG(INFO) << cur_batch_size;
     cur_ID +=cur_batch_size;
     return true;
   };
@@ -255,7 +267,10 @@ class LearningData {
                     ValueFunc_ *vfunction = nullptr) {
 
     dataN = 0;
+    int maxlen = 0;
+
     for (auto &tra : traj) dataN += tra.size() - 1;
+
     stateBat.resize(StateDim, dataN);
 
     int colID = 0;
@@ -268,7 +283,6 @@ class LearningData {
     if (policy->isRecurrent()) {
 
       /////Zero padding tensor//////////////////
-      int maxlen = 0;
       for (auto &tra : traj)
         if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
 
@@ -289,6 +303,7 @@ class LearningData {
         actionNoiseTensor.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
       }
     } else {
+      maxlen = 1;
       stateTensor.resize(StateDim, 1, dataN);
       actionTensor.resize(ActionDim, 1, dataN);
       actionNoiseTensor.resize(ActionDim, 1, dataN);
@@ -308,6 +323,7 @@ class LearningData {
       }
       stateTensor.copyDataFrom(stateBat);
     }
+    advantageTensor.resize(maxlen, batchN);
 
     // update terimnal value
     if (vfunction) {

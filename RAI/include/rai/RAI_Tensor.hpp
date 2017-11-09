@@ -197,6 +197,7 @@ class TensorBase {
   int rows() { return dim_[0]; }
   int cols() { return dim_[1]; }
   int batches() { return dim_[2]; }
+  int size() {return size_; }
 
   /// you lose all data calling resize
   void resize(const std::vector<int> dim) {
