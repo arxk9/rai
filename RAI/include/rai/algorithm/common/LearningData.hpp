@@ -227,6 +227,8 @@ class LearningData {
     if(isrecurrent) cur_minibatch.lengths = trajLength.block(cur_ID,cur_batch_size);
 
     cur_ID +=cur_batch_size;
+//    LOG(INFO) << "cur_ID/batchN = " << cur_ID << "/" << batchN << " batchsize = " << cur_batch_size;
+
     return true;
   };
 

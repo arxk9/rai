@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(5);
+    task.setTimeLimitPerEpisode(25);
     taskVector.push_back(&task);
   }
 
@@ -76,15 +76,15 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Function approximations //////////
   Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-//  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 3 32 / 32 32 1", 0.001);
-  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
+  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 3 10 / 32 1", 0.001);
+//  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 1000, false);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 10, false);
 
   algorithm.setVisualizationLevel(0);
 

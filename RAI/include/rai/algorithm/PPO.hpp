@@ -101,7 +101,7 @@ class PPO {
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
       Ent_coeff_(Ent_coeff),
-      ld_(acquisitor){
+      ld_(acquisitor) {
 
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
@@ -164,7 +164,7 @@ class PPO {
     ValueBatch valuePred(ld_.dataN);
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
-    ld_.computeAdvantage(task_[0],vfunction_,lambda_);
+    ld_.computeAdvantage(task_[0], vfunction_, lambda_);
     Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
@@ -174,6 +174,7 @@ class PPO {
     vfunction_->forward(ld_.stateBat, valuePred);
 
     for (int i = 0; i < n_epoch_; i++) {
+//      LOG(INFO) << i + 1 << "th epoch";
       while (ld_.iterateBatch(minibatchSize_, policy_->isRecurrent())) {
 
 //        policy_->test(ld_.cur_minibatch, stdev_o);
@@ -186,11 +187,8 @@ class PPO {
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
         Utils::timer->startTimer("Gradient computation");
 
-        if (KL_adapt_) {
-          policy_->PPOpg_kladapt(ld_.cur_minibatch, stdev_o, policy_grad);
-        } else {
-          policy_->PPOpg(ld_.cur_minibatch, stdev_o, policy_grad);
-        }
+        if (KL_adapt_) policy_->PPOpg_kladapt(ld_.cur_minibatch, stdev_o, policy_grad);
+        else policy_->PPOpg(ld_.cur_minibatch, stdev_o, policy_grad);
 
         Utils::timer->stopTimer("Gradient computation");
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
@@ -203,19 +201,19 @@ class PPO {
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
 
         KLsum += KL;
-        cnt ++;
+        cnt++;
       }
-     }
-      KL = KLsum / cnt;
+    }
+    KL = KLsum / cnt;
 
-      if (KL_adapt_) {
-        if (KL > KL_thres_ * 1.5)
-          KL_coeff_ *= 2;
-        if (KL < KL_thres_ / 1.5)
-          KL_coeff_ *= 0.5;
+    if (KL_adapt_) {
+      if (KL > KL_thres_ * 1.5)
+        KL_coeff_ *= 2;
+      if (KL < KL_thres_ / 1.5)
+        KL_coeff_ *= 0.5;
 
-        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
-      }
+      policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
+    }
 
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
@@ -267,7 +265,7 @@ class PPO {
   bool KL_adapt_;
 
   /////////////////////////// batches
-  ValueBatch advantage_ , bellmanErr_;
+  ValueBatch advantage_, bellmanErr_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
