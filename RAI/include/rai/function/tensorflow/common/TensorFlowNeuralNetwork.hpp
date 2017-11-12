@@ -96,6 +96,19 @@ class TensorFlowNeuralNetwork {
     outputs = outputTensorFlowTensors;
   }
 
+  //tensor to mat
+  inline void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
+                  const std::vector<std::string> &outputTensorNames,
+                  const  std::vector<std::string> &targetNodeNames, std::vector<MatrixXD> &outputs) {
+
+    std::vector<tensorflow::Tensor> outputTensorFlowTensors;
+    std::vector<std::string> targetNodeNamesModified = targetNodeNames;
+    auto status = session->Run(inputs, outputTensorNames, targetNodeNamesModified, &outputTensorFlowTensors);
+    LOG_IF(FATAL, !status.ok()) << status.ToString();
+    tfTensorsToEigenMatrices(outputTensorFlowTensors, outputs);
+  }
+
+
   void runTargetNodes(const std::vector<std::pair<std::string, MatrixXD>> &inputs,
                       const std::vector<std::string> &targetNodeNames) {
     std::vector<MatrixXD> dummyOutputs;

@@ -38,12 +38,14 @@ class CommonFunc {
   typedef Eigen::Matrix<Dtype, StateDim, -1> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, -1> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, -1> ValueBatch;
+  typedef Eigen::Matrix<Dtype, -1, -1> InnerState;
+
   typedef Eigen::Matrix<Dtype, CommandDim, 1> Command;
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> RowVectorXD;
   typedef Eigen::Matrix<Dtype, 2, 1> Result;
-  typedef rai::Tensor<Dtype,3> StateTensor;
-  typedef rai::Tensor<Dtype,3> ActionTensor;
+  typedef rai::Tensor<Dtype,2> Tensor2D;
+  typedef rai::Tensor<Dtype,3> Tensor3D;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, CommandDim>;
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
@@ -122,8 +124,8 @@ class CommonFunc {
     noise[0]->initializeNoise();
 
     Result stat;
-    StateTensor states("state");
-    ActionTensor actions("action");
+    Tensor3D states("state");
+    Tensor3D actions("action");
 
     std::vector<TerminationType> termTypeBatch;
     State state_tp1, state_t;
@@ -242,8 +244,10 @@ class CommonFunc {
     for (auto &noise_ : noise)
       noise_->initializeNoise();
 
-    StateTensor states("state");
-    ActionTensor actions("action");
+    Tensor3D states("state");
+    Tensor3D actions("action");
+    InnerState hiddenStates;
+    int h_dim;
 
     Result stat;
     std::vector<TerminationType> termTypeBatch;
@@ -270,6 +274,10 @@ class CommonFunc {
     int trajcnt;
 
     termTypeBatch.resize(numOfTraj);
+    if (policy->isRecurrent()){
+      h_dim = policy->hiddenStateDim();
+      hiddenStates.resize(h_dim,ThreadN);
+    }
     states.resize(StateDim,1,ThreadN);
     actions.resize(ActionDim,1,ThreadN);
     Occupied.resize(ThreadN);
@@ -298,6 +306,8 @@ class CommonFunc {
 
     ///////////////////////////////////////////// run episodes
     while (true) {
+
+
       /// initialize tasks to trajectories with unterminated start state
       while (!Occupied.all() && !reducing) {
         if (termTypeBatch[trajcnt] == TerminationType::not_terminated) {
@@ -340,9 +350,12 @@ class CommonFunc {
           }
         }
       actions.resize(ActionDim,1,reducedIdx);
+        if (policy->isRecurrent())hiddenStates.resize(h_dim,reducedIdx);
       }
       if (reducedIdx == 0) /// Termination : No more job to do
         break;
+
+      if(policy->isRecurrent()) policy->getInnerStates(hiddenStates);
 
       timer->startTimer("Policy evaluation");
       policy->forward(states, actions);
@@ -379,6 +392,9 @@ class CommonFunc {
                                                       action_t[taskID],
                                                       action_noise[taskID],
                                                       cost[taskID]);
+
+        if(policy->isRecurrent()) trajectorySet[idx[taskID]].pushBackHiddenState(hiddenStates.col(taskID));
+
         termTypeBatch[idx[taskID]] = termtype_t[taskID];
         if (termTypeBatch[idx[taskID]] == TerminationType::terminalState) {
           trajectorySet[idx[taskID]].terminateTrajectoryAndUpdateValueTraj(
@@ -441,8 +457,8 @@ class CommonFunc {
 
     LOG_IF(FATAL, threadN != noises.size()) << "# Noise: " << noises.size() << ", # Thread: " << threadN << " mismatch";
 
-    StateTensor states({StateDim, 1 , threadN}, "state");
-    ActionTensor actions({ActionDim, 1 , threadN}, "action");
+    Tensor3D states({StateDim, 1 , threadN}, "state");
+    Tensor3D actions({ActionDim, 1 , threadN}, "action");
 
     State tempState;
     unsigned colId = 0;

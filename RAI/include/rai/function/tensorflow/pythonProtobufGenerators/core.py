@@ -14,7 +14,9 @@ def get_available_gpus():
 def dev_config(dev_info):
     command = dev_info.split(',')
     gpulist = get_available_gpus()
+    print(gpulist)
     gpuset = set(gpulist)
+    print(gpuset)
     opt = len(command)
     dev_list = []
     dev_mode = False
@@ -32,7 +34,8 @@ def dev_config(dev_info):
             else:
                 temp.append(dev)
         if (opt - 1) != len(dev_list):
-            print('Cannot find :' + temp)
+            print('Cannot find :')
+            print(temp)
     assert len(dev_list) > 0, 'Cannot find any device'
     return dev_mode, dev_list
 

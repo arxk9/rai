@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Function approximations //////////
   Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 3 10 / 32 1", 0.001);
+  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 3 16 / 16 16 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 10, false);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 5, false);
 
   algorithm.setVisualizationLevel(0);
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(5000);
+    algorithm.runOneLoop(6000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

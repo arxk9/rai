@@ -20,3 +20,6 @@ add_subdirectory(${RAI_ROOT}/RAI/include/rai/function/tensorflow/pythonProtobufG
 add_executable(testDeterministicmodel testDeterministicModel.cpp)
 target_link_libraries(testDeterministicmodel ${RAI_LINK})
 
+add_executable(testRnn test_RNN.cpp)
+target_link_libraries(testRnn ${RAI_LINK})
+

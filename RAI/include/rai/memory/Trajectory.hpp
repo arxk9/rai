@@ -25,6 +25,8 @@ class Trajectory {
   typedef Eigen::Matrix<Dtype, actionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
+  typedef Eigen::Matrix<Dtype, -1, -1> HiddenState;
+
   typedef Eigen::Matrix<Dtype, 1, -1> CostBatch;
   using Vfunction_ = FuncApprox::ValueFunction<Dtype, stateDim>;
 
@@ -43,6 +45,10 @@ class Trajectory {
     costTraj.push_back(cost);
     matrixUpdated = false;
     gaeUpdated = false;
+  }
+
+  void pushBackHiddenState(HiddenState &hiddenState){
+    hiddenStateTraj.push_back(hiddenState);
   }
 
   void terminateTrajectoryAndUpdateValueTraj(TerminationType termTypeArg,
@@ -211,6 +217,8 @@ class Trajectory {
   std::vector<State> stateTraj;
   std::vector<Action> actionTraj;
   std::vector<Action> actionNoiseTraj;
+  std::vector<HiddenState> hiddenStateTraj;
+
   std::vector<Dtype> costTraj, accumCostTraj;
   std::vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;

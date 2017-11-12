@@ -6,9 +6,9 @@ from tensorflow.contrib.layers import fully_connected
 
 # multiple gated recurrent unit layers (https://arxiv.org/pdf/1406.1078v3.pdf)
 # Implementation of GRU + MLP layers
-class GRUMLP(bc.GraphStructure):
+class GRUMLP_TBPTT(bc.GraphStructure):
     def __init__(self, dtype, *param, fn):
-        super(GRUMLP, self).__init__(dtype)
+        super(GRUMLP_TBPTT, self).__init__(dtype)
         nonlin_str = param[0]
         nonlin = getattr(tf.nn, nonlin_str)
 
@@ -25,6 +25,12 @@ class GRUMLP(bc.GraphStructure):
         length_ = tf.placeholder(dtype, name='length')  # [batch]
         length_ = tf.cast(length_, dtype=tf.int32)
         self.seq_length = tf.reshape(length_, [-1])
+
+        # TBPTT
+        K1 = 1
+        K2 = 2
+
+
 
         # GRU
         cells = []

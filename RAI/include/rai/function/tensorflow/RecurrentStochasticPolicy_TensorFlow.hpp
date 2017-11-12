@@ -51,6 +51,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename PolicyBase::LearningData_ LearningData_;
   typedef typename PolicyBase::TensorBatch_ TensorBatch_;
+  typedef typename Pfunction_tensorflow ::InnerState InnerState;
 
   RecurrentStochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -221,9 +222,13 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   virtual int getInnerStatesize() {
-    std::vector<MatrixXD> vectorOfOutputs;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
-    return vectorOfOutputs[0](0);
+    return vectorOfOutputs[0].scalar<int>()();
+  }
+
+  virtual void getInnerStates(InnerState &h_out){
+    h_out = h;
   }
 
   int hiddenStateDim() { return hdim; }

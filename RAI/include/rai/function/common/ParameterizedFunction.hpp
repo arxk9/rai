@@ -151,6 +151,7 @@ class ParameterizedFunction {
   virtual void reset(int n) {}
   virtual void terminate(int n) {}
   virtual int getInnerStatesize() { return 0; }
+  virtual void getInnerStates(InnerState &h_out){LOG(FATAL) << "NOT IMPLEMENTED"; }
 
   LibraryID libraryID_ = LibraryID::notSpecified;
   int parameterSize = 0;

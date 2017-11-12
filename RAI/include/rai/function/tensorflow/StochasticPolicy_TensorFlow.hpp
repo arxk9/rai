@@ -63,7 +63,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   virtual void TRPOpg(LearningData_ &ld,
                       Action &Stdev,
                       VectorXD &grad) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
     this->tf_->run({ld.stateTensor,
@@ -74,13 +74,14 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    {"Algo/TRPO/Pg"},
                    {},
                    vectorOfOutputs);
-    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+
+    grad = vectorOfOutputs[0];
   }
 
   virtual Dtype TRPOcg(LearningData_ &ld,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor1D gradT(grad, {grad.rows()}, "tangent");
 
@@ -91,13 +92,13 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                     StdevT,
                     gradT},
                    {"Algo/TRPO/Cg", "Algo/TRPO/Cgerror"}, {}, vectorOfOutputs);
-    std::memcpy(getng.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * getng.size());
-    return  *(vectorOfOutputs[1].flat<Dtype>().data());
+    getng = vectorOfOutputs[0];
+    return  vectorOfOutputs[1](0);
   }
 
   virtual Dtype TRPOloss(LearningData_ &ld,
                          Action &Stdev) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
     this->tf_->run({ld.stateTensor,
@@ -108,7 +109,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    {"Algo/TRPO/loss"},
                    {}, vectorOfOutputs);
 
-    return *(vectorOfOutputs[0].flat<Dtype>().data());
+    return vectorOfOutputs[0](0);
   }
 
   ///PPO
@@ -134,7 +135,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   virtual void PPOpg(TensorBatch_ &minibatch,
                      Action &Stdev,
                      VectorXD &grad) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
     this->tf_->run({minibatch.states,
@@ -145,13 +146,13 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    {"Algo/PPO/Pg"},
                    {},
                    vectorOfOutputs);
-    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+    grad = vectorOfOutputs[0];
   }
 
   virtual void PPOpg_kladapt(TensorBatch_ &minibatch,
                              Action &Stdev,
                              VectorXD &grad) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
     this->tf_->run({minibatch.states,
@@ -162,13 +163,12 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    {"Algo/PPO/Pg2"},
                    {},
                    vectorOfOutputs);
-
-    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+    grad = vectorOfOutputs[0];
   }
 
   virtual Dtype PPOgetkl(TensorBatch_ &minibatch,
                          Action &Stdev) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
     this->tf_->run({minibatch.states,
@@ -178,7 +178,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    {"Algo/PPO/kl_mean"},
                    {},
                    vectorOfOutputs);
-    return vectorOfOutputs[0].template flat<Dtype>().data()[0];
+    return vectorOfOutputs[0](0);
   }
 
   virtual void setStdev(const Action &Stdev) {

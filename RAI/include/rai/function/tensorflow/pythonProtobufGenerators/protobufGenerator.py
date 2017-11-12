@@ -33,6 +33,7 @@ K.set_session(session)
 # Device Configuration
 GPU_mode, Dev_list = core.dev_config(computeMode)
 
+# with tf.device('/gpu:0'):  # Base device(cpu mode: cpu0, gpu mode: first gpu on the list)
 with tf.device(Dev_list[0]):  # Base device(cpu mode: cpu0, gpu mode: first gpu on the list)
     gs_ob = gs_method(dtype, *gs_arg, fn=fn_method)
     fn_ob = fn_method(dtype, gs_ob)
