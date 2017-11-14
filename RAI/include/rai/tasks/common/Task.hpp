@@ -30,8 +30,8 @@
 #include <Eigen/SVD>
 
 
-#include "rai/common/enumeration.hpp"
-#include "rai/common/TypeDef.hpp"
+#include "raiCommon/enumeration.hpp"
+#include "raiCommon/TypeDef.hpp"
 
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"

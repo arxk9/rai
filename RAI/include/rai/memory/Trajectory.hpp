@@ -9,7 +9,7 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
-#include "rai/common/enumeration.hpp"
+#include "raiCommon/enumeration.hpp"
 #include "rai/function/common/ValueFunction.hpp"
 
 

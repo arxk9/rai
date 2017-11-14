@@ -10,7 +10,7 @@
 #include "rai/memory/ReplayMemorySARS.hpp"
 #include <algorithm>
 #include <flann/flann.hpp>
-#include <RAI_timer/RAI_timer_ToInclude.hpp>
+#include <raiCommon/utils/rai_timer/RAI_timer_ToInclude.hpp>
 
 namespace rai {
 namespace FuncApprox {

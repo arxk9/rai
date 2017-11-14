@@ -32,12 +32,12 @@ Pole_Visualizer::Pole_Visualizer() :
   relPos << -3, 0, 0;
   std::vector<float> pos = {-100, 0, 0}, spec = {0.7, 0.7, 0.7}, amb = {0.7, 0.7, 0.7}, diff = {0.7, 0.7, 0.7};
 
-  Graphics::RAI_graphics::LightProp lprop;
+  rai_graphics::LightProp lprop;
   lprop.amb_light = amb;
   lprop.spec_light = spec;
   lprop.diff_light = diff;
   lprop.pos_light = pos;
-  Graphics::RAI_graphics::CameraProp cprop;
+  rai_graphics::CameraProp cprop;
   cprop.toFollow = &Pole;
   cprop.relativeDist = relPos;
 
@@ -81,7 +81,7 @@ void Pole_Visualizer::drawWorld(HomogeneousTransform &bodyPose, double action) {
 
 }
 
-Graphics::RAI_graphics *Pole_Visualizer::getGraphics() {
+rai_graphics::RAI_graphics *Pole_Visualizer::getGraphics() {
   return &graphics;
 }
 }
