@@ -61,7 +61,7 @@ for d in */ ; do
     if [ "$d" != "install/" ]; then
 	echo "Entering $d" 
 	cd $d
-	cd external/protobuf
+	cd external/protobuf_archive
 	sudo ./autogen.sh && sudo ./configure && sudo make -j3 && sudo make install
     fi
 done

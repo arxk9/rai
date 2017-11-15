@@ -168,7 +168,7 @@ cmake CMakeLists.txt && sudo make install -j
 cd $RAI_ROOT
 #git clone git@bitbucket.org:jhwangbo/raigraphics_opengl.git/
 git clone https://bitbucket.org/jhwangbo/raigraphics_opengl.git
-cd raigraphics_Opengl
+cd raigraphics_opengl
 sudo ./install.sh
 cmake CMakeLists.txt && sudo make install -j
 
