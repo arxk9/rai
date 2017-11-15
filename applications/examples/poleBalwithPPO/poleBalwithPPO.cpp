@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 50;
+  constexpr int loggingInterval = 10;
   for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {

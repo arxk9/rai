@@ -159,9 +159,18 @@ mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release ../ && make -j && s
 
 # RAI_Common
 cd $RAI_ROOT
-git clone git@bitbucket.org:jhwangbo/rai_common.git
-cd rai_common
-cmake .. && sudo make install -j
+#git clone git@bitbucket.org:jhwangbo/raicommon.git
+git clone https://bitbucket.org/jhwangbo/raicommon.git
+cd raicommon
+cmake CMakeLists.txt && sudo make install -j
+
+# RAI_Graphics
+cd $RAI_ROOT
+#git clone git@bitbucket.org:jhwangbo/raigraphics_opengl.git/
+git clone https://bitbucket.org/jhwangbo/raigraphics_opengl.git
+cd raigraphics_Opengl
+sudo ./install.sh
+cmake CMakeLists.txt && sudo make install -j
 
 cd $RAI_ROOT
 exit

@@ -39,13 +39,11 @@ cd ./deepLearning
 sudo rm -rf tensorflow
 git clone https://github.com/tensorflow/tensorflow.git
 cd tensorflow
-git checkout r1.3
+git checkout tags/v1.4.0-rc1
+
 echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
 sudo bazel clean --expunge
 sudo ./configure
-
-##  Debug Tensorflow build error(Temporary 14.09.17)
-sed -i '\@https://github.com/google/protobuf/archive/0b059a3d8a8f8aa40dde7bea55edca4ec5dfea66.tar.gz@d' tensorflow/workspace.bzl
 
 echo -n "do you have gpu (y/n)? "
 read answer

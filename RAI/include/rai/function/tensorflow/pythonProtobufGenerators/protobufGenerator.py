@@ -3,7 +3,9 @@ import tensorflow as tf
 import functions
 import graph_structure
 import core
-from tensorflow.contrib.keras import backend as K
+import os
+# from tensorflow.contrib.keras import backend as K
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 # arguments
 dtype = int(sys.argv[1])
@@ -22,16 +24,27 @@ fn = sys.modules['functions.' + fn_type]
 gs_method = getattr(gs, gs_type)
 fn_method = getattr(fn, fn_type)
 
+# config = tf.ConfigProto()
+
+# config.gpu_options.allow_growth = True
+# config.gpu_options.per_process_gpu_memory_fraction = 0.0
+
+# config = tf.ConfigProto(
+#     intra_op_parallelism_threads=0,
+#     inter_op_parallelism_threads=0
+# )
 config = tf.ConfigProto(
-    intra_op_parallelism_threads=0,
-    inter_op_parallelism_threads=0
+    device_count = {'GPU': 0}
 )
+
 session = tf.Session(config=config)
 # session = tf.Session()
-K.set_session(session)
+# K.set_session(session)
 
 # Device Configuration
 GPU_mode, Dev_list = core.dev_config(computeMode)
+print (Dev_list[0])
+
 
 with tf.device(Dev_list[0]):  # Base device(cpu mode: cpu0, gpu mode: first gpu on the list)
     gs_ob = gs_method(dtype, *gs_arg, fn=fn_method)
