@@ -57,23 +57,32 @@ sudo apt-get install $APT_GET_FLAGS libgflags-dev libgoogle-glog-dev
 sudo apt-get install $APT_GET_FLAGS libboost-all-dev
 
 ### Bazel
-sudo apt-get install $APT_GET_FLAGS software-properties-common
-sudo apt-get install $APT_GET_FLAGS golang
+#sudo apt-get install $APT_GET_FLAGS software-properties-common
+#sudo apt-get install $APT_GET_FLAGS golang
+#
+#if [ "$yrelease" -eq "16" ]; then
+#	sudo apt-get install $APT_GET_FLAGS openjdk-8-jdk
+#else
+#	if [ "$yrelease" -eq "14" ]; then
+#		sudo add-apt-repository ppa:webupd8team/java
+#		sudo apt-get update  $APT_GET_FLAGS && sudo apt-get install $APT_GET_FLAGS oracle-java8-installer
+#	fi
+#fi
+#
+#echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+#curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+#sudo apt-get update $APT_GET_FLAGS 
+#sudo apt-get install $APT_GET_FLAGS bazel
+#sudo apt-get upgrade $APT_GET_FLAGS bazel
 
-if [ "$yrelease" -eq "16" ]; then
-	sudo apt-get install $APT_GET_FLAGS openjdk-8-jdk
-else
-	if [ "$yrelease" -eq "14" ]; then
-		sudo add-apt-repository ppa:webupd8team/java
-		sudo apt-get update  $APT_GET_FLAGS && sudo apt-get install $APT_GET_FLAGS oracle-java8-installer
-	fi
-fi
+### Bazel 0.5.4
+sudo apt-get install pkg-config zip g++ zlib1g-dev unzip python
+wget https://github.com/bazelbuild/bazel/releases/download/0.5.4/bazel-0.5.4-installer-linux-x86_64.sh
+chmod +x bazel-0.5.4-installer-linux-x86_64.sh
+sudo ./bazel-0.5.4-installer-linux-x86_64.sh --prefix=/usr
+rm bazel-0.5.4-installer-linux-x86_64.sh
 
-echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
-curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
-sudo apt-get update $APT_GET_FLAGS 
-sudo apt-get install $APT_GET_FLAGS bazel
-sudo apt-get upgrade $APT_GET_FLAGS bazel
+printf 'export PATH="$PATH:$HOME/bin"\n' >> $HOME/.bashrc
 
 ## Cmake 3
 wget https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.sh
@@ -158,14 +167,14 @@ cd rbdl/
 mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release ../ && make -j && sudo make install
 
 # RAI_Common
-cd $RAI_ROOT
+cd $(dirname "$RAI_ROOT")
 #git clone git@bitbucket.org:jhwangbo/raicommon.git
 git clone https://bitbucket.org/jhwangbo/raicommon.git
 cd raicommon
 cmake CMakeLists.txt && sudo make install -j
 
 # RAI_Graphics
-cd $RAI_ROOT
+cd $(dirname "$RAI_ROOT")
 #git clone git@bitbucket.org:jhwangbo/raigraphics_opengl.git/
 git clone https://bitbucket.org/jhwangbo/raigraphics_opengl.git
 cd raigraphics_opengl
