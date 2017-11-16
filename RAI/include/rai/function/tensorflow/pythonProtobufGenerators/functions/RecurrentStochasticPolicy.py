@@ -2,8 +2,6 @@ import functions.Policy as pc
 import tensorflow as tf
 import core
 import Utils
-from tensorflow.contrib.keras import models
-from tensorflow.contrib.keras import backend as K
 from operator import mul
 from functools import reduce
 import numpy as np
