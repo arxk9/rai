@@ -39,13 +39,14 @@ cd ./deepLearning
 sudo rm -rf tensorflow
 git clone https://github.com/tensorflow/tensorflow.git
 cd tensorflow
-git checkout r1.3
-echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
-sudo bazel clean --expunge
-sudo ./configure
+git checkout tags/v1.3.0
 
 ##  Debug Tensorflow build error(Temporary 14.09.17)
 sed -i '\@https://github.com/google/protobuf/archive/0b059a3d8a8f8aa40dde7bea55edca4ec5dfea66.tar.gz@d' tensorflow/workspace.bzl
+
+echo "select the following path as your python path: " $WORKON_HOME/tensorflow/bin/python
+sudo bazel clean --expunge
+sudo ./configure
 
 echo -n "do you have gpu (y/n)? "
 read answer
@@ -53,7 +54,7 @@ if echo "$answer" | grep -iq "^y" ;then
     sudo bazel build -c opt --config=cuda --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone
     pip3 install --upgrade tensorflow-gpu
 else
-    sudo bazel build -c opt --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone
+    sudo bazel build -c opt --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone 
     pip3 install --upgrade tensorflow
 fi
 

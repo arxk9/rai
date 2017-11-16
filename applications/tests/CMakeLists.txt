@@ -20,3 +20,8 @@ add_subdirectory(${RAI_ROOT}/RAI/include/rai/function/tensorflow/pythonProtobufG
 add_executable(testDeterministicmodel testDeterministicModel.cpp)
 target_link_libraries(testDeterministicmodel ${RAI_LINK})
 
+add_subdirectory(${RAI_ROOT}/RAI/src/tasks/poleBalancing ${CMAKE_BINARY_DIR}/applications/examples/poleBalwithPPO/src)
+
+add_executable(memory ${RAI_TASK_SRC} testMemoryleak.cpp)
+target_include_directories(memory PUBLIC)
+target_link_libraries(memory ${RAI_LINK})
