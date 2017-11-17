@@ -53,7 +53,10 @@ int main() {
   ten3D.setZero();
   for (int i = 0; i < ten3D.batches(); i++) {
     ten3D.col(i, 1) << 1 + 3 * i, 2 + 3 * i, 3 + 3 * i;
+    ten3D.col(i, 2) << 2 + 3 * i, 3 + 3 * i, 4 + 3 * i;
+    ten3D.col(i, 3) << 3 + 3 * i, 4 + 3 * i, 5 + 3 * i;
   }
+
   std::cout << "2nd columns of each batches are nonzero" << std::endl << ten3D << std::endl;
   std::cout << "all 2nd rows(shape = {4,2}) [ten3D.row(1)]" << std::endl << ten3D.row(1) << std::endl;
   std::cout << "all 2nd columns(shape = {3,2}) [ten3D.col(1)]" << std::endl << ten3D.col(1) << std::endl;
@@ -67,10 +70,35 @@ int main() {
   test(ten);
   test2(ten);
 
+  //////Test conservativeResize///
+
   std::cout << "ten : "<<std::endl<<ten << std::endl;
   ten.conservativeResize(4,5);
   std::cout << "ten.conservativeResize(4,5) :"<<std::endl <<ten << std::endl<< std::endl;
 
+  rai::Tensor<float, 3> ten3D2({3, 4, 2},"temp");
+  ten3D2 = ten3D;
+  std::cout << "ten3D : "<<std::endl<<ten3D << std::endl;
+  ten3D2.conservativeResize(2,4,2);
+  std::cout << "ten3D.conservativeResize(2,4,2) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2 = ten3D;
+  ten3D2.conservativeResize(3,3,2);
+  std::cout << "ten3D.conservativeResize(3,3,2) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2 = ten3D;
+  ten3D2.conservativeResize(3,4,1);
+  std::cout << "ten3D.conservativeResize(3,4,1) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2 = ten3D;
+  ten3D2.conservativeResize(3,3,1);
+  std::cout << "ten3D.conservativeResize(3,3,1) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2 = ten3D;
+  ten3D2.conservativeResize(2,4,1);
+  std::cout << "ten3D.conservativeResize(2,4,1) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2 = ten3D;
+  ten3D2.conservativeResize(2,3,2);
+  std::cout << "ten3D.conservativeResize(2,3,2) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2 = ten3D;
+  ten3D2.conservativeResize(4,5,3);
+  std::cout << "ten3D.conservativeResize(4,5,3) :"<<std::endl <<ten3D2 << std::endl;
 }
 
 void test(Eigen::Matrix<float, -1, -1> ten2D) {
