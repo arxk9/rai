@@ -246,7 +246,6 @@ class CommonFunc {
 
     Tensor3D states("state");
     Tensor3D actions("action");
-    InnerState hiddenStates;
     int h_dim;
 
     Result stat;
@@ -274,10 +273,6 @@ class CommonFunc {
     int trajcnt;
 
     termTypeBatch.resize(numOfTraj);
-    if (policy->isRecurrent()){
-      h_dim = policy->hiddenStateDim();
-      hiddenStates.resize(h_dim,ThreadN);
-    }
     states.resize(StateDim,1,ThreadN);
     actions.resize(ActionDim,1,ThreadN);
     Occupied.resize(ThreadN);
@@ -350,12 +345,9 @@ class CommonFunc {
           }
         }
       actions.resize(ActionDim,1,reducedIdx);
-        if (policy->isRecurrent())hiddenStates.resize(h_dim,reducedIdx);
       }
       if (reducedIdx == 0) /// Termination : No more job to do
         break;
-
-      if(policy->isRecurrent()) policy->getInnerStates(hiddenStates);
 
       timer->startTimer("Policy evaluation");
       policy->forward(states, actions);
@@ -392,8 +384,6 @@ class CommonFunc {
                                                       action_t[taskID],
                                                       action_noise[taskID],
                                                       cost[taskID]);
-
-        if(policy->isRecurrent()) trajectorySet[idx[taskID]].pushBackHiddenState(hiddenStates.col(taskID));
 
         termTypeBatch[idx[taskID]] = termtype_t[taskID];
         if (termTypeBatch[idx[taskID]] == TerminationType::terminalState) {

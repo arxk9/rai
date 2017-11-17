@@ -179,7 +179,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
       h.resize(hdim, states.batches());
       h.setZero();
     }
-
     this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
     h.copyDataFrom(vectorOfOutputs[1]);
     actions.copyDataFrom(vectorOfOutputs[0]);

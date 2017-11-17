@@ -1,7 +1,7 @@
 # 1. Contributors
-Main developer: Jemin Hwangbo (RSL, ETH Zurich, Switzerland, jhwangbo@ethz.ch)
+Main developer: Jemin Hwangbo (RSL, ETH Zurich, Switzerland, jhwangbo@ethz.ch), Joonho Lee (ETH Zurich, Switzerland, jolee@ethz.ch)
 
-Contributors: Junho Lee (ETH Zurich, Switzerland), Michael Ackermann (ETH Zurich, Switzerland)
+Contributors: Michael Ackermann (ETH Zurich, Switzerland)
 
 # 2. Installation
 Clone with "git clone --recursive {URL}"
