@@ -133,10 +133,10 @@ int main(int argc, char *argv[]) {
   constexpr int loggingInterval = 10;
   for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
 
-    if (iterationNumber % loggingInterval == 0) {
-      algorithm.setVisualizationLevel(1);
-      taskVector[0]->enableVideoRecording();
-    }
+//    if (iterationNumber % loggingInterval == 0) {
+//      algorithm.setVisualizationLevel(1);
+//      taskVector[0]->enableVideoRecording();
+//    }
     LOG(INFO) << iterationNumber << "th Iteration";
     algorithm.runOneLoop(5000);
 
