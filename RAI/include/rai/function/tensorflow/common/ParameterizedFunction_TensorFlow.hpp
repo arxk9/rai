@@ -67,7 +67,7 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
 
     cmnd += RAI_LOG_PATH + " " + computeMode + " " + functionName + " " + graphName + " " + graphParam;
 
-    int i = system(cmnd.c_str());
+    system(cmnd.c_str());
     learningRate_ = MatrixXD::Constant(1, 1, learningRate);
     tf_ = new TensorFlowNeuralNetwork<Dtype>(RAI_LOG_PATH + "/" + functionName + "_" + graphName + ".pb", 0);
   }

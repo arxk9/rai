@@ -27,7 +27,7 @@ class GRUNet(bc.GraphStructure):
             state_size.append(cell.state_size)
 
         cell = rnn.MultiRNNCell(cells, state_is_tuple=True)
-        hiddenStateDim = tf.identity(tf.constant(value=[recurrent_state_size], dtype=tf.int32), name='h_dim')
+        hiddenStateDim = tf.identity(tf.reshape(tf.constant(value=[recurrent_state_size], dtype=dtype), shape=[1, 1]), name='h_dim')
 
         init_state = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
         init_state_tuple = tuple(tf.split(init_state, num_or_size_splits=state_size, axis=1))

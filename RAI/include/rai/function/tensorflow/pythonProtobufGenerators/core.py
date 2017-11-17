@@ -4,6 +4,7 @@ import tensorflow as tf
 # from tensorflow.contrib.keras import layers
 # from tensorflow.contrib.keras import models
 from tensorflow.python.client import device_lib
+import os
 
 
 # Device configure
@@ -21,6 +22,8 @@ def dev_config(dev_info):
 
     if command[0] == 'cpu':
         dev_list = ['/cpu:0']
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
     elif command[0] == 'gpu':
         assert opt > 1, 'Specify at least one gpu (e.g. gpu,0 or gpu,0,1)'
         dev_mode = True
