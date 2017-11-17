@@ -32,17 +32,16 @@ class ReplayMemoryHistory{
 
  public:
 
-  ReplayMemoryHistory(unsigned capacity, bool distInfo = true) : size_(0), batchIdx_(0),distInfo_(distInfo) {
+  ReplayMemoryHistory(unsigned capacity, bool distInfo = true) : size_(0), batchIdx_(0), maxlen_(0),distInfo_(distInfo) {
     stateTensor_ = new Tensor3D;
     actionTensor_  = new Tensor3D;
     costTensor_ = new Tensor2D;
-    len_ = new Tensor1D;
+    len_ = new Tensor1D({capacity},0);
     if(distInfo_){
       actionNoiseTensor_ = new Tensor3D;
-      stdevs_ = new ScalarBatch(1,capacity);
+      stdevs_ =  new Tensor2D({actionDimension, capacity},0);
     }
-
-    termtypes_ = new Tensor1D;
+    termtypes_ =  new Tensor1D({capacity},0);
     capacity_ = capacity;
   }
 
@@ -58,7 +57,53 @@ class ReplayMemoryHistory{
     }
 
   }
+  ///with distribution Information
+  inline void SaveHistory(Tensor3D &states,
+                          Tensor3D &actions,
+                          Tensor3D &actionNoises,
+                          Tensor2D &costs,
+                          Action &stdev,
+                          Tensor1D &lengths,
+                          Tensor1D &termTypes)
+  {
+    LOG_IF(FATAL, !distInfo_) << "distInfo != true";
 
+    int margin = size_ - batchIdx_;
+    std::lock_guard<std::mutex> lockModel(memoryMutex_);
+    if(states.cols() > maxlen_)
+    {
+      maxlen_ = states.cols();
+      LOG(INFO)<<maxlen_;
+      stateTensor_->conservativeResize(stateDimension,maxlen_,capacity_);
+      actionTensor_->conservativeResize(actionDimension,maxlen_,capacity_);
+      actionNoiseTensor_->conservativeResize(actionDimension,maxlen_,capacity_);
+      costTensor_->conservativeResize(maxlen_,capacity_);
+    }
+
+    for(int i = 0; i<states.batches(); i++){
+      ///partially fill batch
+      std::memcpy(stateTensor_->data() + batchIdx_ * stateDimension * maxlen_,
+                  states.batch(i).data(), sizeof(Dtype) * stateDimension * lengths[i]);
+      std::memcpy(actionTensor_->data() + batchIdx_ * actionDimension * maxlen_,
+                  actions.batch(i).data(), sizeof(Dtype) * actionDimension * lengths[i]);
+      std::memcpy(actionNoiseTensor_->data() + batchIdx_ * actionDimension * maxlen_,
+                  actionNoises.batch(i).data(), sizeof(Dtype) * actionDimension * lengths[i]);
+      costTensor_->block(0,batchIdx_, states.cols(), 1) = costs.col(i);
+      stdevs_->col(batchIdx_) = stdev;
+      len_->at(batchIdx_) = lengths[i];
+      termtypes_->at(batchIdx_) = termTypes[i];
+
+      batchIdx_ = (batchIdx_ + 1) % capacity_;
+      size_++;
+      size_ = std::min(size_, capacity_);
+    }
+//    LOG(INFO) << stateTensor_->dim(0) << " " <<stateTensor_->dim(1) << " " <<stateTensor_->dim(2);
+//    std::cout << stateTensor_->eTensor() << std::endl<< std::endl;
+//    std::cout << actions << std::endl;
+//    std::cout << actionTensor_->eTensor() << std::endl<< std::endl;
+//    std::cout << costs<<std::endl;
+//    std::cout << costTensor_->eTensor() << std::endl;
+  }
 
   inline void SaveHistory(Tensor3D &states,
                           Tensor3D &actions,
@@ -67,36 +112,40 @@ class ReplayMemoryHistory{
                           Tensor1D &termTypes)
   {
     int margin = size_ - batchIdx_;
-    maxlen_ = std::max(states.cols(),maxlen_);
-
-    if(stateTensor_->cols() < maxlen_)
-    {
-
-    }
     std::lock_guard<std::mutex> lockModel(memoryMutex_);
-    if(margin < states.batches())
+    if(states.cols() > maxlen_)
     {
-      stateTensor_->batchBlock(batchIdx_,margin) = states.batchBlock(0,margin);
-      actionTensor_->batchBlock(batchIdx_,margin) = actions.batchBlock(0,margin);
-      costTensor_->block(0,batchIdx_,maxlen_,margin) = costs.block(0,0,maxlen_,margin);
-      len_->block(batchIdx_,margin) = lengths.block(0,margin);
-      termtypes_->block(batchIdx_,margin) = termTypes.block(0,margin);
-
-      stateTensor_->batchBlock(0,states.batches()-margin) = states.batchBlock(margin,states.batches()-margin);
-      actionTensor_->batchBlock(0,states.batches()-margin) = actions.batchBlock(margin,states.batches()-margin);
-      costTensor_->block(0,0,maxlen_,states.batches()-margin) = costs.block(0,margin,maxlen_,states.batches()-margin);
-      len_->block(0,states.batches()-margin) = lengths.block(margin,states.batches()-margin);
-      termtypes_->block(0,states.batches()-margin) = termTypes.block(margin,states.batches()-margin);
+      maxlen_ = states.cols();
+      LOG(INFO)<<maxlen_;
+      stateTensor_->conservativeResize(stateDimension,maxlen_,capacity_);
+      actionTensor_->conservativeResize(actionDimension,maxlen_,capacity_);
+      costTensor_->conservativeResize(maxlen_,capacity_);
     }
-//    state_t_->col(memoryIdx_) = state_t;
-//    state_tp1_->col(memoryIdx_) = state_tp1;
-//    action_t_->col(memoryIdx_) = action_t;
-//    (*cost_)(memoryIdx_) = cost;
-//    (*terminationFlag_)(memoryIdx_) = Dtype(termType);
-//    memoryIdx_ = (memoryIdx_ + 1) % capacity_;
-//    size_++;
-//    size_ = std::min(size_, capacity_);
-  }
+
+    for(int i = 0; i<states.batches(); i++){
+      ///partially fill batch
+      std::memcpy(stateTensor_->data() + batchIdx_ * stateDimension * maxlen_,
+                  states.batch(i).data(), sizeof(Dtype) * stateDimension * lengths[i]);
+      std::memcpy(actionTensor_->data() + batchIdx_ * actionDimension * maxlen_,
+                  actions.batch(i).data(), sizeof(Dtype) * actionDimension * lengths[i]);
+      costTensor_->block(0,batchIdx_, states.cols(), 1) = costs.col(i);
+      len_->at(batchIdx_) = lengths[i];
+      termtypes_->at(batchIdx_) = termTypes[i];
+
+      batchIdx_ = (batchIdx_ + 1) % capacity_;
+      size_++;
+      size_ = std::min(size_, capacity_);
+    }
+//    LOG(INFO) << stateTensor_->dim(0) << " " <<stateTensor_->dim(1) << " " <<stateTensor_->dim(2);
+//    std::cout << stateTensor_->eTensor() << std::endl<< std::endl;
+//    std::cout << actions << std::endl;
+//    std::cout << actionTensor_->eTensor() << std::endl<< std::endl;
+//    std::cout << costs<<std::endl;
+    std::cout << actions << std::endl;
+
+    for(int i = 0 ; i<capacity_ ; i++)
+    std::cout << actionTensor_->batch(i) << std::endl<< std::endl;
+ }
 
 //
 //  inline void clearTheMemoryAndSetNewBatchSize(int newMemorySize) {
@@ -146,10 +195,9 @@ class ReplayMemoryHistory{
   Tensor3D* actionTensor_;
   Tensor3D* actionNoiseTensor_;
   Tensor2D* costTensor_;
+  Tensor2D* stdevs_;
   Tensor1D* len_;
   Tensor1D* termtypes_;
-
-  ScalarBatch* stdevs_;
 
   bool distInfo_;
   unsigned size_;

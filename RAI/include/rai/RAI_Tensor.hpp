@@ -31,7 +31,6 @@ class TensorBase {
   typedef Eigen::TensorMap<Eigen::Tensor<Dtype, NDim>> EigenTensor;
 
  public:
-
   // empty constructor. Resize has to be called before use
   TensorBase(const std::string name = "") {
     namedTensor_.first = name;
@@ -39,7 +38,7 @@ class TensorBase {
   }
 
   // empty data constructor
-  TensorBase(const std::vector<int> dim, const std::string name = "") {
+  TensorBase(const std::vector<int> dim, const std::string name) {
     init(dim, name);
   }
 
@@ -182,7 +181,9 @@ class TensorBase {
 //  Dtype *operator[](int x) {
 //    return vecTens[x].flat<Dtype>().data();
 //  };
-
+  Dtype & at(int i) {
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  };
   Dtype &operator[](int i) {
     return namedTensor_.second.flat<Dtype>().data()[i];
   };
@@ -258,6 +259,7 @@ class Tensor : public rai::TensorBase<Dtype, NDim> {
  public:
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
+  using TensorBase::at;
   using TensorBase::operator =;
   using TensorBase::operator [];
   using TensorBase::operator std::pair<std::string, tensorflow::Tensor>;
@@ -281,6 +283,7 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
   using TensorBase::resize;
+  using TensorBase::at;
   using TensorBase::operator=;
   using TensorBase::operator[];
 
@@ -341,6 +344,7 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
   using TensorBase::resize;
+  using TensorBase::at;
   using TensorBase::operator=;
   using TensorBase::operator[];
 
@@ -395,8 +399,8 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
 
   void conservativeResize(int rows, int cols) {
-
-    if(dim_[0] == rows && dim_[1] == cols) return;
+    if(dim_.size() == 0) resize({rows,cols});
+    else if(dim_[0] == rows && dim_[1] == cols) return;
     Eigen::Matrix<Dtype, -1, -1> Temp(dim_[0],dim_[1]);
     Temp = eMat();
     resize({rows,cols});
@@ -443,6 +447,7 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
   using TensorBase::resize;
+  using TensorBase::at;
   using TensorBase::operator=;
   using TensorBase::operator[];
 
@@ -453,7 +458,8 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   }
 
   void conservativeResize(int rows, int cols, int batches) {
-    if(dim_[0] == rows && dim_[1] == cols && dim_[2] ==batches ) return;
+    if(dim_.size() == 0) resize({rows,cols,batches});
+    else if(dim_[0] == rows && dim_[1] == cols && dim_[2] ==batches ) return;
     std::vector<int> dim = {rows, cols, batches};
 
     if(dim_[1] == cols && dim_[2] == batches){

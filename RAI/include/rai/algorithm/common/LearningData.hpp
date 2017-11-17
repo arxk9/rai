@@ -45,7 +45,7 @@ class LearningData {
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), stateTensor("state"),
+  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), stateTensor(),
                                        actionTensor("sampled_oa"),
                                        actionNoiseTensor("noise_oa"),
                                        trajLength("length"), advantageTensor("advantage"), cur_ID(0), cur_minibatch(){
@@ -309,7 +309,7 @@ class LearningData {
         actionTensor.partiallyFillBatch(i, traj[i].actionTraj, 1);
         actionNoiseTensor.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
         for (int timeID = 0; timeID < traj[i].size() - 1; timeID++){
-          costTensor.eMat()(timeID,batchN) = traj[i].costTraj[timeID];
+          costTensor.eMat()(timeID,i) = traj[i].costTraj[timeID];
         }
         termType[i] = Dtype(traj[i].termType);
       }
