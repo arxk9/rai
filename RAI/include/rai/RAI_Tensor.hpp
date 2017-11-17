@@ -395,22 +395,13 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
 
   void conservativeResize(int rows, int cols) {
-    tensorflow::Tensor Temp(dtype_, dim_inv_);
-    memcpy(Temp.flat<Dtype>().data(),
-           namedTensor_.second.template flat<Dtype>().data(),
-           sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
-    std::vector<int> dim = {rows, cols};
-    resize(dim);
 
-    if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
-      eTensor().setZero();
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * Temp.flat<Dtype>().size());
-    } else
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
+    if(dim_[0] == rows && dim_[1] == cols) return;
+    Eigen::Matrix<Dtype, -1, -1> Temp(dim_[0],dim_[1]);
+    Temp = eMat();
+    resize({rows,cols});
+    Temp.conservativeResize(rows,cols);
+    eMat() = Temp;
   }
 
   void removeCol(int colID) {
@@ -462,26 +453,28 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   }
 
   void conservativeResize(int rows, int cols, int batches) {
-    tensorflow::Tensor Temp(dtype_, dim_inv_);
-    memcpy(Temp.flat<Dtype>().data(),
-           namedTensor_.second.template flat<Dtype>().data(),
-           sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
-    std::vector<int> dim = {rows, cols, batches};
-    resize(dim);
-    if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
-      eTensor().setZero();
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * Temp.flat<Dtype>().size());
-    } else
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
+    if(dim_[0] == rows && dim_[1] == cols && dim_[2] ==batches ) return;
+    if(dim_[1] == cols && dim_[2] == batches)
+    Eigen::Matrix<Dtype, -1, -1> Temp(dim_[0] , cols * batches);
+    Temp.
+//    tensorflow::Tensor Temp(dtype_, dim_inv_);
+//    memcpy(Temp.flat<Dtype>().data(),
+//           namedTensor_.second.template flat<Dtype>().data(),
+//           sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
+//    std::vector<int> dim = {rows, cols, batches};
+//    resize(dim);
+//    if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
+//      eTensor().setZero();
+//      memcpy(namedTensor_.second.template flat<Dtype>().data(),
+//             Temp.flat<Dtype>().data(),
+//             sizeof(Dtype) * Temp.flat<Dtype>().size());
+//    } else
+//      memcpy(namedTensor_.second.template flat<Dtype>().data(),
+//             Temp.flat<Dtype>().data(),
+//             sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
+
   }
 
-
-
-  /////////// 3D methods /////////
   void removeBatch(int batchId) {
     tensorflow::Tensor Temp(dtype_, dim_inv_);
     memcpy(Temp.flat<Dtype>().data(),

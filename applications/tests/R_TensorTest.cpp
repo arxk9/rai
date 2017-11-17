@@ -67,6 +67,10 @@ int main() {
   test(ten);
   test2(ten);
 
+  std::cout << "ten : "<<std::endl<<ten << std::endl;
+  ten.conservativeResize(4,5);
+  std::cout << "ten.conservativeResize(4,5) :"<<std::endl <<ten << std::endl<< std::endl;
+
 }
 
 void test(Eigen::Matrix<float, -1, -1> ten2D) {
