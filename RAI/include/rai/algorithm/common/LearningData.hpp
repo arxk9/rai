@@ -245,8 +245,11 @@ class LearningData {
   ValueBatch valueBat, termValueBat;
 
   tensorBatch cur_minibatch;
+
   Tensor<Dtype, 1> trajLength;
+  Tensor<Dtype, 1> termType;
   Tensor<Dtype, 2> advantageTensor;
+  Tensor<Dtype, 2> costTensor;
   Tensor<Dtype, 2> valueTensor;
 
   Tensor<Dtype, 3> stateTensor;
@@ -291,18 +294,27 @@ class LearningData {
       stateTensor.resize(StateDim, maxlen, batchN);
       actionTensor.resize(ActionDim, maxlen, batchN);
       actionNoiseTensor.resize(ActionDim, maxlen, batchN);
+      costTensor.resize(maxlen, batchN);
+      trajLength.resize(batchN);
+      termType.resize(batchN);
 
       stateTensor.setZero();
       actionTensor.setZero();
       actionNoiseTensor.setZero();
-      trajLength.resize(batchN);
+      costTensor.setZero();
 
       for (int i = 0; i < batchN; i++) {
         trajLength[i] = traj[i].stateTraj.size() - 1;
         stateTensor.partiallyFillBatch(i, traj[i].stateTraj, 1);
         actionTensor.partiallyFillBatch(i, traj[i].actionTraj, 1);
         actionNoiseTensor.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
+        for (int timeID = 0; timeID < traj[i].size() - 1; timeID++){
+          costTensor.eMat()(timeID,batchN) = traj[i].costTraj[timeID];
+        }
+        termType[i] = Dtype(traj[i].termType);
       }
+
+
     } else {
       maxlen = 1;
       stateTensor.resize(StateDim, 1, dataN);

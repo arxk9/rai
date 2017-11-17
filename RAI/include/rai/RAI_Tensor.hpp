@@ -401,6 +401,7 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
            sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
     std::vector<int> dim = {rows, cols};
     resize(dim);
+
     if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
       eTensor().setZero();
       memcpy(namedTensor_.second.template flat<Dtype>().data(),

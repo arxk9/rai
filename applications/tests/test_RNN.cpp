@@ -22,12 +22,13 @@
 
 #include "rai/RAI_core"
 #include "rai/RAI_Tensor.hpp"
-#include <rai/algorithm/common/LearningData.hpp>
 
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
 #include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 #include <rai/algorithm/common/LearningData.hpp>
 #include <vector>
+#include "rai/memory/ReplayMemoryHistory.hpp"
+
 
 using std::cout;
 using std::endl;
@@ -76,12 +77,17 @@ int main() {
   states.setZero();
   
   TensorBatch test_bat;
-
-
   test_bat.states = states;
 
   std::vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
   std::vector<rai::Noise::Noise<Dtype, ActionDim>* > noiseVector = {&noise};
   ////
   ld_.acquireTrajForNTimeSteps(taskVector,noiseVector,&policy,5000);
+
+  rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim> memory(20);
+
+  memory.SaveHistory(ld_.stateTensor,ld_.actionTensor,ld_.costTensor,ld_.trajLength,ld_.termType);
+
+
+
 };
