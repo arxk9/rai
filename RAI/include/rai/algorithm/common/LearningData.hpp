@@ -13,6 +13,7 @@
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/function/common/StochasticPolicy.hpp>
 #include <rai/common/VectorHelper.hpp>
+#include "dataStruct.hpp"
 
 namespace rai {
 namespace Algorithm {
@@ -50,15 +51,7 @@ class LearningData {
                                        actionNoiseTensor("noise_oa"),
                                        trajLength("length"), advantageTensor("advantage"), cur_ID(0), cur_minibatch(){
   }
-  struct tensorBatch{
-    tensorBatch():lengths("length"),advantages("advantage"), states("state"), hiddenStates("h_init"), actions("sampled_oa"), actionNoises("noise_oa"){};
-    Tensor<Dtype, 1> lengths;
-    Tensor<Dtype, 2> advantages;
-    Tensor<Dtype, 3> states;
-    Tensor<Dtype, 3> hiddenStates;
-    Tensor<Dtype, 3> actions;
-    Tensor<Dtype, 3> actionNoises;
-  };
+
 
   void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
                                     std::vector<Noise_ *> &noise,
@@ -213,7 +206,7 @@ class LearningData {
       ///this->shuffleBatch;
       /// permute batches,,,
       ;
-
+    cur_minibatch.batchNum = cur_batch_size;
     cur_minibatch.states.resize(stateTensor.dim(0),stateTensor.dim(1),cur_batch_size);
     cur_minibatch.actions.resize(actionTensor.dim(0),actionTensor.dim(1),cur_batch_size);
     cur_minibatch.actionNoises.resize(actionNoiseTensor.dim(0),actionNoiseTensor.dim(1),cur_batch_size);
@@ -228,7 +221,6 @@ class LearningData {
 
     cur_ID +=cur_batch_size;
 //    LOG(INFO) << "cur_ID/batchN = " << cur_ID << "/" << batchN << " batchsize = " << cur_batch_size;
-
     return true;
   };
 
@@ -244,7 +236,7 @@ class LearningData {
   StateBatch stateBat, termStateBat;
   ValueBatch valueBat, termValueBat;
 
-  tensorBatch cur_minibatch;
+  rai::Algorithm::historyWithAdvantage<Dtype> cur_minibatch;
 
   Tensor<Dtype, 1> trajLength;
   Tensor<Dtype, 1> termType;

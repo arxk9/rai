@@ -9,6 +9,7 @@
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"
 #include <rai/algorithm/common/LearningData.hpp>
+#include <rai/algorithm/common/dataStruct.hpp>
 
 namespace rai {
 namespace FuncApprox {
@@ -24,6 +25,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
   using LearningData_ = rai::Algorithm::LearningData<Dtype, stateDim, actionDim>;
+  using TensorBatch_ = rai::Algorithm::historyWithAdvantage<Dtype>;
 
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
@@ -36,7 +38,6 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
-  typedef typename LearningData_::tensorBatch TensorBatch_;
 
   virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) = 0;
 

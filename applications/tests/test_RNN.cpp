@@ -51,11 +51,10 @@ typedef typename PolicyBase::StateBatch StateBatch;
 typedef typename PolicyBase::Action Action;
 typedef typename PolicyBase::ActionBatch ActionBatch;
 typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
-typedef typename rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>::tensorBatch TensorBatch;
 using NormNoise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCov = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
-
+using TensorBatch = rai::Algorithm::history<Dtype, StateDim, ActionDim>;
 using namespace rai;
 
 int main() {
@@ -78,8 +77,7 @@ int main() {
   states.resize(StateDim,len,Batsize);
   states.setZero();
 
-  TensorBatch test_bat;
-  test_bat.states = states;
+
 
   std::vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
   std::vector<rai::Noise::Noise<Dtype, ActionDim>* > noiseVector = {&noise};
@@ -91,5 +89,12 @@ int main() {
   rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim> memory(20);
   for (int i = 0 ; i<3 ; i++)
   memory.SaveHistory(ld_.stateTensor,ld_.actionTensor,ld_.costTensor,ld_.trajLength,ld_.termType);
+
+  TensorBatch test_bat(3,4);
+  TensorBatch test_minibat;
+
+  test_bat.states = states;
+  test_bat.minibatch = &test_minibat;
+  test_bat.test();
 
 };
