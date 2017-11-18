@@ -9,6 +9,8 @@
 #include <Eigen/Core>
 
 #include "ParameterizedFunction.hpp"
+#include <rai/algorithm/common/LearningData.hpp>
+#include <rai/algorithm/common/dataStruct.hpp>
 
 namespace rai {
 namespace FuncApprox {
@@ -26,11 +28,15 @@ public:
   typedef typename FunctionBase::OutputBatch ValueBatch;
   typedef typename FunctionBase::Gradient Gradient;
   typedef typename FunctionBase::Jacobian Jacobian;
+  typedef typename FunctionBase::Tensor1D Tensor1D;
+  typedef typename FunctionBase::Tensor2D Tensor2D;
+  typedef typename FunctionBase::Tensor3D Tensor3D;
 
   typedef Eigen::Matrix<Dtype, stateDimension, 1> State;
   typedef Eigen::Matrix<Dtype, stateDimension, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDimension, 1> Action;
   typedef Eigen::Matrix<Dtype, actionDimension, Eigen::Dynamic> ActionBatch;
+  typedef rai::Algorithm::history<Dtype,stateDimension, actionDimension> TensorBatch_;
 
   Qfunction(){};
   virtual ~Qfunction(){};

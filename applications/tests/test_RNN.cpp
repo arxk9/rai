@@ -10,6 +10,7 @@
 #include "rai/function/tensorflow/Qfunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/DeterministicPolicy_TensorFlow.hpp"
 #include "rai/function/tensorflow/StochasticPolicy_TensorFlow.hpp"
+#include "rai/function/tensorflow/RecurrentQfunction_TensorFlow.hpp"
 
 #include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
 #include "rai/function/common/Policy.hpp"
@@ -39,6 +40,8 @@ using rai::Task::StateDim;
 using Dtype = float;
 
 using PolicyBase = rai::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
+using RnnQfunc = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
+
 using RnnPolicy = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
 using Task_ = rai::Task::PoleBalancing<Dtype>;
@@ -95,5 +98,7 @@ int main() {
 
   test_bat.states = states;
   test_bat.minibatch = &test_minibat;
+
+  RnnQfunc Qfunc("cpu", "GRUMLP2", "tanh 3 1 5 / 8 1", 0.001);
 
 };

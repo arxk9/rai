@@ -65,8 +65,8 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
   virtual void PPOpg_kladapt(TensorBatch_ *minibatch,
-                     Action &Stdev,
-                     VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
+                             Action &Stdev,
+                             VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
   virtual Dtype PPOgetkl(TensorBatch_ *minibatch,
                          Action &Stdev) {
