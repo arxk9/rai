@@ -74,7 +74,9 @@ int main() {
 
   NoiseCov covariance = NoiseCov::Identity();
   NormNoise  noise(covariance);
+
   RnnPolicy policy("cpu", "GRUMLP", "tanh 3 5 / 8 1", 0.001);
+  RnnQfunc Qfunction("cpu", "GRUMLP2", "tanh 3 1 5 / 8 1", 0.001);
 
   rai::Tensor<Dtype,3> states;
   states.resize(StateDim,len,Batsize);
@@ -99,6 +101,5 @@ int main() {
   test_bat.states = states;
   test_bat.minibatch = &test_minibat;
 
-  RnnQfunc Qfunc("cpu", "GRUMLP2", "tanh 3 1 5 / 8 1", 0.001);
 
 };

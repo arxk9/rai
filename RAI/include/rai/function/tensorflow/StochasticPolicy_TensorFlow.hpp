@@ -37,8 +37,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
-  typedef typename PolicyBase::LearningData_ LearningData_;
-  typedef typename PolicyBase::TensorBatch_ TensorBatch_;
+  typedef typename PolicyBase::historyWithA historyWithA_;
 
   StochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -60,7 +59,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
   ///TRPO
   //batch
-  virtual void TRPOpg(TensorBatch_ &batch,
+  virtual void TRPOpg(historyWithA_ &batch,
                       Action &Stdev,
                       VectorXD &grad) {
     std::vector<MatrixXD> vectorOfOutputs;
@@ -78,7 +77,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     grad = vectorOfOutputs[0];
   }
 
-  virtual Dtype TRPOcg(TensorBatch_ &batch,
+  virtual Dtype TRPOcg(historyWithA_ &batch,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
     std::vector<MatrixXD> vectorOfOutputs;
@@ -96,7 +95,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     return  vectorOfOutputs[1](0);
   }
 
-  virtual Dtype TRPOloss(TensorBatch_ &batch,
+  virtual Dtype TRPOloss(historyWithA_ &batch,
                          Action &Stdev) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
@@ -113,7 +112,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   ///PPO
-  virtual void test(TensorBatch_ *minibatch,
+  virtual void test(historyWithA_ *minibatch,
                      Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     VectorXD test;
@@ -132,7 +131,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   LOG(INFO) << test.transpose();
   }
 
-  virtual void PPOpg(TensorBatch_ *minibatch,
+  virtual void PPOpg(historyWithA_ *minibatch,
                      Action &Stdev,
                      VectorXD &grad) {
     std::vector<MatrixXD> vectorOfOutputs;
@@ -149,7 +148,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     grad = vectorOfOutputs[0];
   }
 
-  virtual void PPOpg_kladapt(TensorBatch_ *minibatch,
+  virtual void PPOpg_kladapt(historyWithA_ *minibatch,
                              Action &Stdev,
                              VectorXD &grad) {
     std::vector<MatrixXD> vectorOfOutputs;
@@ -166,7 +165,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     grad = vectorOfOutputs[0];
   }
 
-  virtual Dtype PPOgetkl(TensorBatch_ *minibatch,
+  virtual Dtype PPOgetkl(historyWithA_ *minibatch,
                          Action &Stdev) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");

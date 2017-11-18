@@ -8,7 +8,6 @@
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"
-#include <rai/algorithm/common/LearningData.hpp>
 #include <rai/algorithm/common/dataStruct.hpp>
 
 namespace rai {
@@ -24,8 +23,8 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
-  using LearningData_ = rai::Algorithm::LearningData<Dtype, stateDim, actionDim>;
-  using TensorBatch_ = rai::Algorithm::historyWithAdvantage<Dtype,stateDim, actionDim>;
+  using history = rai::Algorithm::history<Dtype,stateDim, actionDim>;
+  using historyWithA = rai::Algorithm::historyWithAdvantage<Dtype,stateDim, actionDim>;
 
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
@@ -42,40 +41,40 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) = 0;
 
   ///TRPO
-  virtual void TRPOpg(TensorBatch_ &minibatch,
+  virtual void TRPOpg(historyWithA &minibatch,
                       Action &Stdev,
                       VectorXD &grad) { LOG(FATAL) << "Not implemented"; };
 
-  virtual Dtype TRPOcg(TensorBatch_ &minibatch,
+  virtual Dtype TRPOcg(historyWithA &minibatch,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
 
-  virtual Dtype TRPOloss(TensorBatch_ &minibatch,
+  virtual Dtype TRPOloss(historyWithA &minibatch,
                          Action &Stdev) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
 
   ///PPO
-  virtual void PPOpg(TensorBatch_ *minibatch,
+  virtual void PPOpg(historyWithA *minibatch,
                      Action &Stdev,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual void PPOpg_kladapt(TensorBatch_ *minibatch,
+  virtual void PPOpg_kladapt(historyWithA *minibatch,
                              Action &Stdev,
                              VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual Dtype PPOgetkl(TensorBatch_ *minibatch,
+  virtual Dtype PPOgetkl(historyWithA *minibatch,
                          Action &Stdev) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
 
 
-  virtual void test(TensorBatch_ *minibatch,
+  virtual void test(historyWithA *minibatch,
                     Action &Stdev) {
 
   }

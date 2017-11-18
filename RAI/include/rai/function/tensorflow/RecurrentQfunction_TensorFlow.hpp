@@ -27,7 +27,6 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   typedef typename QfunctionBase::Tensor3D Tensor3D;
 
   typedef typename Pfunction_tensorflow ::InnerState InnerState;
-  typedef typename QfunctionBase::TensorBatch_ TensorBatch_;
 
   typedef Eigen::Matrix<Dtype, actionDim, Eigen::Dynamic> JacobianQwrtActionBatch;
 
@@ -41,6 +40,15 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
                                 Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
           "RecurrentQfunction", computeMode, graphName, graphParam, learningRate) {
+  }
+
+  virtual void forward(State &state, Action &action, Dtype &value) {
+    std::vector<MatrixXD> vectorOfOutputs;
+    this->tf_->run({{"state", state},
+                    {"action", action},
+                    {"updateBNparams", this->notUpdateBN}},
+                   {"QValue"}, {}, vectorOfOutputs);
+    value = vectorOfOutputs[0](0);
   }
 
   virtual void forward(StateBatch &states, ActionBatch &actions, ValueBatch &values) {
@@ -60,9 +68,11 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
     h.copyDataFrom(vectorOfOutputs[1]);
   }
 
-//  Dtype performOneSolverIter(std::vector<StateBatch> &states,
-//                             std::vector<ActionBatch> &actions,
-//                             std::vector<ValueBatch> &values) {
+  virtual Dtype performOneSolverIter(StateBatch& states, ActionBatch& actions, ValueBatch &values){};
+
+  virtual Dtype performOneSolverIter(std::vector<StateBatch> &states,
+                             std::vector<ActionBatch> &actions,
+                             std::vector<ValueBatch> &values) {
 //    std::vector<MatrixXD> outputs, dummy;
 //    this->tf_->run({{"state", states},
 //                    {"new_rcrnt_state", rcrntStates},
@@ -78,7 +88,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
 //                     this->updateBN}}, {},
 //                   {"QValue"}, dummy);
 //    return outputs[0](0);
-//  }
+  }
 //
 //  Dtype getGradient_AvgOf_Q_wrt_action(StateBatch &states, RecurrentStateBatch &rcrntStates, ActionBatch &actions,
 //                                       JacobianQwrtActionBatch &gradients) const {

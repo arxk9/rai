@@ -49,8 +49,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
-  typedef typename PolicyBase::LearningData_ LearningData_;
-  typedef typename PolicyBase::TensorBatch_ TensorBatch_;
+  typedef typename PolicyBase::historyWithA historyWithA_;
   typedef typename Pfunction_tensorflow ::InnerState InnerState;
 
   RecurrentStochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
@@ -75,7 +74,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   ///PPO
-  virtual void PPOpg(TensorBatch_ *minibatch,
+  virtual void PPOpg(historyWithA_ *minibatch,
                      Action &Stdev,
                      VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
@@ -93,7 +92,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual void PPOpg_kladapt(TensorBatch_ *minibatch,
+  virtual void PPOpg_kladapt(historyWithA_ *minibatch,
                              Action &Stdev,
                              VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
@@ -111,7 +110,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual Dtype PPOgetkl(TensorBatch_ *minibatch,
+  virtual Dtype PPOgetkl(historyWithA_ *minibatch,
                          Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");

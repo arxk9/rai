@@ -177,8 +177,7 @@ class PPO {
     vfunction_->forward(ld_.stateBat, valuePred);
 
     for (int i = 0; i < n_epoch_; i++) {
-//      LOG(INFO) << i + 1 << "th epoch";
-      while (ld_.Data.iterateBatch(minibatchSize_, policy_->isRecurrent())) {
+      while (ld_.Data.iterateBatch(minibatchSize_)) {
 
 //        policy_->test(ld_.cur_minibatch, stdev_o);
 

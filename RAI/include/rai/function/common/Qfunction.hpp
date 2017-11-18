@@ -9,7 +9,6 @@
 #include <Eigen/Core>
 
 #include "ParameterizedFunction.hpp"
-#include <rai/algorithm/common/LearningData.hpp>
 #include <rai/algorithm/common/dataStruct.hpp>
 
 namespace rai {
@@ -21,6 +20,8 @@ class Qfunction : public virtual ParameterizedFunction <Dtype, stateDimension + 
 public:
 
   using FunctionBase = ParameterizedFunction <Dtype, stateDimension, 1>;
+  using history = rai::Algorithm::history<Dtype,stateDimension, actionDimension>;
+  using historyWithA = rai::Algorithm::historyWithAdvantage<Dtype,stateDimension, actionDimension>;
 
   typedef typename FunctionBase::Input StateAction;
   typedef typename FunctionBase::InputBatch StateActionBatch;
@@ -36,7 +37,6 @@ public:
   typedef Eigen::Matrix<Dtype, stateDimension, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDimension, 1> Action;
   typedef Eigen::Matrix<Dtype, actionDimension, Eigen::Dynamic> ActionBatch;
-  typedef rai::Algorithm::history<Dtype,stateDimension, actionDimension> TensorBatch_;
 
   Qfunction(){};
   virtual ~Qfunction(){};
