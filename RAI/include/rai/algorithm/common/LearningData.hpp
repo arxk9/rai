@@ -46,10 +46,7 @@ class LearningData {
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), stateTensor(),
-                                       actionTensor("sampled_oa"),
-                                       actionNoiseTensor("noise_oa"),
-                                       trajLength("length"), advantageTensor("advantage"), cur_ID(0), cur_minibatch(){
+  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), cur_ID(0), Data(){
   }
 
 
@@ -174,55 +171,25 @@ class LearningData {
   void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
     int batchID = 0;
     int dataID = 0;
-    advantageTensor.setZero();
+    Data.advantages.setZero();
 
     for (auto &tra : traj) {
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
       if (normalize){
         rai::Math::MathFunc::normalize(advTra);
       }
-      if(advantageTensor.dim(0) == 1){
+      if(Data.advantages.dim(0) == 1){
         //BatchN = DataN
-        advantageTensor.block(0, dataID, 1, advTra.cols()) = advTra;
+        Data.advantages.block(0, dataID, 1, advTra.cols()) = advTra;
       } else {
         //RNN
-        advantageTensor.block(0, batchID, advTra.cols(),1) = advTra.transpose();
+        Data.advantages.block(0, batchID, advTra.cols(),1) = advTra.transpose();
       }
       dataID +=advTra.cols();
       batchID++;
     }
   }
 
-  bool iterateBatch(const int batchSize = 0, bool isrecurrent = false, bool shuffle = false){
-    int cur_batch_size = batchSize;
-    if (cur_batch_size >=  batchN - cur_ID || cur_batch_size == 0) {
-      cur_batch_size =  batchN - cur_ID;
-    }
-    if(cur_ID >= batchN){
-      cur_ID = 0;
-      return false;
-    }
-    if (cur_ID == 0 && shuffle)
-      ///this->shuffleBatch;
-      /// permute batches,,,
-      ;
-    cur_minibatch.batchNum = cur_batch_size;
-    cur_minibatch.states.resize(stateTensor.dim(0),stateTensor.dim(1),cur_batch_size);
-    cur_minibatch.actions.resize(actionTensor.dim(0),actionTensor.dim(1),cur_batch_size);
-    cur_minibatch.actionNoises.resize(actionNoiseTensor.dim(0),actionNoiseTensor.dim(1),cur_batch_size);
-    cur_minibatch.advantages.resize(advantageTensor.dim(0),cur_batch_size);
-    if(isrecurrent) cur_minibatch.lengths.resize(cur_batch_size);
-
-    cur_minibatch.states = stateTensor.batchBlock(cur_ID, cur_batch_size);
-    cur_minibatch.actions = actionTensor.batchBlock(cur_ID,cur_batch_size);
-    cur_minibatch.actionNoises = actionNoiseTensor.batchBlock(cur_ID,cur_batch_size);
-    cur_minibatch.advantages = advantageTensor.block(0, cur_ID, advantageTensor.dim(0),cur_batch_size);
-    if(isrecurrent) cur_minibatch.lengths = trajLength.block(cur_ID,cur_batch_size);
-
-    cur_ID +=cur_batch_size;
-//    LOG(INFO) << "cur_ID/batchN = " << cur_ID << "/" << batchN << " batchsize = " << cur_batch_size;
-    return true;
-  };
 
   /////////////////////////// Core
   TrajAcquisitor_ *trajAcquisitor_ = nullptr;
@@ -236,18 +203,18 @@ class LearningData {
   StateBatch stateBat, termStateBat;
   ValueBatch valueBat, termValueBat;
 
-  rai::Algorithm::historyWithAdvantage<Dtype> cur_minibatch;
+  rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim> Data;
 
-  Tensor<Dtype, 1> trajLength;
-  Tensor<Dtype, 1> termType;
-  Tensor<Dtype, 2> advantageTensor;
-  Tensor<Dtype, 2> costTensor;
-  Tensor<Dtype, 2> valueTensor;
+//  Tensor<Dtype, 1> trajLength;
+//  Tensor<Dtype, 1> termType;
+//  Tensor<Dtype, 2> advantageTensor;
+//  Tensor<Dtype, 2> costTensor;
+//  Tensor<Dtype, 2> valueTensor;
 
-  Tensor<Dtype, 3> stateTensor;
-  Tensor<Dtype, 3> hiddenStateTensor;
-  Tensor<Dtype, 3> actionTensor;
-  Tensor<Dtype, 3> actionNoiseTensor;
+//  Tensor<Dtype, 3> stateTensor;
+//  Tensor<Dtype, 3> hiddenStateTensor;
+//  Tensor<Dtype, 3> actionTensor;
+//  Tensor<Dtype, 3> actionNoiseTensor;
 
  private:
   void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
@@ -267,7 +234,6 @@ class LearningData {
     int maxlen = 0;
 
     for (auto &tra : traj) dataN += tra.size() - 1;
-
     stateBat.resize(StateDim, dataN);
 
     int colID = 0;
@@ -283,52 +249,38 @@ class LearningData {
         if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
 
       batchN= int(traj.size());
-      stateTensor.resize(StateDim, maxlen, batchN);
-      actionTensor.resize(ActionDim, maxlen, batchN);
-      actionNoiseTensor.resize(ActionDim, maxlen, batchN);
-      costTensor.resize(maxlen, batchN);
-      trajLength.resize(batchN);
-      termType.resize(batchN);
-
-      stateTensor.setZero();
-      actionTensor.setZero();
-      actionNoiseTensor.setZero();
-      costTensor.setZero();
+      Data.resize(maxlen,batchN);
+      Data.setZero();
 
       for (int i = 0; i < batchN; i++) {
-        trajLength[i] = traj[i].stateTraj.size() - 1;
-        stateTensor.partiallyFillBatch(i, traj[i].stateTraj, 1);
-        actionTensor.partiallyFillBatch(i, traj[i].actionTraj, 1);
-        actionNoiseTensor.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
+        Data.lengths[i] = traj[i].stateTraj.size() - 1;
+        Data.states.partiallyFillBatch(i, traj[i].stateTraj, 1);
+        Data.actions.partiallyFillBatch(i, traj[i].actionTraj, 1);
+        Data.actionNoises.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
         for (int timeID = 0; timeID < traj[i].size() - 1; timeID++){
-          costTensor.eMat()(timeID,i) = traj[i].costTraj[timeID];
+          Data.costs.eMat()(timeID,i) = traj[i].costTraj[timeID];
         }
-        termType[i] = Dtype(traj[i].termType);
+        Data.termtypes[i] = Dtype(traj[i].termType);
       }
 
 
     } else {
       maxlen = 1;
-      stateTensor.resize(StateDim, 1, dataN);
-      actionTensor.resize(ActionDim, 1, dataN);
-      actionNoiseTensor.resize(ActionDim, 1, dataN);
-      stateTensor.setZero();
-      actionTensor.setZero();
-      actionNoiseTensor.setZero();
-//      trajLength.resize(1);
-//      trajLength.setConstant(dataN);
       batchN = dataN;
+
+      Data.resize(1,dataN);
+      Data.setZero();
 
       int pos = 0;
       for (int traID = 0; traID < traj.size(); traID++) {
         for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-          actionTensor.batch(pos) = traj[traID].actionTraj[timeID];
-          actionNoiseTensor.batch(pos++) = traj[traID].actionNoiseTraj[timeID];
+          Data.actions.batch(pos) = traj[traID].actionTraj[timeID];
+          Data.actionNoises.batch(pos++) = traj[traID].actionNoiseTraj[timeID];
         }
       }
-      stateTensor.copyDataFrom(stateBat);
+      Data.states.copyDataFrom(stateBat);
     }
-    advantageTensor.resize(maxlen, batchN);
+    Data.advantages.resize(1, dataN);
 
     // update terimnal value
     if (vfunction) {

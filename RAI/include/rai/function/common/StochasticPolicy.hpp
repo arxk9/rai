@@ -25,7 +25,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
   using LearningData_ = rai::Algorithm::LearningData<Dtype, stateDim, actionDim>;
-  using TensorBatch_ = rai::Algorithm::historyWithAdvantage<Dtype>;
+  using TensorBatch_ = rai::Algorithm::historyWithAdvantage<Dtype,stateDim, actionDim>;
 
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
@@ -60,22 +60,22 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   }
 
   ///PPO
-  virtual void PPOpg(TensorBatch_ &minibatch,
+  virtual void PPOpg(TensorBatch_ *minibatch,
                      Action &Stdev,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual void PPOpg_kladapt(TensorBatch_ &minibatch,
+  virtual void PPOpg_kladapt(TensorBatch_ *minibatch,
                      Action &Stdev,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
-  virtual Dtype PPOgetkl(TensorBatch_ &minibatch,
+  virtual Dtype PPOgetkl(TensorBatch_ *minibatch,
                          Action &Stdev) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
 
 
-  virtual void test(TensorBatch_ &minibatch,
+  virtual void test(TensorBatch_ *minibatch,
                     Action &Stdev) {
 
   }

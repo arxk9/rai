@@ -60,16 +60,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
   ///TRPO
   //batch
-  virtual void TRPOpg(LearningData_ &ld,
+  virtual void TRPOpg(TensorBatch_ &batch,
                       Action &Stdev,
                       VectorXD &grad) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({ld.stateTensor,
-                    ld.actionTensor,
-                    ld.actionNoiseTensor,
-                    ld.advantageTensor,
+    this->tf_->run({batch.states,
+                    batch.actions,
+                    batch.actionNoises,
+                    batch.advantages,
                     StdevT},
                    {"Algo/TRPO/Pg"},
                    {},
@@ -78,17 +78,17 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     grad = vectorOfOutputs[0];
   }
 
-  virtual Dtype TRPOcg(LearningData_ &ld,
+  virtual Dtype TRPOcg(TensorBatch_ &batch,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     Tensor1D gradT(grad, {grad.rows()}, "tangent");
 
-    this->tf_->run({ld.stateTensor,
-                    ld.actionTensor,
-                    ld.actionNoiseTensor,
-                    ld.advantageTensor,
+    this->tf_->run({batch.states,
+                    batch.actions,
+                    batch.actionNoises,
+                    batch.advantages,
                     StdevT,
                     gradT},
                    {"Algo/TRPO/Cg", "Algo/TRPO/Cgerror"}, {}, vectorOfOutputs);
@@ -96,15 +96,15 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     return  vectorOfOutputs[1](0);
   }
 
-  virtual Dtype TRPOloss(LearningData_ &ld,
+  virtual Dtype TRPOloss(TensorBatch_ &batch,
                          Action &Stdev) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({ld.stateTensor,
-                    ld.actionTensor,
-                    ld.actionNoiseTensor,
-                    ld.advantageTensor,
+    this->tf_->run({batch.states,
+                    batch.actions,
+                    batch.actionNoises,
+                    batch.advantages,
                     StdevT},
                    {"Algo/TRPO/loss"},
                    {}, vectorOfOutputs);
@@ -113,16 +113,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   ///PPO
-  virtual void test(TensorBatch_ &minibatch,
+  virtual void test(TensorBatch_ *minibatch,
                      Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     VectorXD test;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
     ///Test function for debugging
-    this->tf_->run({minibatch.states,
-                    minibatch.actions,
-                    minibatch.actionNoises,
-                    minibatch.advantages,
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
                     StdevT},
                    {"test"},
                    {},
@@ -132,16 +132,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   LOG(INFO) << test.transpose();
   }
 
-  virtual void PPOpg(TensorBatch_ &minibatch,
+  virtual void PPOpg(TensorBatch_ *minibatch,
                      Action &Stdev,
                      VectorXD &grad) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({minibatch.states,
-                    minibatch.actions,
-                    minibatch.actionNoises,
-                    minibatch.advantages,
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
                     StdevT},
                    {"Algo/PPO/Pg"},
                    {},
@@ -149,16 +149,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     grad = vectorOfOutputs[0];
   }
 
-  virtual void PPOpg_kladapt(TensorBatch_ &minibatch,
+  virtual void PPOpg_kladapt(TensorBatch_ *minibatch,
                              Action &Stdev,
                              VectorXD &grad) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({minibatch.states,
-                    minibatch.actions,
-                    minibatch.actionNoises,
-                    minibatch.advantages,
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
                     StdevT},
                    {"Algo/PPO/Pg2"},
                    {},
@@ -166,14 +166,14 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     grad = vectorOfOutputs[0];
   }
 
-  virtual Dtype PPOgetkl(TensorBatch_ &minibatch,
+  virtual Dtype PPOgetkl(TensorBatch_ *minibatch,
                          Action &Stdev) {
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({minibatch.states,
-                    minibatch.actions,
-                    minibatch.actionNoises,
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
                     StdevT},
                    {"Algo/PPO/kl_mean"},
                    {},

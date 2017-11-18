@@ -62,6 +62,7 @@ class PPO {
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
+  typedef rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim>  TensorBatch_;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
@@ -102,6 +103,8 @@ class PPO {
       clip_param_(Clip_param),
       Ent_coeff_(Ent_coeff),
       ld_(acquisitor) {
+    ///Construct minibatch
+    ld_.Data.minibatch = new TensorBatch_;
 
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
@@ -175,7 +178,7 @@ class PPO {
 
     for (int i = 0; i < n_epoch_; i++) {
 //      LOG(INFO) << i + 1 << "th epoch";
-      while (ld_.iterateBatch(minibatchSize_, policy_->isRecurrent())) {
+      while (ld_.Data.iterateBatch(minibatchSize_, policy_->isRecurrent())) {
 
 //        policy_->test(ld_.cur_minibatch, stdev_o);
 
@@ -187,8 +190,8 @@ class PPO {
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
         Utils::timer->startTimer("Gradient computation");
 
-        if (KL_adapt_) policy_->PPOpg_kladapt(ld_.cur_minibatch, stdev_o, policy_grad);
-        else policy_->PPOpg(ld_.cur_minibatch, stdev_o, policy_grad);
+        if (KL_adapt_) policy_->PPOpg_kladapt(ld_.Data.minibatch, stdev_o, policy_grad);
+        else policy_->PPOpg(ld_.Data.minibatch, stdev_o, policy_grad);
 
         Utils::timer->stopTimer("Gradient computation");
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
@@ -197,7 +200,7 @@ class PPO {
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("Adam update");
 
-        KL = policy_->PPOgetkl(ld_.cur_minibatch, stdev_o);
+        KL = policy_->PPOgetkl(ld_.Data.minibatch, stdev_o);
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
 
         KLsum += KL;

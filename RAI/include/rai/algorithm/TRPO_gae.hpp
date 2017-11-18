@@ -183,12 +183,12 @@ class TRPO_gae {
 
     LOG(INFO) << "stdev :" << stdev_o.transpose();
     Utils::timer->startTimer("Gradient computation");
-    policy_->TRPOpg(ld_, stdev_o, policy_grad);
+    policy_->TRPOpg(ld_.Data, stdev_o, policy_grad);
     Utils::timer->stopTimer("Gradient computation");
     LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 
     Utils::timer->startTimer("Conjugate gradient");
-    Dtype CGerror = policy_->TRPOcg(ld_,
+    Dtype CGerror = policy_->TRPOcg(ld_.Data,
                                     stdev_o,
                                     policy_grad,
                                     Nat_grad); // TODO : test
@@ -250,7 +250,7 @@ class TRPO_gae {
 
   inline Dtype costOfParam(VectorXD &param) {
     policy_->setLP(param);
-    return policy_->TRPOloss(ld_, stdev_o);
+    return policy_->TRPOloss(ld_.Data, stdev_o);
   }
 
   /////////////////////////// Core //////////////////////////////////////////

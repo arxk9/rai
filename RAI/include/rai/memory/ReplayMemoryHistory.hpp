@@ -28,11 +28,11 @@ class ReplayMemoryHistory {
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ScalarBatch;
   typedef Eigen::Matrix<Dtype, stateDimension, 1> State;
   typedef Eigen::Matrix<Dtype, actionDimension, 1> Action;
-  using History = rai::Algorithm::history<Dtype, stateDimension, actionDimension>;
+  typedef rai::Algorithm::history<Dtype, stateDimension, actionDimension> History;
 
  public:
 
-  ReplayMemoryHistory(unsigned capacity, bool distInfo = true)
+  ReplayMemoryHistory(unsigned capacity, bool distInfo = false)
       : size_(0), batchIdx_(0), maxlen_(0), distInfo_(distInfo) {
     stateTensor_ = new Tensor3D;
     actionTensor_ = new Tensor3D;
@@ -152,8 +152,7 @@ class ReplayMemoryHistory {
       costTensor_->conservativeResize(maxlen_, capacity_);
     }
   }
-  inline void sampleRandomHistory(History &historyOut) {
-    unsigned batchSize = historyOut.batchNum;
+  inline void sampleRandomHistory(History &historyOut, const int batchSize) {
 
     unsigned memoryIdx[batchSize];
     ///// randomly sampling memory indeces
@@ -166,44 +165,61 @@ class ReplayMemoryHistory {
         }
       }
     }
-//    Tensor3D &states,
-//    Tensor3D &actions,
-//    Tensor2D &costs,
-//    Tensor1D &lengths,
-//    Tensor1D &termTypes,
-//    Tensor3D &actionNoises,
-//    Action &stdev
-    ///// saving memory to Batch
+
+    /// resize
+    historyOut.resize(maxlen_,batchSize);
+
+    /// saving memory to Batch
     for (unsigned i = 0; i < batchSize; i++) {
       historyOut.states.batch(i) = stateTensor_->batch(memoryIdx[i]);
-//      historyOut.actions
-//          historyOut.costs
-//              historyOut.lengths
-//      historyOut.actionNoises
-//      State state = state_t_->col(memoryIdx[i]);
-//      state_t_batch.col(i) = state;
+      historyOut.actions.batch(i) = actionTensor_->batch(memoryIdx[i]);
+      historyOut.costs.col(i) = costTensor_->col(memoryIdx[i]);
+      historyOut.lengths[i] = len_->at(i);
+      historyOut.termtypes[i] = termtypes_->at(i);
+
+      if(distInfo_){
+        historyOut.actionNoises.batch(i) = actionNoiseTensor_->batch(memoryIdx[i]);
+        historyOut.stdevs.col(i) = stdevs_->col(i);
+      }
     }
   }
 
 //
-//  inline void clearTheMemoryAndSetNewBatchSize(int newMemorySize) {
-//    std::lock_guard<std::mutex> lockModel(memoryMutex_);
-//    delete state_t_;
-//    delete state_tp1_;
-//    delete action_t_;
-//    delete cost_;
-//    delete terminationFlag_;
-//    state_t_ = new StateBatch(stateDimension, newMemorySize);
-//    state_tp1_ = new StateBatch(stateDimension, newMemorySize);
-//    action_t_ = new ActionBatch(actionDimension, newMemorySize);
-//    cost_ = new ScalarBatch(1, newMemorySize);
-//    terminationFlag_ = new ScalarBatch(1, newMemorySize);
-//
-//    size_ = 0;
-//    memoryIdx_ = 0;
-//    capacity_ = newMemorySize;
-//  }
+  inline void clearTheMemoryAndSetNewBatchSize(int newMemorySize) {
+    std::lock_guard<std::mutex> lockModel(memoryMutex_);
+    size_ = 0;
+    batchIdx_ = 0;
+    capacity_ = newMemorySize;
 
+    delete stateTensor_;
+    delete actionTensor_;
+    delete costTensor_;
+    delete len_;
+    delete termtypes_;
+    if (distInfo_) {
+      delete actionNoiseTensor_;
+      delete stdevs_;
+    }
+
+    stateTensor_ = new Tensor3D;
+    actionTensor_ = new Tensor3D;
+    costTensor_ = new Tensor2D;
+    len_ = new Tensor1D({capacity_}, 0);
+    if (distInfo_) {
+      actionNoiseTensor_ = new Tensor3D;
+      stdevs_ = new Tensor2D({actionDimension, capacity_}, 0);
+    }
+    termtypes_ = new Tensor1D({capacity_}, 0);
+  }
+
+
+  unsigned getCapacity() {
+    return capacity_;
+  }
+
+  unsigned getSize() {
+    return size_;
+  }
 
  private:
   Tensor3D *stateTensor_;

@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, true);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10);
 
   algorithm.setVisualizationLevel(0);
 
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 10;
+  constexpr int loggingInterval = 50;
   for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {

@@ -75,52 +75,52 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   }
 
   ///PPO
-  virtual void PPOpg(TensorBatch_ &minibatch,
+  virtual void PPOpg(TensorBatch_ *minibatch,
                      Action &Stdev,
                      VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(), minibatch.states.batches()}, 0, "h_init");
+    Tensor2D hiddenState({hiddenStateDim(), minibatch->states.batches()}, 0, "h_init");
 
-    this->tf_->run({minibatch.states,
-                    minibatch.actions,
-                    minibatch.actionNoises,
-                    minibatch.advantages,
-                    minibatch.lengths,
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
+                    minibatch->lengths,
                     hiddenState, StdevT},
                    {"Algo/PPO/Pg"},
                    {},
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual void PPOpg_kladapt(TensorBatch_ &minibatch,
+  virtual void PPOpg_kladapt(TensorBatch_ *minibatch,
                              Action &Stdev,
                              VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(), minibatch.states.batches()},0, "h_init");
+    Tensor2D hiddenState({hiddenStateDim(), minibatch->states.batches()},0, "h_init");
 
-    this->tf_->run({minibatch.states,
-                    minibatch.actions,
-                    minibatch.actionNoises,
-                    minibatch.advantages,
-                    minibatch.lengths,
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
+                    minibatch->lengths,
                     hiddenState, StdevT},
                    {"Algo/PPO/Pg2"},
                    {},
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
-  virtual Dtype PPOgetkl(TensorBatch_ &minibatch,
+  virtual Dtype PPOgetkl(TensorBatch_ *minibatch,
                          Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(),  minibatch.states.batches()},0, "h_init");
+    Tensor2D hiddenState({hiddenStateDim(),  minibatch->states.batches()},0, "h_init");
 
-    this->tf_->run({minibatch.states,
-                    minibatch.actions,
-                    minibatch.actionNoises,
-                    minibatch.lengths,
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->lengths,
                     hiddenState, StdevT},
                    {"Algo/PPO/kl_mean"},
                    {},

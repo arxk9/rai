@@ -84,17 +84,16 @@ int main() {
   ////
   ld_.acquireTrajForNTimeSteps(taskVector,noiseVector,&policy,50);
 
-  LOG(INFO) << ld_.stateTensor.cols() << ", " << ld_.stateTensor.batches();
-  std::cout << ld_.stateTensor << std::endl<< std::endl;
+  LOG(INFO) << ld_.Data.states.cols() << ", " << ld_.Data.states.batches();
+  std::cout << ld_.Data. states << std::endl<< std::endl;
   rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim> memory(20);
   for (int i = 0 ; i<3 ; i++)
-  memory.SaveHistory(ld_.stateTensor,ld_.actionTensor,ld_.costTensor,ld_.trajLength,ld_.termType);
+  memory.SaveHistory(ld_.Data.states,ld_.Data.actions,ld_.Data.costs,ld_.Data.lengths,ld_.Data.termtypes);
 
   TensorBatch test_bat(3,4);
   TensorBatch test_minibat;
 
   test_bat.states = states;
   test_bat.minibatch = &test_minibat;
-  test_bat.test();
 
 };
