@@ -399,8 +399,13 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
 
   void conservativeResize(int rows, int cols) {
+<<<<<<< HEAD
     if(dim_.size() == 0) resize({rows,cols});
     else if(dim_[0] == rows && dim_[1] == cols) return;
+=======
+
+    if(dim_[0] == rows && dim_[1] == cols) return;
+>>>>>>> master
     Eigen::Matrix<Dtype, -1, -1> Temp(dim_[0],dim_[1]);
     Temp = eMat();
     resize({rows,cols});
@@ -458,8 +463,12 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   }
 
   void conservativeResize(int rows, int cols, int batches) {
+<<<<<<< HEAD
     if(dim_.size() == 0) resize({rows,cols,batches});
     else if(dim_[0] == rows && dim_[1] == cols && dim_[2] ==batches ) return;
+=======
+    if(dim_[0] == rows && dim_[1] == cols && dim_[2] ==batches ) return;
+>>>>>>> master
     std::vector<int> dim = {rows, cols, batches};
 
     if(dim_[1] == cols && dim_[2] == batches){
