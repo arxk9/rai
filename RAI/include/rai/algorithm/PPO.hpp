@@ -221,7 +221,7 @@ class PPO {
     Utils::timer->stopTimer("policy Training");
 
 ///Logging
-    LOG(INFO) << "Mean KL divergence = " << KL;
+    LOG(INFO) << "Mean KL divergence per epoch = " << KL;
     if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
     Utils::logger->appendData("Stdev", ld_.stepsTaken(), policy_grad.norm());

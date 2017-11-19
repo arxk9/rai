@@ -244,7 +244,6 @@ class LearningData {
     }
 
     if (policy->isRecurrent()) {
-      Data.isrecurrent_ = true;
       /////Zero padding tensor//////////////////
       for (auto &tra : traj)
         if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
@@ -266,7 +265,6 @@ class LearningData {
 
 
     } else {
-      Data.isrecurrent_ = false;
       maxlen = 1;
       batchN = dataN;
 

@@ -27,9 +27,10 @@
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
 #include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 #include <rai/algorithm/common/LearningData.hpp>
+#include <rai/algorithm/common/dataStruct.hpp>
+
 #include <vector>
 #include "rai/memory/ReplayMemoryHistory.hpp"
-
 
 using std::cout;
 using std::endl;
@@ -57,6 +58,7 @@ typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
 using NormNoise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCov = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
+using TensorBatchBase = rai::Algorithm::TensorBatch<Dtype>;
 using TensorBatch = rai::Algorithm::history<Dtype, StateDim, ActionDim>;
 using namespace rai;
 
@@ -67,39 +69,36 @@ int main() {
   const int sampleN = 5;
   int Batsize = 100;
   int len = 100;
-  Acquisitor_  acquisitor;
+  Acquisitor_ acquisitor;
   rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
-  Task_  task;
+  Task_ task;
   task.setTimeLimitPerEpisode(0.2);
 
   NoiseCov covariance = NoiseCov::Identity();
-  NormNoise  noise(covariance);
+  NormNoise noise(covariance);
 
   RnnPolicy policy("cpu", "GRUMLP", "tanh 3 5 / 8 1", 0.001);
-  RnnQfunc Qfunction("cpu", "GRUMLP2", "tanh 3 1 5 / 8 1", 0.001);
 
-  rai::Tensor<Dtype,3> states;
-  states.resize(StateDim,len,Batsize);
+  rai::Tensor<Dtype, 3> states;
+  states.resize(StateDim, len, Batsize);
   states.setZero();
 
-
-
-  std::vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
-  std::vector<rai::Noise::Noise<Dtype, ActionDim>* > noiseVector = {&noise};
+  std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
+  std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
   ////
-  ld_.acquireTrajForNTimeSteps(taskVector,noiseVector,&policy,50);
+  ld_.acquireTrajForNTimeSteps(taskVector, noiseVector, &policy, 50);
 
   LOG(INFO) << ld_.Data.states.cols() << ", " << ld_.Data.states.batches();
-  std::cout << ld_.Data. states << std::endl<< std::endl;
+  std::cout << ld_.Data.states << std::endl << std::endl;
   rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim> memory(20);
-  for (int i = 0 ; i<3 ; i++)
-  memory.SaveHistory(ld_.Data.states,ld_.Data.actions,ld_.Data.costs,ld_.Data.lengths,ld_.Data.termtypes);
 
-  TensorBatch test_bat(3,4);
+  for (int i = 0; i < 3; i++)
+    memory.SaveHistory(ld_.Data.states, ld_.Data.actions, ld_.Data.costs, ld_.Data.lengths, ld_.Data.termtypes);
+
+  TensorBatch test_bat(3, 4);
   TensorBatch test_minibat;
+  TensorBatchBase *test_base;
 
-  test_bat.states = states;
-  test_bat.minibatch = &test_minibat;
-
+    RnnQfunc Qfunction("cpu", "GRUMLP2", "tanh 3 1 5 / 8 1", 0.001);
 
 };

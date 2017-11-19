@@ -24,7 +24,7 @@ class GRUMLP2(bc.GraphStructure):
         self.input1 = tf.placeholder(dtype, shape=[None, None, gruDim[0]], name=fn.input_names[0])  # [batch, time, statedim]
         self.input2 = tf.placeholder(dtype, shape=[None, None, gruDim[1]], name=fn.input_names[1])  # [batch, time, actiondim]
 
-        inputconcat = tf.concat([self.input1, self.input2], axis=1)
+        inputconcat = tf.concat([self.input1, self.input2], axis= 2)
 
         length_ = tf.placeholder(dtype, name='length')  # [batch]
         length_ = tf.cast(length_, dtype=tf.int32)
