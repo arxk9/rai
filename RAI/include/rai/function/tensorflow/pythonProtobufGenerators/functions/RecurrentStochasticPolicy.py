@@ -32,8 +32,8 @@ class RecurrentStochasticPolicy(pc.Policy):
 
         tangent_in = tf.placeholder(dtype, shape=[1, None], name='tangent')
         old_stdv = tf.placeholder(dtype, shape=[1, action_dim], name='stdv_o')
-        old_action_sampled = tf.placeholder(dtype, shape=[None, None, action_dim], name='sampled_oa')
-        old_action_noise = tf.placeholder(dtype, shape=[None, None, action_dim], name='noise_oa')
+        old_action_sampled = tf.placeholder(dtype, shape=[None, None, action_dim], name='sampledAction')
+        old_action_noise = tf.placeholder(dtype, shape=[None, None, action_dim], name='actionNoise')
         advantage_in = tf.placeholder(dtype, shape=[None, None], name='advantage')
 
 

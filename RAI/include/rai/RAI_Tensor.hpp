@@ -127,6 +127,10 @@ class TensorBase {
     eTensor().setZero();
   }
 
+  void setRandom() {
+    eTensor().setRandom();
+  }
+
   Dtype *data() {
     return eTensor().data();
   }

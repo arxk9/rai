@@ -4,7 +4,7 @@ import core
 
 
 class Qfunction(bc.SpecializedFunction):
-    input_names = ['state', 'action']
+    input_names = ['state', 'sampledAction']
     output_names = ['QValue']
 
     def __init__(self, dtype, gs):

@@ -35,12 +35,12 @@ class GRUMLP2(bc.GraphStructure):
         state_size = []
         recurrent_state_size = 0
 
-        for size in gruDim[1:]:
+        for size in gruDim[2:]:
             cell = rnn.GRUCell(size, activation=nonlin, kernel_initializer=tf.contrib.layers.xavier_initializer())
             cells.append(cell)
-            print(cell.state_size)
             recurrent_state_size += cell.state_size
             state_size.append(cell.state_size)
+            print(cell.state_size)
 
         cell = rnn.MultiRNNCell(cells, state_is_tuple=True)
         hiddenStateDim = tf.identity(tf.constant(value=[recurrent_state_size], dtype=tf.int32), name='h_dim')
@@ -48,8 +48,11 @@ class GRUMLP2(bc.GraphStructure):
         init_state = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
         init_state_tuple = tuple(tf.split(init_state, num_or_size_splits=state_size, axis=1))
 
-        # Full-length output for training
-        gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
+
+        # GRU output
+        gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
+        print(gruOutput)
+
         # FCN
         top = tf.reshape(gruOutput,shape=[-1, gruDim[-1]], name='fcIn')
 
@@ -60,7 +63,7 @@ class GRUMLP2(bc.GraphStructure):
                 layer_n += 1
 
 
-        self.output = tf.reshape(top, [-1, tf.shape(self.input)[1], mlpDim[-1]])
+        self.output = tf.reshape(top, [-1, tf.shape(self.input1)[1], mlpDim[-1]])
         hiddenState = tf.concat([state for state in final_state], axis=1, name='h_state')
 
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)

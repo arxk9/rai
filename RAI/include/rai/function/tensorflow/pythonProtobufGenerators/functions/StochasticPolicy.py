@@ -29,8 +29,8 @@ class StochasticPolicy(pc.Policy):
 
         tangent_in = tf.placeholder(dtype,  name='tangent')
         old_stdv = tf.placeholder(dtype, shape=[1, action_dim], name='stdv_o')  # TODO : Change to tf.Variable
-        old_action_in = tf.placeholder(dtype, name='sampled_oa')
-        old_action_noise_in = tf.placeholder(dtype, name='noise_oa')
+        old_action_in = tf.placeholder(dtype, name='sampledAction')
+        old_action_noise_in = tf.placeholder(dtype, name='actionNoise')
         advantage_in = tf.placeholder(dtype, name='advantage')
 
         tangent_ = tf.reshape(tangent_in, [1, -1])

@@ -172,7 +172,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   ///
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, 1, "length");
+    Tensor1D len({states.batches()},  states.dim(1), "length");
 
     if (h.cols() != states.batches()) {
       h.resize(hdim, states.batches());
