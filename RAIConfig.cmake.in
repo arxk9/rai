@@ -1,7 +1,6 @@
 # This file exports the Eigen3::Eigen CMake target which should be passed to the
 # target_link_libraries command.
 
-include ("${CMAKE_CURRENT_LIST_DIR}/RAITargets.cmake")
 set (RAI_INCLUDE_DIR  "@RAI_INCLUDE_DIR@")
 set (RAI_LINK "@RAI_LINK@")
 set (TENSORFLOW_EIGEN_DIR @TENSORFLOW_EIGEN_DIR@)
