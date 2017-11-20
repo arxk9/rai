@@ -167,15 +167,6 @@ class TensorBase {
   }
 
   template<int rows, int cols>
-  void operator=(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
-    LOG_IF(FATAL, dim_.size() > 2) << "The dimension is higher than 2";
-    LOG_IF(FATAL, dim_[0] != eMat.rows() || dim_[1] != eMat.cols())
-    << "matrix size mismatch: " << dim_[0] << "X" << dim_[1] << "vs" << eMat.rows() << "X"
-    << eMat.cols();
-    std::memcpy(namedTensor_.second.flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * size_);
-  }
-
-  template<int rows, int cols>
   void copyDataFrom(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
     LOG_IF(FATAL, size_ != eMat.rows() * eMat.cols())
     << "Data size mismatch: " << size_ << "vs" << eMat.rows() * eMat.cols();
@@ -206,6 +197,7 @@ class TensorBase {
   int rows() { return dim_[0]; }
   int cols() { return dim_[1]; }
   int batches() { return dim_[2]; }
+  int size() {return size_; }
 
   /// you lose all data calling resize
   void resize(const std::vector<int> dim) {
@@ -217,8 +209,9 @@ class TensorBase {
       dim_inv_.AddDim(dim[i]);
       size_ *= dim[i];
     }
-    for (int d = 0; d < NDim; d++)
+    for (int d = 0; d < NDim; d++) {
       esizes_[d] = dim_[d];
+    }
     setDataType();
     namedTensor_.second = tensorflow::Tensor(dtype_, dim_inv_);
   }
@@ -247,6 +240,7 @@ class TensorBase {
     else if (typeid(Dtype) == typeid(double))
       dtype_ = tensorflow::DataType::DT_DOUBLE;
   }
+
 
   tensorflow::DataType dtype_;
   std::pair<std::string, tensorflow::Tensor> namedTensor_;
@@ -290,11 +284,35 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
   using TensorBase::operator=;
   using TensorBase::operator[];
 
+  ///////////////////////////////
+  ////////// operators //////////
+  ///////////////////////////////
+
+  template<int rows, int cols>
+  void operator=(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows())
+    << "matrix size mismatch: " << dim_[0] << "X1" << "vs" << eMat.rows() << "X1";
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
+
+  void operator=(const Eigen::Matrix<Dtype, -1, -1> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows())
+    << "matrix size mismatch: " << dim_[0] << "X1" << "vs" << eMat.rows() << "X1";
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
+
   ////////////////////////////
   /// Eigen Methods mirror ///
   ////////////////////////////
   EigenMat eMat() {
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data(), TensorBase::dim_[0],1);
+    return mat;
+  }
+
+  EigenMat block(int startIdx, int size)
+  {
+    LOG_IF(FATAL, startIdx + size > dim_[0]) << "requested segment exceeds Tensor dimension (startIdx+size v.s lastIdx = " << startIdx + size -1  << " v.s. "<<dim_[0] -1 ;
+    EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + startIdx, size, 1);
     return mat;
   }
 
@@ -310,7 +328,9 @@ template<typename Dtype>
 class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
-  typedef Eigen::TensorMap<Eigen::Tensor<Dtype, 1>, Eigen::Aligned> EigenTensor;
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>, 0, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>> EigenMatStride;
+
+  typedef Eigen::TensorMap<Eigen::Tensor<Dtype, 2>, Eigen::Aligned> EigenTensor;
   typedef rai::TensorBase<Dtype, 2> TensorBase;
   using TensorBase::namedTensor_;
   using TensorBase::dim_inv_;
@@ -323,6 +343,25 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
   using TensorBase::resize;
   using TensorBase::operator=;
   using TensorBase::operator[];
+
+  ///////////////////////////////
+  ////////// operators //////////
+  ///////////////////////////////
+
+  template<int rows, int cols>
+  void operator=(const Eigen::Matrix<Dtype, rows, cols> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows() || dim_[1] != eMat.cols())
+    << "matrix size mismatch: " << dim_[0] << "X" << dim_[1] << "vs" << eMat.rows() << "X"
+    << eMat.cols();
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
+
+  void operator=(const Eigen::Matrix<Dtype, -1, -1> &eMat) {
+    LOG_IF(FATAL, dim_[0] != eMat.rows() || dim_[1] != eMat.cols())
+    << "matrix size mismatch: " << dim_[0] << "X" << dim_[1] << "vs" << eMat.rows() << "X"
+    << eMat.cols();
+    std::memcpy(namedTensor_.second.template flat<Dtype>().data(), eMat.data(), sizeof(Dtype) * this->size_);
+  }
 
   ////////////////////////////
   /// Eigen Methods mirror ///
@@ -337,11 +376,16 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
     return mat.row(rowId);
   }
 
+  EigenMatStride block(int rowStart, int colStart, int rowDim, int colDim)
+  {
+    EigenMatStride mat(namedTensor_.second.template flat<Dtype>().data() + rowStart + dim_[0] * colStart, rowDim, colDim, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
+    return mat;
+  }
+
   EigenMat eMat() {
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data(), dim_[0], dim_[1]);
     return mat;
   }
-
 
   /// you lose all data calling resize
   void resize(int rows, int cols) {
@@ -351,21 +395,13 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
 
 
   void conservativeResize(int rows, int cols) {
-    tensorflow::Tensor Temp(dtype_, dim_inv_);
-    memcpy(Temp.flat<Dtype>().data(),
-           namedTensor_.second.template flat<Dtype>().data(),
-           sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
-    std::vector<int> dim = {rows, cols};
-    resize(dim);
-    if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
-      eTensor().setZero();
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * Temp.flat<Dtype>().size());
-    } else
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
+
+    if(dim_[0] == rows && dim_[1] == cols) return;
+    Eigen::Matrix<Dtype, -1, -1> Temp(dim_[0],dim_[1]);
+    Temp = eMat();
+    resize({rows,cols});
+    Temp.conservativeResize(rows,cols);
+    eMat() = Temp;
   }
 
   void removeCol(int colID) {
@@ -394,7 +430,7 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>, 0, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>> EigenMatStride;
 
-  typedef Eigen::TensorMap<Eigen::Tensor<Dtype, 1>, Eigen::Aligned> EigenTensor;
+  typedef Eigen::TensorMap<Eigen::Tensor<Dtype, 3>, Eigen::Aligned> EigenTensor;
   typedef rai::TensorBase<Dtype, 3> TensorBase;
 
   using TensorBase::namedTensor_;
@@ -417,26 +453,78 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   }
 
   void conservativeResize(int rows, int cols, int batches) {
-    tensorflow::Tensor Temp(dtype_, dim_inv_);
-    memcpy(Temp.flat<Dtype>().data(),
-           namedTensor_.second.template flat<Dtype>().data(),
-           sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
+    if(dim_[0] == rows && dim_[1] == cols && dim_[2] ==batches ) return;
     std::vector<int> dim = {rows, cols, batches};
-    resize(dim);
-    if (Temp.flat<Dtype>().size() < namedTensor_.second.template flat<Dtype>().size()) {
-      eTensor().setZero();
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * Temp.flat<Dtype>().size());
-    } else
-      memcpy(namedTensor_.second.template flat<Dtype>().data(),
-             Temp.flat<Dtype>().data(),
-             sizeof(Dtype) * namedTensor_.second.template flat<Dtype>().size());
+
+    if(dim_[1] == cols && dim_[2] == batches){
+      Eigen::Matrix<Dtype, -1, -1> Temp(rows , cols * batches);
+      int commonRow = std::min(dim_[0], rows);
+      Temp.block(0,0,commonRow,cols * batches) = EigenMatStride(namedTensor_.second.template flat<Dtype>().data(), commonRow, cols * batches, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
+      resize(dim);
+      memcpy(namedTensor_.second.template flat<Dtype>().data(), Temp.data(),
+             sizeof(Dtype) * Temp.size());
+    }
+    else if(dim_[0] == rows && dim_[2] == batches){
+      Eigen::Matrix<Dtype, -1, -1> Temp(rows*cols, batches);
+      int commonCol = std::min(dim_[1], cols);
+      Temp.block(0,0,rows * commonCol, batches) = EigenMatStride(namedTensor_.second.template flat<Dtype>().data(), rows * commonCol, batches, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0]*dim_[1],1));
+      resize(dim);
+      memcpy(namedTensor_.second.template flat<Dtype>().data(), Temp.data(),
+             sizeof(Dtype) * Temp.size());
+    }
+    else if(dim_[0] == rows && dim_[1] == cols){
+      Eigen::Matrix<Dtype, -1, -1> Temp(rows*cols, batches);
+      int commonBat = std::min(dim_[2], batches);
+      Temp.block(0,0,rows * cols, commonBat) = EigenMatStride(namedTensor_.second.template flat<Dtype>().data(), rows * cols, commonBat, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0]*dim_[1],1));
+      resize(dim);
+      memcpy(namedTensor_.second.template flat<Dtype>().data(), Temp.data(),
+             sizeof(Dtype) * Temp.size());
+    }
+    else if(dim_[0] == rows) {
+      Eigen::Matrix<Dtype, -1, -1> Temp(rows*cols, batches);
+      int commonCol = std::min(dim_[1], cols);
+      int commonBat = std::min(dim_[2], batches);
+      Temp.block(0,0,rows*commonCol, commonBat) = EigenMatStride(namedTensor_.second.template flat<Dtype>().data(), rows*commonCol, commonBat, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0]*dim_[1],1));
+      resize(dim);
+      memcpy(namedTensor_.second.template flat<Dtype>().data(), Temp.data(),
+             sizeof(Dtype) * Temp.size());
+    }
+    else if(dim_[1] == cols) {
+      Eigen::Matrix<Dtype, -1, -1> Temp(rows, cols*batches);
+      int commonRow = std::min(dim_[0], rows);
+      int commonBat = std::min(dim_[2], batches);
+      Temp.block(0,0,commonRow,cols * commonBat) = EigenMatStride(namedTensor_.second.template flat<Dtype>().data(), commonRow, cols * commonBat, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
+      resize(dim);
+      memcpy(namedTensor_.second.template flat<Dtype>().data(), Temp.data(),
+             sizeof(Dtype) * Temp.size());
+    }
+    else if(dim_[2] == batches) {
+      int commonRow = std::min(dim_[0], rows);
+      int commonCol = std::min(dim_[1], cols);
+      Eigen::Matrix<Dtype, -1, -1> Temp(dim_[0]*commonCol, batches);
+      Temp = EigenMatStride(namedTensor_.second.template flat<Dtype>().data(), dim_[0]*commonCol, batches, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0]*dim_[1],1));
+
+      Eigen::Matrix<Dtype, -1, -1> Temp2(rows,cols* batches);
+      Temp2.block(0,0,commonRow,commonCol* batches) = EigenMatStride(Temp.data(), commonRow,commonCol*batches, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
+      resize(dim);
+      memcpy(namedTensor_.second.template flat<Dtype>().data(), Temp2.data(),
+             sizeof(Dtype) * Temp2.size());
+    }
+    else{
+      int commonRow = std::min(dim_[0], rows);
+      int commonCol = std::min(dim_[1], cols);
+      int commonBat = std::min(dim_[2], batches);
+      Eigen::Matrix<Dtype, -1, -1> Temp(dim_[0]*commonCol, commonBat);
+      Temp = EigenMatStride(namedTensor_.second.template flat<Dtype>().data(), dim_[0]*commonCol, commonBat, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0]*dim_[1],1));
+
+      Eigen::Matrix<Dtype, -1, -1> Temp2(rows,cols*batches);
+      Temp2.block(0,0,commonRow,commonCol* commonBat) = EigenMatStride(Temp.data(), commonRow,commonCol*commonBat, Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic>(dim_[0],1));
+      resize(dim);
+      memcpy(namedTensor_.second.template flat<Dtype>().data(), Temp2.data(),
+             sizeof(Dtype) * Temp2.size());
+    }
   }
 
-
-
-  /////////// 3D methods /////////
   void removeBatch(int batchId) {
     tensorflow::Tensor Temp(dtype_, dim_inv_);
     memcpy(Temp.flat<Dtype>().data(),
@@ -485,6 +573,12 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   EigenMat batch(int batchId) {
     EigenMat mat(namedTensor_.second.template flat<Dtype>().data() + batchId * dim_[0] * dim_[1], dim_[0], dim_[1]);
     return mat;
+  }
+
+  EigenTensor batchBlock(int startBatchID, int size){
+    LOG_IF(FATAL,startBatchID + size >dim_[2]) << "endBatchID exceeds last batch ID: "<< startBatchID + size-1  << "vs" << dim_[2]-1;
+    EigenTensor ten(namedTensor_.second.template flat<Dtype>().data() + startBatchID * dim_[0] * dim_[1], dim_[0], dim_[1],size);
+    return ten;
   }
 
   template<int rows, int cols>
