@@ -126,14 +126,14 @@ class TRPO_gae {
 
   void runOneLoop(int numOfSteps) {
     iterNumber_++;
-    tester_.testPerformance(task_,
-                            noiseBasePtr_,
-                            policy_,
-                            task_[0]->timeLimit(),
-                            testingTrajN_,
-                            acquisitor_->stepsTaken(),
-                            vis_lv_,
-                            std::to_string(iterNumber_));
+//    tester_.testPerformance(task_,
+//                            noiseBasePtr_,
+//                            policy_,
+//                            task_[0]->timeLimit(),
+//                            testingTrajN_,
+//                            acquisitor_->stepsTaken(),
+//                            vis_lv_,
+//                            std::to_string(iterNumber_));
     LOG(INFO) << "Simulation";
     ld_.acquireVineTrajForNTimeSteps(task_,
                                      noiseBasePtr_,

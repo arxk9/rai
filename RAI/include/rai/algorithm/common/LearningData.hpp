@@ -85,146 +85,146 @@ class LearningData {
                                           timeLimit,
                                           true);
     if (vis_lv > 1) task[0]->turnOffVisualization();
-
-    int stepsInThisLoop = int(trajAcquisitor_->stepsTaken() - stepsTaken);
-
-    if (numOfSteps > stepsInThisLoop) {
-      int stepsneeded = numOfSteps - stepsInThisLoop;
-      std::vector<Trajectory_> tempTraj_;
-      while (1) {
-        int numofnewtraj = std::ceil(1.5 * stepsneeded * dt / timeLimit); // TODO: fix
-
-        tempTraj_.resize(numofnewtraj);
-        for (auto &tra : tempTraj_)
-          tra.clear();
-
-        StateBatch startState2(StateDim, numofnewtraj);
-        sampleBatchOfInitial(startState2, task);
-
-        for (auto &noise : noise)
-          noise->initializeNoise();
-
-        if (vis_lv > 1) task[0]->turnOnVisualization("");
-        trajAcquisitor_->acquire(task,
-                                 policy,
-                                 noise,
-                                 tempTraj_,
-                                 startState2,
-                                 timeLimit,
-                                 true);
-        if (vis_lv > 1) task[0]->turnOffVisualization();
-
-        stepsInThisLoop = int(trajAcquisitor_->stepsTaken() - stepsTaken);
-        stepsneeded = numOfSteps - stepsInThisLoop;
-        ///merge trajectories
-        traj.reserve(traj.size() + tempTraj_.size());
-        traj.insert(traj.end(), tempTraj_.begin(), tempTraj_.end());
-
-        if (stepsneeded <= 0) break;
-      }
-    }
-    ///////////////////////////////////////VINE//////////////////////////////
-    StateBatch VineStartPosition(StateDim, numofjunct);
-    StateBatch rolloutstartState(StateDim, numofjunct * numOfBranchPerJunct);
-    trajectories.resize(numofjunct * numOfBranchPerJunct);
-    rolloutstartState.setOnes();
-    std::vector<std::pair<int, int> > indx;
-    rai::Op::VectorHelper::sampleRandomStates(traj, VineStartPosition, int(0.1 * timeLimit / dt), indx);
-
-    for (int dataID = 0; dataID < numofjunct; dataID++)
-      rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct) =
-          rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct).array().colwise()
-              * VineStartPosition.col(dataID).array();
-
-    for (auto &tra : trajectories)
-      tra.clear();
-    for (auto &noise : noise)
-      noise->initializeNoise();
-
-    trajAcquisitor_->acquire(task, policy, noise, trajectories, rolloutstartState, timeLimit, true);
-
-    ///merge trajectories into one vector
-    traj.reserve(traj.size() + trajectories.size());
-    traj.insert(traj.end(), trajectories.begin(), trajectories.end());
-
-    int dataN = 0;
-    for (auto &tra : traj) dataN += tra.size() - 1;
-
-   stepsTaken = int(trajAcquisitor_->stepsTaken());
-    stateBat.resize(StateDim, dataN);
-//    actionBat.resize(ActionDim, dataN);
-//    actionNoiseBat.resize(ActionDim, dataN);
-
-    int colID = 0;
-    for (int traID = 0; traID < traj.size(); traID++) {
-      for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-        stateBat.col(colID++) = traj[traID].stateTraj[timeID];
-      }
-    }
-
-    if (policy->isRecurrent()) {
-
-      /////Zero padding tensor//////////////////
-      int maxlen = 0;
-      for (auto &tra : traj)
-        if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
-
-      int numtra = int(traj.size());
-      stateTensor.resize(StateDim, maxlen, numtra);
-      actionTensor.resize(ActionDim, maxlen, numtra);
-      actionNoiseTensor.resize(ActionDim, maxlen, numtra);
-
-      stateTensor.setZero();
-      actionTensor.setZero();
-      actionNoiseTensor.setZero();
-      trajLength.resize(numtra);
-
-      for (int i = 0; i < numtra; i++) {
-        trajLength[i] = traj[i].stateTraj.size() - 1;
-        stateTensor.partiallyFillBatch(i, traj[i].stateTraj, 1);
-        actionTensor.partiallyFillBatch(i, traj[i].actionTraj, 1);
-        actionNoiseTensor.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
-      }
-    } else {
-      stateTensor.resize(StateDim, 1, dataN);
-      actionTensor.resize(ActionDim, 1, dataN);
-      actionNoiseTensor.resize(ActionDim, 1, dataN);
-      stateTensor.setZero();
-      actionTensor.setZero();
-      actionNoiseTensor.setZero();
-      trajLength.resize(1);
-      trajLength[0] = dataN;
-
-      int pos = 0;
-      for (int traID = 0; traID < traj.size(); traID++) {
-        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-          actionTensor.batch(pos) = traj[traID].actionTraj[timeID];
-          actionNoiseTensor.batch(pos++) = traj[traID].actionNoiseTraj[timeID];
-        }
-      }
-      stateTensor.copyDataFrom(stateBat);
-    }
-
-    // update terimnal value
-    if (vfunction) {
-      termValueBat.resize(1, traj.size());
-      termStateBat.resize(StateDim, traj.size());
-      valueBat.resize(dataN);
-
-      for (int traID = 0; traID < traj.size(); traID++)
-        termStateBat.col(traID) = traj[traID].stateTraj.back();
-      vfunction->forward(termStateBat, termValueBat);
-
-      for (int traID = 0; traID < traj.size(); traID++)
-        if (traj[traID].termType == TerminationType::timeout) {
-          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task[0]->discountFtr());
-        }
-
-      int colID = 0;
-      for (int traID = 0; traID < traj.size(); traID++)
-        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
-          valueBat(colID++) = traj[traID].valueTraj[timeID];
-    }
+//
+//    int stepsInThisLoop = int(trajAcquisitor_->stepsTaken() - stepsTaken);
+//
+//    if (numOfSteps > stepsInThisLoop) {
+//      int stepsneeded = numOfSteps - stepsInThisLoop;
+//      std::vector<Trajectory_> tempTraj_;
+//      while (1) {
+//        int numofnewtraj = std::ceil(1.5 * stepsneeded * dt / timeLimit); // TODO: fix
+//
+//        tempTraj_.resize(numofnewtraj);
+//        for (auto &tra : tempTraj_)
+//          tra.clear();
+//
+//        StateBatch startState2(StateDim, numofnewtraj);
+//        sampleBatchOfInitial(startState2, task);
+//
+//        for (auto &noise : noise)
+//          noise->initializeNoise();
+//
+//        if (vis_lv > 1) task[0]->turnOnVisualization("");
+//        trajAcquisitor_->acquire(task,
+//                                 policy,
+//                                 noise,
+//                                 tempTraj_,
+//                                 startState2,
+//                                 timeLimit,
+//                                 true);
+//        if (vis_lv > 1) task[0]->turnOffVisualization();
+//
+//        stepsInThisLoop = int(trajAcquisitor_->stepsTaken() - stepsTaken);
+//        stepsneeded = numOfSteps - stepsInThisLoop;
+//        ///merge trajectories
+//        traj.reserve(traj.size() + tempTraj_.size());
+//        traj.insert(traj.end(), tempTraj_.begin(), tempTraj_.end());
+//
+//        if (stepsneeded <= 0) break;
+//      }
+//    }
+//    ///////////////////////////////////////VINE//////////////////////////////
+//    StateBatch VineStartPosition(StateDim, numofjunct);
+//    StateBatch rolloutstartState(StateDim, numofjunct * numOfBranchPerJunct);
+//    trajectories.resize(numofjunct * numOfBranchPerJunct);
+//    rolloutstartState.setOnes();
+//    std::vector<std::pair<int, int> > indx;
+//    rai::Op::VectorHelper::sampleRandomStates(traj, VineStartPosition, int(0.1 * timeLimit / dt), indx);
+//
+//    for (int dataID = 0; dataID < numofjunct; dataID++)
+//      rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct) =
+//          rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct).array().colwise()
+//              * VineStartPosition.col(dataID).array();
+//
+//    for (auto &tra : trajectories)
+//      tra.clear();
+//    for (auto &noise : noise)
+//      noise->initializeNoise();
+//
+//    trajAcquisitor_->acquire(task, policy, noise, trajectories, rolloutstartState, timeLimit, true);
+//
+//    ///merge trajectories into one vector
+//    traj.reserve(traj.size() + trajectories.size());
+//    traj.insert(traj.end(), trajectories.begin(), trajectories.end());
+//
+//    int dataN = 0;
+//    for (auto &tra : traj) dataN += tra.size() - 1;
+//
+//   stepsTaken = int(trajAcquisitor_->stepsTaken());
+//    stateBat.resize(StateDim, dataN);
+////    actionBat.resize(ActionDim, dataN);
+////    actionNoiseBat.resize(ActionDim, dataN);
+//
+//    int colID = 0;
+//    for (int traID = 0; traID < traj.size(); traID++) {
+//      for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
+//        stateBat.col(colID++) = traj[traID].stateTraj[timeID];
+//      }
+//    }
+//
+//    if (policy->isRecurrent()) {
+//
+//      /////Zero padding tensor//////////////////
+//      int maxlen = 0;
+//      for (auto &tra : traj)
+//        if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
+//
+//      int numtra = int(traj.size());
+//      stateTensor.resize(StateDim, maxlen, numtra);
+//      actionTensor.resize(ActionDim, maxlen, numtra);
+//      actionNoiseTensor.resize(ActionDim, maxlen, numtra);
+//
+//      stateTensor.setZero();
+//      actionTensor.setZero();
+//      actionNoiseTensor.setZero();
+//      trajLength.resize(numtra);
+//
+//      for (int i = 0; i < numtra; i++) {
+//        trajLength[i] = traj[i].stateTraj.size() - 1;
+//        stateTensor.partiallyFillBatch(i, traj[i].stateTraj, 1);
+//        actionTensor.partiallyFillBatch(i, traj[i].actionTraj, 1);
+//        actionNoiseTensor.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
+//      }
+//    } else {
+//      stateTensor.resize(StateDim, 1, dataN);
+//      actionTensor.resize(ActionDim, 1, dataN);
+//      actionNoiseTensor.resize(ActionDim, 1, dataN);
+//      stateTensor.setZero();
+//      actionTensor.setZero();
+//      actionNoiseTensor.setZero();
+//      trajLength.resize(1);
+//      trajLength[0] = dataN;
+//
+//      int pos = 0;
+//      for (int traID = 0; traID < traj.size(); traID++) {
+//        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
+//          actionTensor.batch(pos) = traj[traID].actionTraj[timeID];
+//          actionNoiseTensor.batch(pos++) = traj[traID].actionNoiseTraj[timeID];
+//        }
+//      }
+//      stateTensor.copyDataFrom(stateBat);
+//    }
+//
+//    // update terimnal value
+//    if (vfunction) {
+//      termValueBat.resize(1, traj.size());
+//      termStateBat.resize(StateDim, traj.size());
+//      valueBat.resize(dataN);
+//
+//      for (int traID = 0; traID < traj.size(); traID++)
+//        termStateBat.col(traID) = traj[traID].stateTraj.back();
+//      vfunction->forward(termStateBat, termValueBat);
+//
+//      for (int traID = 0; traID < traj.size(); traID++)
+//        if (traj[traID].termType == TerminationType::timeout) {
+//          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task[0]->discountFtr());
+//        }
+//
+//      int colID = 0;
+//      for (int traID = 0; traID < traj.size(); traID++)
+//        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
+//          valueBat(colID++) = traj[traID].valueTraj[timeID];
+//    }
 
     Utils::timer->stopTimer("Simulation");
   }
