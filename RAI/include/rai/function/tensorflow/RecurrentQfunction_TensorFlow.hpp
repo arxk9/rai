@@ -47,9 +47,15 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
 
   virtual void forward(State &state, Action &action, Dtype &value) {
     std::vector<MatrixXD> vectorOfOutputs;
+    MatrixXD h_, length;
+    length.resize(1,1);
+    h_.resize(hdim,1);
+    h_.setZero();
+
     this->tf_->run({{"state", state},
                     {"sampledAction", action},
-                    {"updateBNparams", this->notUpdateBN}},
+                    {"length", length},
+                    {"h_init", h_}},
                    {"QValue"}, {}, vectorOfOutputs);
     value = vectorOfOutputs[0](0);
   }
@@ -107,14 +113,16 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
 
 
   virtual Dtype performOneSolverIter(StateBatch& states, ActionBatch& actions, ValueBatch &values){
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states},
-                    {"sampledAction", actions},
-                    {"targetQValue", values},
-                    {"trainUsingTargetQValue/learningRate", this->learningRate_}},
-                   {"trainUsingTargetQValue/loss"},
-                   {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
-    return vectorOfOutputs[0](0);
+  LOG(FATAL) << "NOT IMPLEMENTED";
+//    std::vector<MatrixXD> vectorOfOutputs;
+//    this->tf_->run({{"state", states},
+//                    {"sampledAction", actions},
+//                    {"targetQValue", values},
+//                    {"trainUsingTargetQValue/learningRate", this->learningRate_}},
+//                   {"trainUsingTargetQValue/loss"},
+//                   {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
+//    return vectorOfOutputs[0](0);
+  return 0;
   };
 
   virtual Dtype performOneSolverIter(history *minibatch, Tensor3D &values){
@@ -151,14 +159,13 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
     return vectorOfOutputs[0](0);
   };
 
-  Dtype getGradient_AvgOf_Q_wrt_action(history *minibatch, Tensor3D &gradients)
+  Dtype getGradient_AvgOf_Q_wrt_action(history *minibatch, Tensor3D &gradients) const
   {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
-    h.setZero();
+    Tensor2D h_({hdim, minibatch->batchNum}, 0, "h_init");
 
     this->tf_->run({minibatch->states,
-                    minibatch->actions, minibatch->lengths,h},
+                    minibatch->actions, minibatch->lengths,h_},
                    {"gradient_AvgOf_Q_wrt_action", "average_Q_value"}, {}, vectorOfOutputs);
     gradients = (vectorOfOutputs[0]);
     return vectorOfOutputs[1].scalar<Dtype>()();

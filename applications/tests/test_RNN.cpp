@@ -18,6 +18,8 @@
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <functional>
+#include <rai/function/tensorflow/RecurrentDeterministicPolicy_Tensorflow.hpp>
+
 #include <rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp>
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
 
@@ -45,7 +47,7 @@ using Dtype = float;
 
 using PolicyBase = rai::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 using RnnQfunc = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
-
+using RnnDPolicy = rai::FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using RnnPolicy = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
 using Task_ = rai::Task::PoleBalancing<Dtype>;
@@ -216,7 +218,9 @@ int main() {
 
   cout << "jaco from TF is       " << endl << Gradtest << endl;
   cout << "jaco from numerical is" << endl << GradtestNum << endl;
-//    cout << (sss1 - sss2).norm()/sss1.norm()*100 << ", "<< perturb << endl;
+
+  RnnDPolicy DPolicy("cpu", "GRUMLP", "tanh 3 5 / 10 3", 0.001);
+
 
 //  }
 };
