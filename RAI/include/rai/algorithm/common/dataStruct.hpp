@@ -39,6 +39,7 @@ struct TensorBatch {
   }
 
   void fillminibatch(TensorBatch *minibatch, int batchSize = 0) {
+
     if (minibatch->batchNum != batchSize || minibatch->maxLen != maxLen) {
       minibatch->resize(maxLen, batchSize);
     }
@@ -50,6 +51,7 @@ struct TensorBatch {
     }
     for (int i = 0; i < tensor1Ds.size(); i++) {
       minibatch->tensor1Ds[i] = tensor1Ds[i].block(batchID, batchSize);
+
     }
   }
 
@@ -61,9 +63,6 @@ struct TensorBatch {
     if (batchID >= batchNum) {
       batchID = 0;
       return false;
-    }
-    if (minibatch->batchNum != cur_batch_size || minibatch->maxLen != maxLen) {
-      minibatch->resize(maxLen, cur_batch_size);
     }
     fillminibatch(minibatch, cur_batch_size);
     batchID += cur_batch_size;
@@ -130,8 +129,8 @@ struct history : public TensorBatch<Dtype> {
     stdevs.resize(actionDim, batchNum_in);
   }
 
-  virtual bool iterateBatch(int batchSize){
-    return TensorBatch_::iterateBatch(minibatch,batchSize);
+  virtual bool iterateBatch(int batchSize) {
+    return TensorBatch_::iterateBatch(minibatch, batchSize);
   };
 
   /// assign data
@@ -197,8 +196,8 @@ struct historyWithAdvantage : public TensorBatch<Dtype> {
     advantages.resize(maxlen, batchNum_in);
   }
 
-  virtual bool iterateBatch(int batchSize){
-    return TensorBatch_::iterateBatch(minibatch,batchSize);
+  virtual bool iterateBatch(int batchSize) {
+    return TensorBatch_::iterateBatch(minibatch, batchSize);
   };
 
   /// assign data

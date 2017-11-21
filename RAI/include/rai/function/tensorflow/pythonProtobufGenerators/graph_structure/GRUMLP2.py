@@ -51,7 +51,6 @@ class GRUMLP2(bc.GraphStructure):
 
         # GRU output
         gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
-        print(gruOutput)
 
         # FCN
         top = tf.reshape(gruOutput,shape=[-1, gruDim[-1]], name='fcIn')
@@ -62,8 +61,8 @@ class GRUMLP2(bc.GraphStructure):
                 top = fully_connected(activation_fn=nonlin, inputs=top, num_outputs=dim, weights_initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
                 layer_n += 1
 
-
         self.output = tf.reshape(top, [-1, tf.shape(self.input1)[1], mlpDim[-1]])
+
         hiddenState = tf.concat([state for state in final_state], axis=1, name='h_state')
 
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)

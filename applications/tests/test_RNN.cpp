@@ -38,8 +38,8 @@ using namespace rai;
 using std::cout;
 using std::endl;
 using std::cin;
-using rai::Task::ActionDim;
-using rai::Task::StateDim;
+constexpr int StateDim = 3;
+constexpr int ActionDim = 3;
 
 using Dtype = float;
 
@@ -73,8 +73,8 @@ int main() {
   bool teststdev = false;
   bool testgradient = false;
   const int sampleN = 5;
-  int Batsize = 100;
-  int len = 100;
+//  int Batsize = 100;
+//  int len = 100;
   Acquisitor_ acquisitor;
   rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
 //  Task_ task;
@@ -110,11 +110,14 @@ int main() {
   cout << "Test: Policy::copyStructureFrom" << endl;
 //
 //
-  RnnQfunc qfunction1("cpu", "GRUMLP2", "tanh 3 1 5 / 4 1", 0.001);
 
-  int nIterations = 100;
+
+
+  RnnQfunc qfunction1("cpu", "GRUMLP2", "tanh 3 3 5 / 10 1", 0.001);
+
+  int nIterations = 500;
   int maxlen = 10;
-  int batchSize = 10;
+  int batchSize = 15;
   RandomNumberGenerator<Dtype> rn_;
 
   Tensor3D stateBatch;
@@ -133,42 +136,40 @@ int main() {
   rai::Algorithm::history<Dtype, StateDim, ActionDim> DATA;
   DATA.resize(maxlen, batchSize);
   DATA.setZero();
-  DATA.states.copyDataFrom(stateBatch);
-  DATA.actions.copyDataFrom(actionBatch);
+
   DATA.minibatch = new rai::Algorithm::history<Dtype, StateDim, ActionDim>;
+
   for (int k = 0; k < batchSize; k++) {
 //    DATA.lengths[k] = 2 * (k + 1);
     DATA.lengths[k] = maxlen; //full length
   }
 
-  LOG(INFO) << DATA.lengths.eMat();
   LOG(INFO) << DATA.states.rows() << " " << DATA.states.cols() << " " << DATA.states.batches();
   LOG(INFO) << DATA.actions.rows() << " " << DATA.actions.cols() << " " << DATA.actions.batches();
 //  qfunction1.forward(DATA.states ,DATA.actions, valueBatch);
 
 
-  DATA.iterateBatch(batchSize);
-
+  Dtype loss = 0;
   for (int iteration = 0; iteration < nIterations; ++iteration) {
-    Dtype loss = qfunction1.performOneSolverIter(DATA.minibatch, valueBatch);
+
+    stateBatch.setRandom();
+    actionBatch.setRandom();
+    DATA.states.copyDataFrom(stateBatch);
+    DATA.actions.copyDataFrom(actionBatch);
+    valueBatch.setZero();
+
+    for (int k = 0; k < batchSize; k++) {
+      for (int j = 0; j < DATA.lengths[k]; j++) {
+        for (int i = 0; i < 3; i++) {
+          valueBatch.eTensor()(0, j, k) += std::sin(5 * actionBatch.eTensor()(i, j, k)) - stateBatch.eTensor()(i, j, k);
+        }
+      }
+    }
+    DATA.iterateBatch(batchSize);
+    loss = qfunction1.performOneSolverIter(DATA.minibatch, valueBatch);
     if (iteration % 100 == 0) cout << iteration << ", loss = " << loss << endl;
   }
-//
-//  RnnQfunc qfunction2("cpu", "GRUMLP2", "tanh 3 1 5 / 4 1", 0.001);
-//  qfunction2.copyStructureFrom(&qfunction1);
-//
-//  VectorXD param1, param2;
-//  qfunction1.getAP(param1);
-//  qfunction2.getAP(param2);
-//
-//  cout << "testing interpolation" << endl;
-//  cout << "from cpp calculation " << endl << (param1 * 0.2 + param2 * 0.8).transpose() << endl;
-//  qfunction2.interpolateAPWith(&qfunction1, 0.2);
-//  qfunction2.getAP(param2);
-//  cout << "from tensorflow " << endl << param2.transpose() << endl;
-//  cout << "Press Enter if the two vectors are the same" << endl;
-//  cin.get();
-
+//  qfunction1.test(DATA.minibatch, valueBatch);
 
   Tensor3D valueBatch2;
 
@@ -182,33 +183,39 @@ int main() {
   Gradtest.setZero();
   GradtestNum.setZero();
 
-  qfunction1.test(DATA.minibatch, valueBatch);
 
-  LOG(INFO) << qfunction1.getGradient_AvgOf_Q_wrt_action(DATA.minibatch, Gradtest);
   qfunction1.forward(DATA.minibatch->states, DATA.minibatch->actions, valueBatch);
 
-  Dtype perturb = 1e-6;
+  Dtype perturb = 5e-3;
+  int cnt=0;
+  for (int k = 0; k < batchSize; k++) {
+    cnt += DATA.minibatch->lengths[k] * ActionDim;
+  }
+  Eigen::Tensor<Dtype, 0 > temp;
+  for (int i = 0; i < ActionDim; i++) {
+    for (int k = 0; k < batchSize; k++) {
+      for (int j = 0; j < DATA.minibatch->lengths[k]; j++) {
 
-    for (int i = 0; i < ActionDim; i++) {
-      for (int k = 0; k < batchSize; k++) {
-        for (int j = 0; j < DATA.minibatch->lengths[k]; j++) {
-
-          DATA.minibatch->actions.eTensor()(i, j, k) += perturb;
-          qfunction1.forward(DATA.minibatch->states, DATA.minibatch->actions, valueBatch2);
-          DATA.minibatch->actions.eTensor()(i, j, k) -= perturb;
-          GradtestNum.eTensor()(i, j, k) = (valueBatch2.eTensor()(0, j, k) - valueBatch.eTensor()(0, j, k)) / (perturb);
-          GradtestNum.eTensor()(i, j, k) /= batchSize;
-//          std::cout << j << ", " << valueBatch2.batch(0)<< std::endl;
-//          std::cout << j << ", " << valueBatch3.batch(0)<< std::endl;
-//          std::cout << j << ", " << valueBatch2.eTensor()(0, j, k) - valueBatch3.eTensor()(0, j, k)<< std::endl;
-        }
+        DATA.minibatch->actions.eTensor()(i, j, k) += perturb;
+        qfunction1.forward(DATA.minibatch->states, DATA.minibatch->actions, valueBatch2);
+        DATA.minibatch->actions.eTensor()(i, j, k) -= perturb;
+//        Dtype f1= valueBatch2.eTensor().sum();
+        temp = valueBatch2.eTensor().mean();
+        GradtestNum.eTensor()(i, j, k) = temp(0);
+        temp = valueBatch.eTensor().mean();
+//        LOG(INFO) << temp(0) - GradtestNum.eTensor()(i, j, k) ;
+        GradtestNum.eTensor()(i, j, k) -= temp(0);
+        GradtestNum.eTensor()(i,j,k) /= perturb;
       }
     }
+  }
+
+  qfunction1.getGradient_AvgOf_Q_wrt_action(DATA.minibatch, Gradtest);
 //    Eigen::Matrix<Dtype,-1,-1> sss1 = Gradtest.batch(0);
 //    Eigen::Matrix<Dtype,-1,-1> sss2 = GradtestNum.batch(0);
 
-    cout << "jaco from TF is       " << endl << Gradtest << endl;
-    cout << "jaco from numerical is" << endl << GradtestNum << endl;
+  cout << "jaco from TF is       " << endl << Gradtest << endl;
+  cout << "jaco from numerical is" << endl << GradtestNum << endl;
 //    cout << (sss1 - sss2).norm()/sss1.norm()*100 << ", "<< perturb << endl;
 
 //  }
