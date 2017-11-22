@@ -130,7 +130,7 @@ class PPO {
     updatePolicyVar();
   };
 
-  ~PPO() {};
+  ~PPO() {delete Dataset_.minibatch;};
 
   void runOneLoop(int numOfSteps) {
     iterNumber_++;

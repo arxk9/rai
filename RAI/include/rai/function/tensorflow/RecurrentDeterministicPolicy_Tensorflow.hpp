@@ -110,8 +110,8 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
 //    this->tf_->run({{"state", states}}, {},
 //                   {"action"}, dummy);
 //    return loss[0](0);
-return 0;
-}
+    return 0;
+  }
 
   virtual Dtype performOneSolverIter(history *minibatch, Tensor3D &actions) {
     std::vector<MatrixXD> vectorOfOutputs;
@@ -128,7 +128,7 @@ return 0;
     return vectorOfOutputs[0](0);
   };
 
-  Dtype backwardUsingCritic(Qfunction_ *qFunction, history *minibatch) {
+  Dtype backwardUsingCritic(Qfunction_tensorflow &qFunction, history *minibatch) {
     Tensor3D actions;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
@@ -145,7 +145,7 @@ return 0;
                    {"trainUsingCritic/applyGradients"}, dummy);
     return averageQ;
   }
-  Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states){ };
+  Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states) {};
 
   Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco) {
 //    ActionBatch actions;

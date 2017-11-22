@@ -34,6 +34,8 @@
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 #include <rai/algorithm/common/LearningData.hpp>
+#include <rai/function/tensorflow/RecurrentQfunction_TensorFlow.hpp>
+#include <rai/function/tensorflow/RecurrentDeterministicPolicy_Tensorflow.hpp>
 
 // common
 #include "raiCommon/enumeration.hpp"
@@ -56,220 +58,182 @@ class RDPG {
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
-  typedef rai::Algorithm::history<Dtype, StateDim, ActionDim>  TensorBatch_;
+  typedef rai::Algorithm::history<Dtype, StateDim, ActionDim> TensorBatch_;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::Noise<Dtype, ActionDim>;
 
-  using Qfunction_ = FuncApprox::Qfunction<Dtype, StateDim, ActionDim>;
-  using Policy_ = FuncApprox::StochasticPolicy<Dtype, StateDim, ActionDim>;
-  using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
+  using Qfunction_ = FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
+  using Policy_ = FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
-  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
   using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
   using ReplayMemory_ = rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim>;
 
-  RDPG(std::vector<Task_ *> &tasks,
-      Qfunction_ *qfunction,
-      Qfunction_ *qfunction_target,
-      Policy_ *policy,
-      Policy_ *policy_target,
-      std::vector<Noise_ *> &noises,
-      Acquisitor_ *acquisitor,
+  RDPG(std::vector<Task_ *> &task,
+       Qfunction_ *qfunction,
+       Qfunction_ *qfunction_target,
+       Policy_ *policy,
+       Policy_ *policy_target,
+       std::vector<Noise_ *> &noise,
+       Acquisitor_ *acquisitor,
        ReplayMemory_ *memory,
        unsigned batchSize,
-      unsigned testingTrajN,
-      int n_epoch = 30,
-      int minibatchSize = 0,
-       Dtype tau = 1e-3 :
-      task_(tasks),
-      vfunction_(vfunction),
+       unsigned testingTrajN,
+       int n_epoch = 30,
+       int minibatchSize = 0,
+       Dtype tau = 1e-3):
+      qfunction_(qfunction),
+      qfunction_target_(qfunction_target),
       policy_(policy),
-      noise_(noises),
+      policy_target_(policy_target),
+      noise_(noise),
       acquisitor_(acquisitor),
-      lambda_(lambda),
-      numOfBranchPerJunct_(numOfBranchPerJunction),
-      numOfJunct_(numofJunctions),
+      memory(memory),
+      batSize_(batchSize),
+      tau_(tau),
       testingTrajN_(testingTrajN),
-      KL_adapt_(KL_adapt),
-      n_epoch_(n_epoch),
-      minibatchSize_(minibatchSize),
-      cov_in(Cov),
-      KL_thres_(KL_thres),
-      KL_coeff_(KL_coeff),
-      clip_param_(Clip_param),
-      Ent_coeff_(Ent_coeff),
+      task_(task),
       ld_(acquisitor) {
-    ///Construct minibatch
-    ld_.Data.minibatch = new TensorBatch_;
 
-    Utils::logger->addVariableToLog(2, "klD", "");
-    Utils::logger->addVariableToLog(2, "Stdev", "");
-    Utils::logger->addVariableToLog(2, "klcoef", "");
+    ///Construct minibatch
+    Dataset_.minibatch = new TensorBatch_;
 
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
-    policy_->setPPOparams(KL_coeff_, Ent_coeff, Clip_param);
 
-    termCost = task_[0]->termValue();
-    discFactor = task_[0]->discountFtr();
-    dt = task_[0]->dt();
     timeLimit = task_[0]->timeLimit();
+
     for (int i = 0; i < task_.size(); i++)
       noiseBasePtr_.push_back(noise_[i]);
 
-    ///update input stdev
-    stdev_o.setOnes();
-    stdev_o *= std::sqrt(cov_in);
-    policy_->setStdev(stdev_o);
-    updatePolicyVar();
+    policy_->copyAPFrom(policy_target_);
+    qfunction_->copyAPFrom(qfunction_target_);
   };
 
-  ~RDPG() {};
+  ~RDPG() {delete Dataset_.minibatch; };
 
-  void runOneLoop(int numOfSteps) {
+  void initiallyFillTheMemory() {
+    if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
+    Utils::timer->startTimer("Simulation");
+    ld_.acquireNEpisodes(task_, noiseBasePtr_, policy_, memory->getCapacity());
+    Utils::timer->stopTimer("Simulation");
+    if (vis_lv_ > 1) task_[0]->turnOffVisualization();
+    memory->SaveHistory(Dataset_.states, Dataset_.actions, Dataset_.costs, Dataset_.lengths, Dataset_.termtypes);
+  }
+
+  void learnForNepisodes(int numOfEpisodes) {
     iterNumber_++;
+
+    //////////////// testing (not part of the algorithm) ////////////////////
+    Utils::timer->disable();
     tester_.testPerformance(task_,
-                            noiseBasePtr_,
+                            noise_,
                             policy_,
                             task_[0]->timeLimit(),
                             testingTrajN_,
-                            ld_.stepsTaken(),
+                            acquisitor_->stepsTaken(),
                             vis_lv_,
                             std::to_string(iterNumber_));
-    LOG(INFO) << "Simulation";
-    ld_.acquireVineTrajForNTimeSteps(task_,
-                                     noiseBasePtr_,
-                                     policy_,
-                                     numOfSteps,
-                                     numOfJunct_,
-                                     numOfBranchPerJunct_,
-                                     vfunction_,
-                                     vis_lv_);
 
-    LOG(INFO) << "PPO Updater";
-    PPOUpdater();
+    /// reset all for learning
+    for (auto &task : task_)
+      task->setToInitialState();
+    for (auto &noise : noise_)
+      noise->initializeNoise();
+
+    Utils::timer->enable();
+    /////////////////////////////////////////////////////////////////////////
+    for (unsigned i = 0; i < numOfEpisodes; i++)
+      learnForOneEpisode();
   }
 
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
 
  private:
 
-  void PPOUpdater() {
-
-    Utils::timer->startTimer("policy Training");
-    Utils::timer->startTimer("GAE");
-
-    /// Update Advantage
-    ValueBatch valuePred(ld_.dataN);
-    Dtype loss;
-    LOG(INFO) << "Optimizing policy";
-    ld_.computeAdvantage(task_[0], vfunction_, lambda_);
-    Utils::timer->stopTimer("GAE");
-
-    /// Update Policy & Value
-    Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
-    Dtype KL = 0, KLsum = 0;
-    int cnt = 0;
-    vfunction_->forward(ld_.stateBat, valuePred);
-
-    for (int i = 0; i < n_epoch_; i++) {
-      while (ld_.Data.iterateBatch(minibatchSize_)) {
-
-//        policy_->test(ld_.cur_minibatch, stdev_o);
-
-        Utils::timer->startTimer("Vfunction update");
-        loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
-        Utils::timer->stopTimer("Vfunction update");
-
-        policy_->getStdev(stdev_o);
-        LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
-        Utils::timer->startTimer("Gradient computation");
-
-        if (KL_adapt_) policy_->PPOpg_kladapt(ld_.Data.minibatch, stdev_o, policy_grad);
-        else policy_->PPOpg(ld_.Data.minibatch, stdev_o, policy_grad);
-
-        Utils::timer->stopTimer("Gradient computation");
-        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
-
-        Utils::timer->startTimer("Adam update");
-        policy_->trainUsingGrad(policy_grad);
-        Utils::timer->stopTimer("Adam update");
-
-        KL = policy_->PPOgetkl(ld_.Data.minibatch, stdev_o);
-        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
-
-        KLsum += KL;
-        cnt++;
-      }
+  void sampleBatchOfInitial(StateBatch &initial) {
+    for (int trajID = 0; trajID < initial.cols(); trajID++) {
+      State state;
+      task_[0]->setToInitialState();
+      task_[0]->getState(state);
+      initial.col(trajID) = state;
     }
-    KL = KLsum / cnt;
-
-    if (KL_adapt_) {
-      if (KL > KL_thres_ * 1.5)
-        KL_coeff_ *= 2;
-      if (KL < KL_thres_ / 1.5)
-        KL_coeff_ *= 0.5;
-
-      policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
-    }
-
-    updatePolicyVar();/// save stdev & Update Noise Covariance
-    Utils::timer->stopTimer("policy Training");
-
-///Logging
-    LOG(INFO) << "Mean KL divergence per epoch = " << KL;
-    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
-
-    Utils::logger->appendData("Stdev", ld_.stepsTaken(), policy_grad.norm());
-    Utils::logger->appendData("klcoef", ld_.stepsTaken(), KL_coeff_);
-    Utils::logger->appendData("klD", ld_.stepsTaken(), KLsum / n_epoch_);
   }
 
-  void updatePolicyVar() {
-    Action temp;
-    policy_->getStdev(stdev_o);
-    temp = stdev_o;
-    temp = temp.array().square(); //var
-    policycov = temp.asDiagonal();
-    for (auto &noise : noise_)
-      noise->updateCovariance(policycov);
+  void learnForOneEpisode() {
+    Utils::timer->startTimer("Simulation");
+    if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
+    ld_.acquireNEpisodes(task_, noiseBasePtr_, policy_, 1);
+    if (vis_lv_ > 1) task_[0]->turnOffVisualization();
+    Utils::timer->stopTimer("Simulation");
+    memory->SaveHistory(Dataset_.states, Dataset_.actions, Dataset_.costs, Dataset_.lengths, Dataset_.termtypes);
+    Utils::timer->startTimer("Qfunction and Policy update");
+    updateQfunctionAndPolicy();
+    Utils::timer->stopTimer("Qfunction and Policy update");
+  }
+
+  void updateQfunctionAndPolicy() {
+    Dtype termValue = task_[0]->termValue();
+    Dtype disFtr = task_[0]->discountFtr();
+
+    Tensor<Dtype, 3> value_;
+    Tensor<Dtype, 3> value_t("targetQValue");
+
+    memory->sampleRandomHistory(Dataset_, batSize_);
+    value_.resize(1, Dataset_.maxLen, Dataset_.batchNum);
+    value_t.resize(1, Dataset_.maxLen, Dataset_.batchNum);
+
+    Utils::timer->startTimer("Qfunction update");
+    policy_target_->forward(Dataset_.states, Dataset_.actions);
+    qfunction_target_->forward(Dataset_.states, Dataset_.actions, value_);
+
+    for (unsigned batchID = 0; batchID < batSize_; batchID++) {
+      if (TerminationType(Dataset_.termtypes[batchID]) == TerminationType::terminalState)
+        value_.eTensor()(1, Dataset_.lengths[batchID], batchID) = termValue;
+    }
+    for (unsigned batchID = 0; batchID < batSize_; batchID++){
+      for(unsigned timeID = 0; timeID<Dataset_.lengths[batchID]; timeID++)
+      value_t.eTensor()(1,timeID,batchID) = Dataset_.costs.eTensor()(1,timeID,batchID)  + disFtr * value_t.eTensor()(1,timeID,batchID) ;
+    }
+//
+//    for (unsigned tupleID = 0; tupleID < batSize_; tupleID++)
+//      value_t(tupleID) = cost_t(tupleID) + disFtr * value_tp1(tupleID);
+
+    qfunction_->performOneSolverIter(&Dataset_, value_t);
+    Utils::timer->stopTimer("Qfunction update");
+
+    Utils::timer->startTimer("Policy update");
+    policy_->backwardUsingCritic(qfunction_, &Dataset_);
+    Utils::timer->stopTimer("Policy update");
+
+    Utils::timer->startTimer("Target update");
+    qfunction_target_->interpolateAPWith(qfunction_, tau_);
+    policy_target_->interpolateAPWith(policy_, tau_);
+    Utils::timer->stopTimer("Target update");
   }
 
   /////////////////////////// Core //////////////////////////////////////////
   std::vector<Task_ *> task_;
   std::vector<Noise_ *> noise_;
   std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
-  ValueFunc_ *vfunction_;
-  Policy_ *policy_;
+  Qfunction_ *qfunction_, *qfunction_target_;
+  Policy_ *policy_, *policy_target_;
   Acquisitor_ *acquisitor_;
-  Dtype lambda_;
+  ReplayMemory_ *memory;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
   LearningData<Dtype, StateDim, ActionDim> ld_;
+  history<Dtype, StateDim, ActionDim> Dataset_;
 
   /////////////////////////// Algorithmic parameter ///////////////////
-  int numOfJunct_;
-  int numOfBranchPerJunct_;
-  int n_epoch_;
-  int minibatchSize_;
-  Dtype cov_in;
-  Dtype termCost;
-  Dtype discFactor;
-  Dtype dt;
-  Dtype clip_param_;
-  Dtype Ent_coeff_;
-  Dtype KL_coeff_;
-  Dtype KL_thres_;
   double timeLimit;
-  bool KL_adapt_;
+  unsigned batSize_;
+  Dtype tau_;
 
   /////////////////////////// batches
   ValueBatch advantage_, bellmanErr_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
-  Action stdev_o;
-  Covariance policycov;
 
   /////////////////////////// plotting
   int iterNumber_ = 0;

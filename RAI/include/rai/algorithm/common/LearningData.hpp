@@ -51,6 +51,42 @@ class LearningData {
   void appendData(rai::Algorithm::TensorBatch<Dtype> *datain) {
     Data = datain;
   }
+  void acquireNEpisodes(std::vector<Task_ *> &task,
+                                    std::vector<Noise_ *> &noise,
+                                    Policy_ *policy,
+                                    int numOfEpisodes,
+                                    ValueFunc_ *vfunction = nullptr,
+                                    int vis_lv = 0) {
+    LOG_IF(FATAL, !Data) << "TensorBatch needed";
+
+    Utils::timer->startTimer("Simulation");
+    double dt = task[0]->dt();
+    double timeLimit = task[0]->timeLimit();
+
+    traj.resize(numOfEpisodes);
+    StateBatch startState(StateDim, numOfEpisodes);
+    sampleBatchOfInitial(startState, task);
+    for (auto &noise : noise)
+      noise->initializeNoise();
+    for (auto &task : task)
+      task->setToInitialState();
+    for (auto &tra : traj)
+      tra.clear();
+    if (vis_lv > 1) task[0]->turnOnVisualization("");
+    long double stepsTaken = trajAcquisitor_->stepsTaken();
+    Dtype cost = trajAcquisitor_->acquire(task,
+                                          policy,
+                                          noise,
+                                          traj,
+                                          startState,
+                                          timeLimit,
+                                          true);
+    if (vis_lv > 1) task[0]->turnOffVisualization();
+
+    int stepsInThisLoop = int(trajAcquisitor_->stepsTaken() - stepsTaken);
+    processTrajs(task[0], policy, vfunction);
+    Utils::timer->stopTimer("Simulation");
+  }
 
   void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
                                     std::vector<Noise_ *> &noise,
@@ -211,17 +247,6 @@ class LearningData {
   StateBatch stateBat, termStateBat;
   ValueBatch valueBat, termValueBat;
   rai::Algorithm::TensorBatch<Dtype> *Data;
-
-//  Tensor<Dtype, 1> trajLength;
-//  Tensor<Dtype, 1> termType;
-//  Tensor<Dtype, 2> advantageTensor;
-//  Tensor<Dtype, 2> costTensor;
-//  Tensor<Dtype, 2> valueTensor;
-
-//  Tensor<Dtype, 3> stateTensor;
-//  Tensor<Dtype, 3> hiddenStateTensor;
-//  Tensor<Dtype, 3> actionTensor;
-//  Tensor<Dtype, 3> actionNoiseTensor;
 
  private:
   void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
