@@ -24,6 +24,8 @@ using rai::Utils::timer;
 
 inline int RAI_init() {
   RAI_LOG_PATH = std::string("/logsNplots/" + timer->getCurrentDataAndTime());
+  LOG_IF(FATAL, std::string(std::getenv("RAI_ROOT")).empty())
+  << "Environment variable RAI_ROOT is not defined. Make sure it is written in ~/.bashrc file. If you are using clion, add it manually in the execution";
   RAI_LOG_PATH = std::string(std::getenv("RAI_ROOT")) + RAI_LOG_PATH;
   RAI_ROOT_PATH = std::string(std::getenv("RAI_ROOT"));
   mkdir(RAI_LOG_PATH.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);

@@ -99,7 +99,9 @@ class TRPO_gae {
       cg_damping(0.1),
       klD_threshold(0.01),
       cov_in(Cov),
-      ld_(acquisitor){
+      ld_(acquisitor),
+      Dataset_(){
+    ld_.appendData(&Dataset_);
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
     termCost = task_[0]->termValue();
@@ -183,12 +185,12 @@ class TRPO_gae {
 
     LOG(INFO) << "stdev :" << stdev_o.transpose();
     Utils::timer->startTimer("Gradient computation");
-    policy_->TRPOpg(ld_.Data, stdev_o, policy_grad);
+    policy_->TRPOpg(Dataset_, stdev_o, policy_grad);
     Utils::timer->stopTimer("Gradient computation");
     LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 
     Utils::timer->startTimer("Conjugate gradient");
-    Dtype CGerror = policy_->TRPOcg(ld_.Data,
+    Dtype CGerror = policy_->TRPOcg(Dataset_,
                                     stdev_o,
                                     policy_grad,
                                     Nat_grad); // TODO : test
@@ -250,7 +252,7 @@ class TRPO_gae {
 
   inline Dtype costOfParam(VectorXD &param) {
     policy_->setLP(param);
-    return policy_->TRPOloss(ld_.Data, stdev_o);
+    return policy_->TRPOloss(Dataset_, stdev_o);
   }
 
   /////////////////////////// Core //////////////////////////////////////////
@@ -265,6 +267,7 @@ class TRPO_gae {
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
   LearningData<Dtype, StateDim, ActionDim> ld_;
+  historyWithAdvantage<Dtype, StateDim, ActionDim> Dataset_;
 
   /////////////////////////// Algorithmic parameter ///////////////////
   int stepsTaken;

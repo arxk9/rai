@@ -168,14 +168,12 @@ mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release ../ && make -j && s
 
 # RAI_Common
 cd $(dirname "$RAI_ROOT")
-#git clone git@bitbucket.org:jhwangbo/raicommon.git
 git clone https://bitbucket.org/jhwangbo/raicommon.git
 cd raicommon
 cmake CMakeLists.txt && sudo make install -j
 
 # RAI_Graphics
 cd $(dirname "$RAI_ROOT")
-#git clone git@bitbucket.org:jhwangbo/raigraphics_opengl.git/
 git clone https://bitbucket.org/jhwangbo/raigraphics_opengl.git
 cd raigraphics_opengl
 sudo ./install.sh

@@ -16,6 +16,8 @@
 
 namespace rai {
 
+namespace FuncApprox {
+
 template<int StateDim, int ActionDim>
 class MLP_fullyconnected {
 
@@ -43,7 +45,7 @@ class MLP_fullyconnected {
     std::stringstream parameterFileName;
     std::ifstream indata;
     indata.open(fileName);
-    LOG_IF(FATAL, !indata) << "MLP file does not exists!"<<std::endl;
+    LOG_IF(FATAL, !indata) << "MLP file does not exists!" << std::endl;
     std::string line;
     getline(indata, line);
     std::stringstream lineStream(line);
@@ -88,7 +90,7 @@ class MLP_fullyconnected {
     noise_.updateCovariance(temp.asDiagonal());
   }
 
-  Action forward(State& state) {
+  Action forward(State &state) {
     lo[0] = state;
     for (int cnt = 0; cnt < Ws.size() - 1; cnt++) {
       lo[cnt + 1] = Ws[cnt] * lo[cnt] + bs[cnt];
@@ -126,6 +128,8 @@ class MLP_fullyconnected {
   Noise_ noise_;
 
 };
+
+}
 
 }
 
