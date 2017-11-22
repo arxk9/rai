@@ -1,16 +1,16 @@
 //
-// Created by joonho on 15.05.17.
+// Created by joonho on 11/21/17.
 //
 
-#ifndef RAI_PPO_HPP
-#define RAI_PPO_HPP
+#ifndef RAI_RDPG_HPP
+#define RAI_RDPG_HPP
 
 #include <iostream>
 #include "glog/logging.h"
 
 #include "rai/tasks/common/Task.hpp"
 #include <Eigen/Core>
-#include <rai/noiseModel/NormalDistributionNoise.hpp>
+#include <rai/noiseModel/OrnsteinUhlenbeckNoise.hpp>
 #include <rai/noiseModel/NoNoise.hpp>
 #include <Eigen/Cholesky>
 #include <Eigen/Jacobi>
@@ -19,10 +19,7 @@
 #include <math.h>
 #include "rai/RAI_core"
 #include <vector>
-#include <raiCommon/math/RAI_math.hpp>
 
-// Neural network
-//function approximations
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/ValueFunction.hpp"
 #include "rai/function/common/StochasticPolicy.hpp"
@@ -30,27 +27,23 @@
 
 // memory
 #include "rai/memory/Trajectory.hpp"
+#include "rai/memory/ReplayMemoryHistory.hpp"
 
 // acquisitor
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 #include <rai/algorithm/common/LearningData.hpp>
-#include <rai/algorithm/common/DataStruct.hpp>
 
 // common
 #include "raiCommon/enumeration.hpp"
-#include "raiCommon/math/inverseUsingCholesky.hpp"
-#include "raiCommon/math/ConjugateGradient.hpp"
-#include "math.h"
-#include "rai/RAI_core"
 #include "common/PerformanceTester.hpp"
 
 namespace rai {
 namespace Algorithm {
 
 template<typename Dtype, int StateDim, int ActionDim>
-class PPO {
+class RDPG {
 
  public:
 
@@ -63,29 +56,32 @@ class PPO {
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
-  typedef rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim>  TensorBatch_;
+  typedef rai::Algorithm::history<Dtype, StateDim, ActionDim>  TensorBatch_;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
-  using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
+  using Noise_ = Noise::Noise<Dtype, ActionDim>;
+
+  using Qfunction_ = FuncApprox::Qfunction<Dtype, StateDim, ActionDim>;
   using Policy_ = FuncApprox::StochasticPolicy<Dtype, StateDim, ActionDim>;
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
   using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
+  using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
+  using ReplayMemory_ = rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim>;
 
-  PPO(std::vector<Task_ *> &tasks,
-      ValueFunc_ *vfunction,
+  RDPG(std::vector<Task_ *> &tasks,
+      Qfunction_ *qfunction,
+      Qfunction_ *qfunction_target,
       Policy_ *policy,
+      Policy_ *policy_target,
       std::vector<Noise_ *> &noises,
       Acquisitor_ *acquisitor,
-      Dtype lambda,
-      int numOfBranchPerJunction,
-      int numofJunctions,
+       ReplayMemory_ *memory,
+       unsigned batchSize,
       unsigned testingTrajN,
       int n_epoch = 30,
       int minibatchSize = 0,
-      bool KL_adapt = true,
-      Dtype Cov = 1, Dtype Clip_param = 0.2, Dtype Ent_coeff = 0.01,
-      Dtype KL_thres = 0.01, Dtype KL_coeff = 1) :
+       Dtype tau = 1e-3 :
       task_(tasks),
       vfunction_(vfunction),
       policy_(policy),
@@ -103,10 +99,9 @@ class PPO {
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
       Ent_coeff_(Ent_coeff),
-      ld_(acquisitor), Dataset_() {
+      ld_(acquisitor) {
     ///Construct minibatch
-    ld_.appendData(&Dataset_);
-    Dataset_.minibatch = new TensorBatch_;
+    ld_.Data.minibatch = new TensorBatch_;
 
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
@@ -130,7 +125,7 @@ class PPO {
     updatePolicyVar();
   };
 
-  ~PPO() {};
+  ~RDPG() {};
 
   void runOneLoop(int numOfSteps) {
     iterNumber_++;
@@ -169,7 +164,7 @@ class PPO {
     ValueBatch valuePred(ld_.dataN);
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
-//    ld_.computeAdvantage(task_[0], vfunction_, lambda_);
+    ld_.computeAdvantage(task_[0], vfunction_, lambda_);
     Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
@@ -177,10 +172,9 @@ class PPO {
     Dtype KL = 0, KLsum = 0;
     int cnt = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
-    ld_.computeAdvantage(task_[0],vfunction_,lambda_, true);
 
     for (int i = 0; i < n_epoch_; i++) {
-      while (ld_.Data->iterateBatch(minibatchSize_)) {
+      while (ld_.Data.iterateBatch(minibatchSize_)) {
 
 //        policy_->test(ld_.cur_minibatch, stdev_o);
 
@@ -192,8 +186,8 @@ class PPO {
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
         Utils::timer->startTimer("Gradient computation");
 
-        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.minibatch, stdev_o, policy_grad);
-        else policy_->PPOpg(Dataset_.minibatch, stdev_o, policy_grad);
+        if (KL_adapt_) policy_->PPOpg_kladapt(ld_.Data.minibatch, stdev_o, policy_grad);
+        else policy_->PPOpg(ld_.Data.minibatch, stdev_o, policy_grad);
 
         Utils::timer->stopTimer("Gradient computation");
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
@@ -202,7 +196,7 @@ class PPO {
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("Adam update");
 
-        KL = policy_->PPOgetkl(Dataset_.minibatch, stdev_o);
+        KL = policy_->PPOgetkl(ld_.Data.minibatch, stdev_o);
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
 
         KLsum += KL;
@@ -252,7 +246,7 @@ class PPO {
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
   LearningData<Dtype, StateDim, ActionDim> ld_;
-  historyWithAdvantage<Dtype, StateDim, ActionDim> Dataset_;
+
   /////////////////////////// Algorithmic parameter ///////////////////
   int numOfJunct_;
   int numOfBranchPerJunct_;
@@ -289,4 +283,4 @@ class PPO {
 
 }
 }
-#endif //RAI_PPO_HPP
+#endif //RAI_RDPG_HPP

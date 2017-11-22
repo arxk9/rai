@@ -9,7 +9,7 @@
 #include <Eigen/Core>
 
 #include "ParameterizedFunction.hpp"
-#include <rai/algorithm/common/dataStruct.hpp>
+#include <rai/algorithm/common/DataStruct.hpp>
 
 namespace rai {
 namespace FuncApprox {

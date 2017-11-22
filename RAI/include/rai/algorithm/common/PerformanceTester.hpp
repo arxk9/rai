@@ -13,7 +13,6 @@
 namespace rai {
 
 namespace Algorithm {
-
 template<typename Dtype, int StateDim, int ActionDim>
 class PerformanceTester {
 

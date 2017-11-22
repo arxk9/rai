@@ -8,7 +8,7 @@
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include "rai/function/common/Policy.hpp"
 #include "rai/function/common/Qfunction.hpp"
-#include <rai/algorithm/common/dataStruct.hpp>
+#include <rai/algorithm/common/DataStruct.hpp>
 
 namespace rai {
 namespace FuncApprox {

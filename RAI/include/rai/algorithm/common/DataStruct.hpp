@@ -1,16 +1,20 @@
 //
-// Created by joonho on 11/18/17.
+// Created by joonho on 11/21/17.
 //
 
 #ifndef RAI_DATASTRUCT_HPP
 #define RAI_DATASTRUCT_HPP
 
-#include <rai/RAI_Tensor.hpp>
+
+#include "rai/tasks/common/Task.hpp"
+//#include "rai/function/common/ValueFunction.hpp"
+#include <rai/common/VectorHelper.hpp>
+#include <rai/RAI_core>
+#include <rai/memory/Trajectory.hpp>
 
 namespace rai {
 namespace Algorithm {
 
-///
 template<typename Dtype>
 struct TensorBatch {
   TensorBatch() : tensor1Ds(0), tensor2Ds(0), tensor3Ds(0), maxLen(0), batchNum(0), batchID(0),
@@ -161,6 +165,8 @@ struct historyWithAdvantage : public TensorBatch<Dtype> {
   using TensorBatch_::tensor3Ds;
   using TensorBatch_::tensor2Ds;
   using TensorBatch_::tensor1Ds;
+  using ValueFunc_ = rai::FuncApprox::ValueFunction<Dtype, stateDim>;
+  using Task_ = rai::Task::Task<Dtype, stateDim, actionDim, 0>;
 
   historyWithAdvantage() : TensorBatch_::TensorBatch(2, 3, 3, 0, 0), minibatch(nullptr) {
     tensor3Ds[0] = "state";
@@ -199,7 +205,6 @@ struct historyWithAdvantage : public TensorBatch<Dtype> {
   virtual bool iterateBatch(int batchSize) {
     return TensorBatch_::iterateBatch(minibatch, batchSize);
   };
-
   /// assign data
   Tensor3D &states = tensor3Ds[0];
   Tensor3D &actions = tensor3Ds[1];
@@ -209,7 +214,6 @@ struct historyWithAdvantage : public TensorBatch<Dtype> {
   Tensor2D &advantages = tensor2Ds[2];
   Tensor1D &lengths = tensor1Ds[0];
   Tensor1D &termtypes = tensor1Ds[1];
-
   historyWithAdvantage *minibatch;
 };
 

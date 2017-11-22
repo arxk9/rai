@@ -13,14 +13,13 @@
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/function/common/StochasticPolicy.hpp>
 #include <rai/common/VectorHelper.hpp>
-#include "dataStruct.hpp"
+#include "DataStruct.hpp"
 
 namespace rai {
 namespace Algorithm {
 
 template<typename Dtype, int StateDim, int ActionDim>
 class LearningData {
-
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
@@ -46,9 +45,12 @@ class LearningData {
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), cur_ID(0), Data(){
+  LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), cur_ID(0), Data(nullptr) {
   }
 
+  void appendData(rai::Algorithm::TensorBatch<Dtype> *datain) {
+    Data = datain;
+  }
 
   void acquireVineTrajForNTimeSteps(std::vector<Task_ *> &task,
                                     std::vector<Noise_ *> &noise,
@@ -58,8 +60,9 @@ class LearningData {
                                     int numOfBranchPerJunct,
                                     ValueFunc_ *vfunction = nullptr,
                                     int vis_lv = 0) {
-    Utils::timer->startTimer("Simulation");
+    LOG_IF(FATAL, !Data) << "TensorBatch needed";
 
+    Utils::timer->startTimer("Simulation");
     std::vector<Trajectory_> trajectories;
     double dt = task[0]->dt();
     double timeLimit = task[0]->timeLimit();
@@ -171,26 +174,31 @@ class LearningData {
   void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
     int batchID = 0;
     int dataID = 0;
-    Data.advantages.setZero();
+    bool check = false;
+    for (auto &ten:Data->tensor2Ds)
+      if (ten.getName() == "advantage") {
+        check = true;
+        break;
+      }
+    LOG_IF(FATAL, !check) << "This method is not applicable to this data";
+    Data->tensor2Ds[2].setZero();
 
     for (auto &tra : traj) {
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
-      if (normalize){
+      if (normalize) {
         rai::Math::MathFunc::normalize(advTra);
       }
-      if(Data.advantages.dim(0) == 1){
+      if (Data->tensor2Ds[2].dim(0) == 1) {
         //BatchN = DataN
-        Data.advantages.block(0, dataID, 1, advTra.cols()) = advTra;
+        Data->tensor2Ds[2].block(0, dataID, 1, advTra.cols()) = advTra;
       } else {
         //RNN
-        Data.advantages.block(0, batchID, advTra.cols(),1) = advTra.transpose();
+        Data->tensor2Ds[2].block(0, batchID, advTra.cols(), 1) = advTra.transpose();
       }
-      dataID +=advTra.cols();
+      dataID += advTra.cols();
       batchID++;
     }
   }
-
-
   /////////////////////////// Core
   TrajAcquisitor_ *trajAcquisitor_ = nullptr;
   TupleAcquisitor_ *tupleAcquisitor_ = nullptr;
@@ -202,8 +210,7 @@ class LearningData {
   /////////////////////////// batches
   StateBatch stateBat, termStateBat;
   ValueBatch valueBat, termValueBat;
-
-  rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim> Data;
+  rai::Algorithm::TensorBatch<Dtype> *Data;
 
 //  Tensor<Dtype, 1> trajLength;
 //  Tensor<Dtype, 1> termType;
@@ -248,39 +255,37 @@ class LearningData {
       for (auto &tra : traj)
         if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
 
-      batchN= int(traj.size());
-      Data.resize(maxlen,batchN);
-      Data.setZero();
+      batchN = int(traj.size());
+      Data->resize(maxlen, batchN);
+      Data->setZero();
 
       for (int i = 0; i < batchN; i++) {
-        Data.lengths[i] = traj[i].stateTraj.size() - 1;
-        Data.states.partiallyFillBatch(i, traj[i].stateTraj, 1);
-        Data.actions.partiallyFillBatch(i, traj[i].actionTraj, 1);
-        Data.actionNoises.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
-        for (int timeID = 0; timeID < traj[i].size() - 1; timeID++){
-          Data.costs.eMat()(timeID,i) = traj[i].costTraj[timeID];
+        Data->tensor3Ds[0].partiallyFillBatch(i, traj[i].stateTraj, 1);
+        Data->tensor3Ds[1].partiallyFillBatch(i, traj[i].actionTraj, 1);
+        Data->tensor3Ds[2].partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
+        for (int timeID = 0; timeID < traj[i].size() - 1; timeID++) {
+          Data->tensor2Ds[0].eMat()(timeID, i) = traj[i].costTraj[timeID];
         }
-        Data.termtypes[i] = Dtype(traj[i].termType);
+        Data->tensor1Ds[0][i] = traj[i].stateTraj.size() - 1;
+        Data->tensor1Ds[1][i] = Dtype(traj[i].termType);
       }
-
 
     } else {
       maxlen = 1;
       batchN = dataN;
-
-      Data.resize(1,dataN);
-      Data.setZero();
+      Data->resize(1, batchN);
+      Data->setZero();
 
       int pos = 0;
       for (int traID = 0; traID < traj.size(); traID++) {
         for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-          Data.actions.batch(pos) = traj[traID].actionTraj[timeID];
-          Data.actionNoises.batch(pos++) = traj[traID].actionNoiseTraj[timeID];
+          Data->tensor3Ds[1].batch(pos) = traj[traID].actionTraj[timeID];
+          Data->tensor3Ds[2].batch(pos++) = traj[traID].actionNoiseTraj[timeID];
         }
       }
-      Data.states.copyDataFrom(stateBat);
+      Data->tensor3Ds[0].copyDataFrom(stateBat);
     }
-    Data.advantages.resize(1, dataN);
+
 
     // update terimnal value
     if (vfunction) {
@@ -294,12 +299,12 @@ class LearningData {
       vfunction->forward(termStateBat, termValueBat);
       for (int traID = 0; traID < traj.size(); traID++)
         if (traj[traID].termType == TerminationType::timeout) {
-        traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task->discountFtr());
+          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task->discountFtr());
         }
 
       colID = 0;
       for (int traID = 0; traID < traj.size(); traID++) {
-        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++){
+        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
 //          if(maxlen != 1) advantageTensor.eMat()(colID,traID) = traj[traID].valueTraj[timeID];
           valueBat(colID++) = traj[traID].valueTraj[timeID];
         }
@@ -308,7 +313,6 @@ class LearningData {
     }
   }
 };
-
 }
 }
 

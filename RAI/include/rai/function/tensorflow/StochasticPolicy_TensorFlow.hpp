@@ -7,8 +7,6 @@
 
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include "rai/function/common/StochasticPolicy.hpp"
-#include "rai/function/common/Qfunction.hpp"
-#include "Qfunction_TensorFlow.hpp"
 #include "common/ParameterizedFunction_TensorFlow.hpp"
 namespace rai {
 namespace FuncApprox {

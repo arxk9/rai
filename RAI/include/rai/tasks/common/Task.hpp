@@ -33,8 +33,6 @@
 #include "raiCommon/enumeration.hpp"
 #include "raiCommon/TypeDef.hpp"
 
-#include "rai/function/common/Policy.hpp"
-#include "rai/function/common/Qfunction.hpp"
 
 
 namespace rai {
