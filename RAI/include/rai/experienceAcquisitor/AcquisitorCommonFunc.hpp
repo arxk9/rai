@@ -423,15 +423,13 @@ class CommonFunc {
     ActionTensor actions("action");
 
     Result stat;
-    std::vector<TerminationType> termTypeBatch;
     int stepCount = 0;
     Dtype costInThisEpisode = 0.0;
-    int ThreadN = int(taskset.size()); /////////////recommend it to be little bit larger than the number of CPUs
+    int ThreadN = int(taskset.size());
     LOG_IF(FATAL, ThreadN != noise.size())
     << "# of Noise: " << noise.size() << ", # of Thread: " << ThreadN << " mismatch";
     if (ThreadN >= numOfTraj) ThreadN = numOfTraj;
     int reducedIdx = ThreadN;
-    int idx[ThreadN];
     double episodetime[ThreadN];
     Action action_t[ThreadN], action_noise[ThreadN];
     State state_t[ThreadN], state_t2[ThreadN];
@@ -449,8 +447,8 @@ class CommonFunc {
       episodetime[i] = 0;
 
     for (int i = 0; i < ThreadN; i++) {
-      state_t[i] = startingState.col(trajcnt++);
-      taskset[i].setToParticularState(state_t[i]);
+      state_t[i] = startingState.col(trajcnt);
+      taskset[i]->setToParticularState(state_t[i]);
       trajectoryID[i] = trajcnt++;
       active[i] = true;
     }
@@ -460,29 +458,32 @@ class CommonFunc {
         if (!active[i]) continue;
 
         bool isTimeout = episodetime[i] + taskset[i]->dt() * 0.5 >= timeLimit;
-        bool isTerminal = taskset[i].isTerminalState();
+        bool isTerminal = taskset[i]->isTerminalState();
 
-        while (!isTerminal && !isTimeout) {
 
-          if (isTerminal)
+        while (isTerminal || isTimeout) {
+
+          if (isTerminal) {
             trajectorySet[trajectoryID[i]].terminateTrajectoryAndUpdateValueTraj(
-                TerminationType::terminalState, state_t[i], action_t[i],
-                taskset[0]->termValue(), taskset[i]->discountFtr());
-          else if (isTimeout)
+              TerminationType::terminalState, state_t[i], action_t[i],
+              taskset[0]->termValue(), taskset[i]->discountFtr());
+          } else if (isTimeout) {
             trajectorySet[trajectoryID[i]].terminateTrajectoryAndUpdateValueTraj(
-                TerminationType::timeout, state_t[i], action_t[i],
-                Dtype(0.0), taskset[i]->discountFtr());
+              TerminationType::timeout, state_t[i], action_t[i],
+              Dtype(0.0), taskset[i]->discountFtr());
+          }
 
-          if (trajcnt == numOfTraj - 1) {
+          if (trajcnt == numOfTraj) {
             activeThreads--;
             active[i] = false;
+            break;
           } else {
-            state_t[i] = startingState.col(++trajcnt);
-            taskset[i].setToParticularState(state_t[i]);
-            trajectoryID[i] = trajcnt;
+            state_t[i] = startingState.col(trajcnt);
+            taskset[i]->setToParticularState(state_t[i]);
+            trajectoryID[i] = trajcnt++;
             episodetime[i] = 0;
             isTimeout = false;
-            isTerminal = taskset[i].isTerminalState();
+            isTerminal = taskset[i]->isTerminalState();
           }
         }
       }
@@ -500,11 +501,12 @@ class CommonFunc {
       policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
+      colId = 0;
       for (int taskID = 0; taskID < ThreadN; taskID++) {
         if (!active[taskID]) continue;
         cost[taskID] = 0;
         action_noise[taskID] = noise[taskID]->sampleNoise();
-        action_t[taskID] = actions.batch(taskID) + action_noise[taskID];
+        action_t[taskID] = actions.batch(colId++) + action_noise[taskID];
       }
 
       timer->startTimer("dynamics");
@@ -528,13 +530,21 @@ class CommonFunc {
                                                                cost[taskID]);
         stepCount++;
 
-        episodetime[taskID] += taskset[taskID]->dt;
+        episodetime[taskID] += taskset[taskID]->dt();
         state_t[taskID] = state_t2[taskID];
       }
 
       timer->stopTimer("dynamics");
+
+      for (int taskID = 0; taskID < reducedIdx; taskID++) {
+        costInThisEpisode += cost[taskID];
+        cost[taskID] = 0;
+      }
     }
 
+    if (stepCount == 0) stat[0] = 0;
+    else stat[0] = costInThisEpisode / (stepCount * taskset[0]->dt());
+    stat[1] = stepCount;
     return stat;
   }
 
