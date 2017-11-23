@@ -78,8 +78,8 @@ int main() {
   Acquisitor_ acquisitor;
   rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
 
-  RnnPolicy policy("gpu,0", "GRUMLP", "tanh 1e-3 1 32 / 32 1", 0.001);
-  RnnPolicy policy2("gpu,0", "LSTMMLP", "tanh 1e-3 1 32 / 32 1", 0.001);
+  RnnPolicy policy("gpu,0", "GRUMLP", "tanh 1e-3 3 32 / 32 3", 0.001);
+  RnnPolicy policy2("gpu,0", "LSTMMLP", "tanh 1e-3 3 32 20 / 32 3", 0.001);
 
   ///test Memory
   {
@@ -150,6 +150,14 @@ int main() {
 //  qfunction1.forward(DATA.states ,DATA.actions, valueBatch);
 
 
+  ///Test Pol
+
+  policy.forward(DATA.states, DATA.actions);
+  policy2.forward(DATA.states, DATA.actions);
+
+  LOG(INFO) << "f";
+
+  ///Test Vfunc
   Dtype loss = 0;
   for (int iteration = 0; iteration < nIterations; ++iteration) {
 
