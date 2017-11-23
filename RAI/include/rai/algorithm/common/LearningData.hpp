@@ -48,7 +48,7 @@ class LearningData {
   LearningData(TrajAcquisitor_ *acq) : trajAcquisitor_(acq), cur_ID(0), Data(nullptr) {
   }
 
-  void appendData(rai::Algorithm::TensorBatch<Dtype> *datain) {
+  void setData(rai::Algorithm::TensorBatch<Dtype> *datain) {
     Data = datain;
   }
   void acquireNEpisodes(std::vector<Task_ *> &task,

@@ -40,6 +40,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename Qfunction_::history history;
+  typedef typename Pfunction_tensorflow ::InnerState InnerState;
 
   RecurrentDeterministicPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -51,6 +52,8 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
                                           Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
           "RecurrentDeterministicPolicy", computeMode, graphName, graphParam, learningRate), h("h_init") {
+    hdim = this->getInnerStatesize();
+    h.resize(hdim, 0);
   }
 
   virtual void forward(State &state, Action &action) {
@@ -96,6 +99,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
       h.resize(hdim, states.batches());
       h.setZero();
     }
+
     this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
     h.copyDataFrom(vectorOfOutputs[1]);
     actions.copyDataFrom(vectorOfOutputs[0]);
@@ -128,54 +132,67 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     return vectorOfOutputs[0](0);
   };
 
-  Dtype backwardUsingCritic(Qfunction_tensorflow &qFunction, history *minibatch) {
-    Tensor3D actions;
+  Dtype backwardUsingCritic(Qfunction_tensorflow *qFunction, history *minibatch) {
+    std::vector<MatrixXD> dummy;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingCritic/learningRate");
 
-    forward(minibatch->states, actions);
     auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
+    gradients.resize(minibatch->actions.dim());
+    if (h.cols() != minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
+    h.setZero();
 
+    forward(minibatch->states, minibatch->actions);
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(minibatch, gradients);
+//    std::cout << "grad" << std::endl << gradients<< std::endl;
 
-    std::vector<MatrixXD> dummy;
-
-    this->tf_->run({minibatch->states, gradients, lr}, {},
+    this->tf_->run({minibatch->states, minibatch->lengths, h, gradients, lr}, {},
                    {"trainUsingCritic/applyGradients"}, dummy);
     return averageQ;
   }
   Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states) {};
 
   Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco) {
-//    ActionBatch actions;
-//    forward(states, actions);
-//    auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
-//    LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
-//    typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
-//    Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-//    std::vector<MatrixXD> output;
-//    std::vector<MatrixXD> dummy;
-//    this->tf_->run({{"state", states},
-//                    {"gradQwrtParamMethod/gradientFromCritic", gradients}},
-//                   {"gradQwrtParamMethod/gradientQwrtParam"},
-//                   {"gradQwrtParamMethod/gradientQwrtParam"}, output);
-//    jaco = output[0];
-//    return averageQ;
     return 0;
   }
 
   void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
-//    std::vector<MatrixXD> temp;
-//    this->tf_->run({{"state", state}}, {"jac_Action_wrt_Param"}, {}, temp);
-//    jacobian = temp[0];
   }
 
   virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
-//    std::vector<MatrixXD> temp;
-//    this->tf_->run({{"state", state}}, {"jac_Action_wrt_State"}, {}, temp);
-//    jacobian = temp[0];
   }
+  virtual bool isRecurrent() {
+    return true;
+  }
+
+  virtual void reset(int n) {
+    //n:index
+    if (n >= h.cols())
+      h.conservativeResize(hdim, n + 1);
+
+    h.col(n).setZero();
+  }
+
+  virtual void terminate(int n) {
+    int coldim = h.cols() - 1;
+    LOG_IF(FATAL, coldim < 0) << "Initialize Innerstates first (Call reset)";
+    LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
+    h.removeCol(n);
+  }
+
+  virtual int getInnerStatesize() {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
+    return vectorOfOutputs[0].scalar<int>()();
+  }
+
+  virtual void getInnerStates(InnerState &h_out){
+    h_out = h;
+  }
+
+  int hiddenStateDim() { return hdim; }
+
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
   int hdim = 0;

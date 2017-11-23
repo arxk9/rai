@@ -104,8 +104,9 @@ class PPO {
       clip_param_(Clip_param),
       Ent_coeff_(Ent_coeff),
       ld_(acquisitor), Dataset_() {
-    ///Construct minibatch
-    ld_.appendData(&Dataset_);
+
+    ///Construct Dataset
+    ld_.setData(&Dataset_);
     Dataset_.minibatch = new TensorBatch_;
 
     Utils::logger->addVariableToLog(2, "klD", "");

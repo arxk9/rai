@@ -95,7 +95,8 @@ class RDPG {
       task_(task),
       ld_(acquisitor) {
 
-    ///Construct minibatch
+    ///Construct Dataset
+    ld_.setData(&Dataset_);
     Dataset_.minibatch = new TensorBatch_;
 
     timeLimit = task_[0]->timeLimit();
@@ -110,12 +111,14 @@ class RDPG {
   ~RDPG() {delete Dataset_.minibatch; };
 
   void initiallyFillTheMemory() {
+    LOG(INFO) << "FillingMemory" ;
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
-    Utils::timer->startTimer("Simulation");
     ld_.acquireNEpisodes(task_, noiseBasePtr_, policy_, memory->getCapacity());
-    Utils::timer->stopTimer("Simulation");
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
+    timer->startTimer("SavingHistory");
     memory->SaveHistory(Dataset_.states, Dataset_.actions, Dataset_.costs, Dataset_.lengths, Dataset_.termtypes);
+    timer->stopTimer("SavingHistory");
+    LOG(INFO) << "Done" ;
   }
 
   void learnForNepisodes(int numOfEpisodes) {
@@ -158,12 +161,14 @@ class RDPG {
   }
 
   void learnForOneEpisode() {
-    Utils::timer->startTimer("Simulation");
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
     ld_.acquireNEpisodes(task_, noiseBasePtr_, policy_, 1);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
-    Utils::timer->stopTimer("Simulation");
+
+    timer->startTimer("SavingHistory");
     memory->SaveHistory(Dataset_.states, Dataset_.actions, Dataset_.costs, Dataset_.lengths, Dataset_.termtypes);
+    timer->stopTimer("SavingHistory");
+
     Utils::timer->startTimer("Qfunction and Policy update");
     updateQfunctionAndPolicy();
     Utils::timer->stopTimer("Qfunction and Policy update");
@@ -175,8 +180,10 @@ class RDPG {
 
     Tensor<Dtype, 3> value_;
     Tensor<Dtype, 3> value_t("targetQValue");
-
+    timer->startTimer("SamplingHistory");
     memory->sampleRandomHistory(Dataset_, batSize_);
+    timer->stopTimer("SamplingHistory");
+
     value_.resize(1, Dataset_.maxLen, Dataset_.batchNum);
     value_t.resize(1, Dataset_.maxLen, Dataset_.batchNum);
 
@@ -190,8 +197,10 @@ class RDPG {
     }
     for (unsigned batchID = 0; batchID < batSize_; batchID++){
       for(unsigned timeID = 0; timeID<Dataset_.lengths[batchID]; timeID++)
-      value_t.eTensor()(1,timeID,batchID) = Dataset_.costs.eTensor()(1,timeID,batchID)  + disFtr * value_t.eTensor()(1,timeID,batchID) ;
+      value_t.eTensor()(1,timeID,batchID) = Dataset_.costs.eTensor()(timeID,batchID)  + disFtr * value_.eTensor()(1,timeID,batchID) ;
     }
+
+//    std::cout << "TD" << std::endl << value_t << std::endl;
 
     qfunction_->performOneSolverIter(&Dataset_, value_t);
     Utils::timer->stopTimer("Qfunction update");
