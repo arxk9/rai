@@ -79,8 +79,6 @@ class RDPG {
        ReplayMemory_ *memory,
        unsigned batchSize,
        unsigned testingTrajN,
-       int n_epoch = 30,
-       int minibatchSize = 0,
        Dtype tau = 1e-3):
       qfunction_(qfunction),
       qfunction_target_(qfunction_target),
@@ -197,9 +195,10 @@ class RDPG {
     }
     for (unsigned batchID = 0; batchID < batSize_; batchID++){
       for(unsigned timeID = 0; timeID<Dataset_.lengths[batchID]; timeID++)
-      value_t.eTensor()(1,timeID,batchID) = Dataset_.costs.eTensor()(timeID,batchID)  + disFtr * value_.eTensor()(1,timeID,batchID) ;
+      value_t.eTensor()(0,timeID,batchID) = Dataset_.costs.eTensor()(timeID,batchID)  + disFtr * value_.eTensor()(0,timeID,batchID) ;
     }
-
+//    std::cout << "val" << std::endl << value_ << std::endl;
+//    std::cout << "costs" << std::endl << Dataset_.costs << std::endl;
 //    std::cout << "TD" << std::endl << value_t << std::endl;
 
     qfunction_->performOneSolverIter(&Dataset_, value_t);

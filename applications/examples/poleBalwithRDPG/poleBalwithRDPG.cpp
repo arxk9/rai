@@ -64,7 +64,7 @@ using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, St
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
 Dtype learningRateQfunction = 1e-3;
 Dtype learningRatePolicy = 1e-3;
-#define nThread 2
+#define nThread 4
 
 int main(int argc, char *argv[]) {
 
@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
-    task.setRealTimeFactor(1.5);
-    task.setTimeLimitPerEpisode(25.0);
+    task.setRealTimeFactor(5);
+    task.setTimeLimitPerEpisode(10.0);
     taskVector.push_back(&task);
   }
 
@@ -90,14 +90,14 @@ int main(int argc, char *argv[]) {
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
   ////////////////////////// Define Memory ////////////////////////////
-  ReplayMemory Memory(50);
+  ReplayMemory Memory(100);
 
   ////////////////////////// Define Function approximations //////////
-  Policy_TensorFlow policy("gpu,0", "GRUMLP", "relu 1e-3 3 5 / 32 32 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "GRUMLP", "relu 1e-3 3 5 / 32 32 1", learningRatePolicy);
+  Policy_TensorFlow policy("gpu,0", "GRUMLP", "relu 1e-3 3 32 / 32 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "GRUMLP", "relu 1e-3 3 32 / 32 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "GRUMLP2", "relu 1e-3 3 1 5 / 32 32 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "GRUMLP2", "relu 1e-3 3 1 5 / 32 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "GRUMLP2", "relu 1e-3 3 1 32 / 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "GRUMLP2", "relu 1e-3 3 1 32 / 32 1", learningRateQfunction);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
                 noiseVector,
                 &acquisitor,
                 &Memory,
-                3,
+                20,
                 1);
   algorithm.setVisualizationLevel(0);
   algorithm.initiallyFillTheMemory();
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    algorithm.learnForNepisodes(10);
+    algorithm.learnForNepisodes(5);
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
