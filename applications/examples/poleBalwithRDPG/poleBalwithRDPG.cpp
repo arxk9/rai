@@ -21,7 +21,8 @@
 #include <Eigen/Dense>
 
 // task
-#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/OrnsteinUhlenbeckNoise.hpp"
@@ -47,7 +48,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-using Task = rai::Task::PoleBalancing<Dtype>;
+//using Task = rai::Task::PoleBalancing<Dtype>;
+using Task = rai::Task::PO_PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -77,9 +79,9 @@ int main(int argc, char *argv[]) {
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
-    task.setDiscountFactor(0.995);
+    task.setDiscountFactor(0.99);
     task.setRealTimeFactor(5);
-    task.setTimeLimitPerEpisode(10.0);
+    task.setTimeLimitPerEpisode(5.0);
     taskVector.push_back(&task);
   }
 
@@ -90,14 +92,14 @@ int main(int argc, char *argv[]) {
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
   ////////////////////////// Define Memory ////////////////////////////
-  ReplayMemory Memory(100);
+  ReplayMemory Memory(1000);
 
   ////////////////////////// Define Function approximations //////////
-  Policy_TensorFlow policy("gpu,0", "GRUMLP", "relu 1e-3 3 32 / 32 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "GRUMLP", "relu 1e-3 3 32 / 32 1", learningRatePolicy);
+  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 1 32 / 32 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 1 32 / 32 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "GRUMLP2", "relu 1e-3 3 1 32 / 32 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "GRUMLP2", "relu 1e-3 3 1 32 / 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 32 / 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 1 1 32 / 32 1", learningRateQfunction);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
@@ -112,7 +114,7 @@ int main(int argc, char *argv[]) {
                 noiseVector,
                 &acquisitor,
                 &Memory,
-                20,
+                100,
                 1);
   algorithm.setVisualizationLevel(0);
   algorithm.initiallyFillTheMemory();
@@ -156,7 +158,7 @@ int main(int argc, char *argv[]) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    algorithm.learnForNepisodes(5);
+    algorithm.learnForNepisodes(10);
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();

@@ -72,13 +72,17 @@ typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> JacobianQwrtActionBatch;
 
 int main() {
   RAI_init();
-  bool teststdev = false;
-  bool testgradient = false;
   const int sampleN = 5;
 //  int Batsize = 100;
 //  int len = 100;
   Acquisitor_ acquisitor;
   rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
+
+  RnnPolicy policy("gpu,0", "GRUMLP", "tanh 1e-3 1 32 / 32 1", 0.001);
+  RnnPolicy policy2("gpu,0", "LSTMMLP", "tanh 1e-3 1 32 / 32 1", 0.001);
+
+  ///test Memory
+  {
 //  Task_ task;
 //  task.setTimeLimitPerEpisode(0.2);
 //
@@ -106,16 +110,11 @@ int main() {
 //  TensorBatch test_bat(3, 4);
 //  TensorBatch test_minibat;
 //  TensorBatchBase *test_base;
-
+  }
 //  /// Test RQFUNC
 //  {
-  cout << "Test: Policy::copyStructureFrom" << endl;
-//
-//
 
-
-
-  RnnQfunc qfunction1("cpu", "GRUMLP2", "tanh 3 3 5 / 10 1", 0.001);
+  RnnQfunc qfunction1("cpu", "GRUMLP2", "tanh 1e-3 3 3 5 / 10 1", 0.001);
 
   int nIterations = 500;
   int maxlen = 10;
@@ -219,7 +218,7 @@ int main() {
   cout << "jaco from TF is       " << endl << Gradtest << endl;
   cout << "jaco from numerical is" << endl << GradtestNum << endl;
 
-  RnnDPolicy DPolicy("cpu", "GRUMLP", "tanh 3 5 / 10 3", 0.001);
+  RnnDPolicy DPolicy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 10 3", 0.001);
 
 
 //  }

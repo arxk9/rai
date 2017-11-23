@@ -4,11 +4,10 @@ import tensorflow.contrib.rnn as rnn
 from tensorflow.contrib.layers import fully_connected
 
 
-# multiple gated recurrent unit layers (https://arxiv.org/pdf/1406.1078v3.pdf)
-# Implementation of GRU + MLP layers
-class GRUMLP(bc.GraphStructure):
+# Implementation of LSTM + MLP layers
+class LSTMMLP(bc.GraphStructure):
     def __init__(self, dtype, *param, fn):
-        super(GRUMLP, self).__init__(dtype)
+        super(LSTMMLP, self).__init__(dtype)
         nonlin_str = param[0]
         nonlin = getattr(tf.nn, nonlin_str)
         weight = float(param[1])
@@ -33,8 +32,9 @@ class GRUMLP(bc.GraphStructure):
         recurrent_state_size = 0
 
         for size in rnnDim[1:]:
-            cell = rnn.GRUCell(size, activation=nonlin, kernel_initializer=tf.contrib.layers.xavier_initializer())
+            cell = rnn.LSTMCell(size, activation=nonlin)
             cells.append(cell)
+            print(cell.state_size)
             recurrent_state_size += cell.state_size
             state_size.append(cell.state_size)
 
@@ -44,10 +44,10 @@ class GRUMLP(bc.GraphStructure):
         init_state = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
         init_state_tuple = tuple(tf.split(init_state, num_or_size_splits=state_size, axis=1))
 
-        # Full-length output for training
-        gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.input, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
+        # LSTM output
+        LSTMOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
         # FCN
-        top = tf.reshape(gruOutput,shape=[-1, rnnDim[-1]], name='fcIn')
+        top = tf.reshape(LSTMOutput,shape=[-1, rnnDim[-1]], name='fcIn')
 
         layer_n = 0
         for dim in mlpDim[:-1]:

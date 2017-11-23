@@ -19,11 +19,11 @@ class GRUMLP2(bc.GraphStructure):
             if val == '/':
                 check = i
 
-        gruDim = [int(i) for i in param[2:check+2]]
+        rnnDim = [int(i) for i in param[2:check+2]]
         mlpDim = [int(i) for i in param[check+3:]]
 
-        self.input1 = tf.placeholder(dtype, shape=[None, None, gruDim[0]], name=fn.input_names[0])  # [batch, time, statedim]
-        self.input2 = tf.placeholder(dtype, shape=[None, None, gruDim[1]], name=fn.input_names[1])  # [batch, time, actiondim]
+        self.input1 = tf.placeholder(dtype, shape=[None, None, rnnDim[0]], name=fn.input_names[0])  # [batch, time, statedim]
+        self.input2 = tf.placeholder(dtype, shape=[None, None, rnnDim[1]], name=fn.input_names[1])  # [batch, time, actiondim]
 
         inputconcat = tf.concat([self.input1, self.input2], axis= 2)
 
@@ -36,7 +36,7 @@ class GRUMLP2(bc.GraphStructure):
         state_size = []
         recurrent_state_size = 0
 
-        for size in gruDim[2:]:
+        for size in rnnDim[2:]:
             cell = rnn.GRUCell(size, activation=nonlin, kernel_initializer=tf.contrib.layers.xavier_initializer())
             cells.append(cell)
             recurrent_state_size += cell.state_size
@@ -53,7 +53,7 @@ class GRUMLP2(bc.GraphStructure):
         gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
 
         # FCN
-        top = tf.reshape(gruOutput,shape=[-1, gruDim[-1]], name='fcIn')
+        top = tf.reshape(gruOutput,shape=[-1, rnnDim[-1]], name='fcIn')
 
         layer_n = 0
         for dim in mlpDim[:-1]:
