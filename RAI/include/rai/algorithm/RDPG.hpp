@@ -98,9 +98,6 @@ class RDPG {
     ///Construct minibatch
     Dataset_.minibatch = new TensorBatch_;
 
-    parameter_.setZero(policy_->getLPSize());
-    policy_->getLP(parameter_);
-
     timeLimit = task_[0]->timeLimit();
 
     for (int i = 0; i < task_.size(); i++)
@@ -195,9 +192,6 @@ class RDPG {
       for(unsigned timeID = 0; timeID<Dataset_.lengths[batchID]; timeID++)
       value_t.eTensor()(1,timeID,batchID) = Dataset_.costs.eTensor()(1,timeID,batchID)  + disFtr * value_t.eTensor()(1,timeID,batchID) ;
     }
-//
-//    for (unsigned tupleID = 0; tupleID < batSize_; tupleID++)
-//      value_t(tupleID) = cost_t(tupleID) + disFtr * value_tp1(tupleID);
 
     qfunction_->performOneSolverIter(&Dataset_, value_t);
     Utils::timer->stopTimer("Qfunction update");
@@ -228,12 +222,6 @@ class RDPG {
   double timeLimit;
   unsigned batSize_;
   Dtype tau_;
-
-  /////////////////////////// batches
-  ValueBatch advantage_, bellmanErr_;
-
-  /////////////////////////// Policy parameter
-  VectorXD parameter_;
 
   /////////////////////////// plotting
   int iterNumber_ = 0;
