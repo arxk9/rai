@@ -27,7 +27,7 @@ class MLP_fullyconnected {
   typedef Eigen::Matrix<double, StateDim, 1> State;
 
   MLP_fullyconnected(std::string fileName, std::string activation, std::vector<int> hiddensizes) :
-      act_(activation), noise_(Eigen::Matrix<double, ActionDim, ActionDim>::Identity()) {
+  cov(Eigen::Matrix<double, ActionDim, ActionDim>::Identity()), act_(activation), noise_(cov) {
     const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
 
     layersizes.push_back(StateDim);
@@ -124,7 +124,7 @@ class MLP_fullyconnected {
 
   std::vector<int> layersizes;
   std::string act_;
-
+  Eigen::Matrix<double, ActionDim, ActionDim> cov;
   Noise_ noise_;
 
 };

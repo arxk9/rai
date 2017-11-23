@@ -20,7 +20,7 @@ class NormalDistributionNoise : public Noise<Dtype, noiseVectorDimension> {
   typedef typename Noise<Dtype, noiseVectorDimension>::NoiseVector NoiseVector;
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, noiseVectorDimension> Covariance;
 
-  NormalDistributionNoise(Covariance &cov) {
+  NormalDistributionNoise(Covariance cov) {
     initialCov_ = cov;
     cov_ = cov;
     Eigen::LLT<Covariance> lltOfcov(cov);
@@ -43,7 +43,7 @@ class NormalDistributionNoise : public Noise<Dtype, noiseVectorDimension> {
     return noiseVector_;
   }
 
-  virtual void updateCovariance(Covariance &cov) {
+  virtual void updateCovariance(Covariance cov) {
     initialCov_ = cov;
     cov_ = cov;
     Eigen::LLT<Covariance> lltOfcov(cov);
