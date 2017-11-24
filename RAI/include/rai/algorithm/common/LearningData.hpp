@@ -59,8 +59,6 @@ class LearningData {
                                     int numOfBranchPerJunct,
                                     ValueFunc_ *vfunction = nullptr,
                                     int vis_lv = 0) {
-    Utils::timer->startTimer("Simulation");
-
     std::vector<Trajectory_> trajectories;
     double dt = task[0]->dt();
     double timeLimit = task[0]->timeLimit();
@@ -225,8 +223,6 @@ class LearningData {
         for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
           valueBat(colID++) = traj[traID].valueTraj[timeID];
     }
-
-    Utils::timer->stopTimer("Simulation");
   }
 
   void acquireTrajForNTimeSteps(std::vector<Task_ *> &task,
