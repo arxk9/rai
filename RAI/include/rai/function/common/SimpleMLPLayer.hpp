@@ -16,6 +16,8 @@
 
 namespace rai {
 
+namespace FuncApprox {
+
 template<int StateDim, int ActionDim>
 class MLP_fullyconnected {
 
@@ -25,7 +27,7 @@ class MLP_fullyconnected {
   typedef Eigen::Matrix<double, StateDim, 1> State;
 
   MLP_fullyconnected(std::string fileName, std::string activation, std::vector<int> hiddensizes) :
-      act_(activation), noise_(Eigen::Matrix<double, ActionDim, ActionDim>::Identity()) {
+  cov(Eigen::Matrix<double, ActionDim, ActionDim>::Identity()), act_(activation), noise_(cov) {
     const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
 
     layersizes.push_back(StateDim);
@@ -43,7 +45,7 @@ class MLP_fullyconnected {
     std::stringstream parameterFileName;
     std::ifstream indata;
     indata.open(fileName);
-    LOG_IF(FATAL, !indata) << "MLP file does not exists!"<<std::endl;
+    LOG_IF(FATAL, !indata) << "MLP file does not exists!" << std::endl;
     std::string line;
     getline(indata, line);
     std::stringstream lineStream(line);
@@ -88,7 +90,7 @@ class MLP_fullyconnected {
     noise_.updateCovariance(temp.asDiagonal());
   }
 
-  Action forward(State& state) {
+  Action forward(State &state) {
     lo[0] = state;
     for (int cnt = 0; cnt < Ws.size() - 1; cnt++) {
       lo[cnt + 1] = Ws[cnt] * lo[cnt] + bs[cnt];
@@ -122,10 +124,12 @@ class MLP_fullyconnected {
 
   std::vector<int> layersizes;
   std::string act_;
-
+  Eigen::Matrix<double, ActionDim, ActionDim> cov;
   Noise_ noise_;
 
 };
+
+}
 
 }
 

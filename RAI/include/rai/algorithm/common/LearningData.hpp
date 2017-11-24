@@ -91,7 +91,6 @@ class LearningData {
       std::vector<Trajectory_> tempTraj_;
       while (1) {
         int numofnewtraj = std::ceil(1.5 * stepsneeded * dt / timeLimit); // TODO: fix
-
         tempTraj_.resize(numofnewtraj);
         for (auto &tra : tempTraj_)
           tra.clear();
@@ -119,6 +118,7 @@ class LearningData {
         traj.insert(traj.end(), tempTraj_.begin(), tempTraj_.end());
 
         if (stepsneeded <= 0) break;
+
       }
     }
     ///////////////////////////////////////VINE//////////////////////////////
