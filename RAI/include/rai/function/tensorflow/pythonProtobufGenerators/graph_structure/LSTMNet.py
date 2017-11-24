@@ -12,15 +12,9 @@ class LSTMMLP(bc.GraphStructure):
         nonlin = getattr(tf.nn, nonlin_str)
         weight = float(param[1])
 
-        check=0
-        for i, val in enumerate(param[2:]):
-            if val == '/':
-                check = i
+        dimension = [int(i) for i in param[2:]]
 
-        rnnDim = [int(i) for i in param[2:check+2]]
-        mlpDim = [int(i) for i in param[check+3:]]
-
-        self.input = tf.placeholder(dtype, shape=[None, None, rnnDim[0]], name=fn.input_names[0])  # [batch, time, dim]
+        self.input = tf.placeholder(dtype, shape=[None, None, dimension[0]], name=fn.input_names[0])  # [batch, time, dim]
         print(self.input)
 
         length_ = tf.placeholder(dtype, name='length')  # [batch]
@@ -32,7 +26,7 @@ class LSTMMLP(bc.GraphStructure):
         state_size = [] # size of c = h in LSTM
         recurrent_state_size = 0
 
-        for size in rnnDim[1:]:
+        for size in dimension[1:]:
             cell = rnn.LSTMCell(size, state_is_tuple=True)
             cells.append(cell)
             recurrent_state_size += cell.state_size.c + cell.state_size.h
@@ -50,21 +44,8 @@ class LSTMMLP(bc.GraphStructure):
 
         # LSTM output
         LSTMOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.input, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
-        # FCN
-        top = tf.reshape(LSTMOutput,shape=[-1, rnnDim[-1]], name='fcIn')
 
-        layer_n = 0
-        for dim in mlpDim[:-1]:
-            with tf.name_scope('hidden_layer'+repr(layer_n)):
-                top = fully_connected(activation_fn=nonlin, inputs=top, num_outputs=dim, weights_initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
-                layer_n += 1
-
-        with tf.name_scope('output_layer'):
-            wo = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-2], mlpDim[-1]], minval=-float(weight), maxval=float(weight)))
-            bo = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-1]], minval=-float(weight), maxval=float(weight)))
-            top = tf.matmul(top, wo) + bo
-
-        self.output = tf.reshape(top, [-1, tf.shape(self.input)[1], mlpDim[-1]])
+        self.output = LSTMOutput
 
         final_state_list = []
         for state_tuple in final_state:

@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(25);
+    task.setTimeLimitPerEpisode(10);
     taskVector.push_back(&task);
   }
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Function approximations //////////
   Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 3 16 / 16 16 1", 0.001);
+  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 1e-3 3 16 / 16 16 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor

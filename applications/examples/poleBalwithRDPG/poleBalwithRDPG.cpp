@@ -21,8 +21,8 @@
 #include <Eigen/Dense>
 
 // task
-//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
-#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/OrnsteinUhlenbeckNoise.hpp"
@@ -48,8 +48,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-//using Task = rai::Task::PoleBalancing<Dtype>;
-using Task = rai::Task::PO_PoleBalancing<Dtype>;
+using Task = rai::Task::PoleBalancing<Dtype>;
+//using Task = rai::Task::PO_PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -64,6 +64,11 @@ using Qfunction_TensorFlow = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtyp
 using ReplayMemory = rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
+
+using NormalNoise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
+using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
+
+
 Dtype learningRateQfunction = 1e-3;
 Dtype learningRatePolicy = 1e-3;
 #define nThread 4
@@ -81,25 +86,32 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.99);
     task.setRealTimeFactor(5);
-    task.setTimeLimitPerEpisode(5.0);
+    task.setTimeLimitPerEpisode(10.0);
     taskVector.push_back(&task);
   }
 
   ////////////////////////// Define Noise Model //////////////////////
-  std::vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
-      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.15, 0.3));
+//  std::vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
+//      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.2 , 1, 0.05));
+//  std::vector<Noise *> noiseVector;
+//  for (auto &noise : noiseVec)
+//    noiseVector.push_back(&noise);
+
+  NoiseCovariance covariance = NoiseCovariance::Identity();
+  std::vector<NormalNoise> noiseVec(nThread, NormalNoise(covariance));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
+
   ////////////////////////// Define Memory ////////////////////////////
   ReplayMemory Memory(1000);
 
   ////////////////////////// Define Function approximations //////////
-  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 1 32 / 32 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 1 32 / 32 1", learningRatePolicy);
+  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 3 32 / 32 16 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 3 32 / 32 16 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 32 / 32 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 1 1 32 / 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 32 / 32 16 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 32 / 32 16 1", learningRateQfunction);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;

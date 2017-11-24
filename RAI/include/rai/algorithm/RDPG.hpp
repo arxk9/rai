@@ -10,7 +10,6 @@
 
 #include "rai/tasks/common/Task.hpp"
 #include <Eigen/Core>
-#include <rai/noiseModel/OrnsteinUhlenbeckNoise.hpp>
 #include <rai/noiseModel/NoNoise.hpp>
 #include <Eigen/Cholesky>
 #include <Eigen/Jacobi>

@@ -36,17 +36,19 @@ class LSTMMLP2(bc.GraphStructure):
         recurrent_state_size = 0
 
         for size in rnnDim[2:]:
-            cell = rnn.LSTMCell(size, activation=nonlin)
+            cell = rnn.LSTMCell(size)
             cells.append(cell)
-            recurrent_state_size += cell.state_size
-            state_size.append(cell.state_size)
-
+            recurrent_state_size += cell.state_size.c + cell.state_size.h
+            state_size.append(cell.state_size.c)
+            state_size.append(cell.state_size.h)
         cell = rnn.MultiRNNCell(cells, state_is_tuple=True)
         hiddenStateDim = tf.identity(tf.constant(value=[recurrent_state_size], dtype=tf.int32), name='h_dim')
+        init_states = tf.split(tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init'), num_or_size_splits=state_size, axis = 1)
 
-        init_state = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
-        init_state_tuple = tuple(tf.split(init_state, num_or_size_splits=state_size, axis=1))
-
+        init_state_list = []
+        for i in range(len(cells)):
+            init_state_list.append(rnn.LSTMStateTuple(init_states[2*i], init_states[2*i+1]))
+        init_state_tuple = tuple(init_state_list)
 
         # LSTM output
         LSTMOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
@@ -66,7 +68,13 @@ class LSTMMLP2(bc.GraphStructure):
             top = tf.matmul(top, wo) + bo
 
         self.output = tf.reshape(top, [-1, tf.shape(self.input1)[1], mlpDim[-1]])
-        hiddenState = tf.concat([state for state in final_state], axis=1, name='h_state')
+
+        final_state_list = []
+        for state_tuple in final_state:
+            final_state_list.append(state_tuple.c)
+            final_state_list.append(state_tuple.h)
+
+        hiddenState = tf.concat([state for state in final_state_list], axis=1, name='h_state')
 
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         self.a_param_list = self.l_param_list

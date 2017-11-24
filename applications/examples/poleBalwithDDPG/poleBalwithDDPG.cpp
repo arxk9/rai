@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Noise Model //////////////////////
   std::vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
-      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.15, 0.3));
+      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.15, 1));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);

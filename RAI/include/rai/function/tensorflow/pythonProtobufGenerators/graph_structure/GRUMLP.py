@@ -33,8 +33,8 @@ class GRUMLP(bc.GraphStructure):
         recurrent_state_size = 0
 
         for size in rnnDim[1:]:
-            cell = rnn.GRUCell(size, activation=nonlin, kernel_initializer=tf.contrib.layers.xavier_initializer())
-            cells.append(cell)z
+            cell = rnn.GRUCell(size, kernel_initializer=tf.contrib.layers.xavier_initializer())
+            cells.append(cell)
             recurrent_state_size += cell.state_size
             state_size.append(cell.state_size)
 

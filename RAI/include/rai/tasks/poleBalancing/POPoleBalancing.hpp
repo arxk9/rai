@@ -132,7 +132,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
 
   void setVersion(TaskVersion taskVersion) {
     if (taskVersion == easy) {
-      maxTorque_ = 2.0;
+      maxTorque_ = 3.0;
     } else {
       maxTorque_ = 0.5;
     }
