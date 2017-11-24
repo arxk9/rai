@@ -29,20 +29,23 @@ class GRUMLP(bc.GraphStructure):
 
         # GRU
         cells = []
+        state_size = []
         recurrent_state_size = 0
 
         for size in rnnDim[1:]:
             cell = rnn.GRUCell(size, activation=nonlin, kernel_initializer=tf.contrib.layers.xavier_initializer())
-            cells.append(cell)
+            cells.append(cell)z
             recurrent_state_size += cell.state_size
+            state_size.append(cell.state_size)
 
-        cell = rnn.MultiRNNCell(cells, state_is_tuple=False)
+        cell = rnn.MultiRNNCell(cells, state_is_tuple=True)
         hiddenStateDim = tf.identity(tf.constant(value=[recurrent_state_size], dtype=tf.int32), name='h_dim')
 
         init_state = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
+        init_state_tuple = tuple(tf.split(init_state, num_or_size_splits=state_size, axis=1))
 
         # Full-length output for training
-        gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.input, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state)
+        gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.input, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
         # FCN
         top = tf.reshape(gruOutput,shape=[-1, rnnDim[-1]], name='fcIn')
 
@@ -58,7 +61,7 @@ class GRUMLP(bc.GraphStructure):
             top = tf.matmul(top, wo) + bo
 
         self.output = tf.reshape(top, [-1, tf.shape(self.input)[1], mlpDim[-1]])
-        hiddenState = tf.identity(final_state, name='h_state')
+        hiddenState = tf.concat([state for state in final_state], axis=1, name='h_state')
 
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         self.a_param_list = self.l_param_list
