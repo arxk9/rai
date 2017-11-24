@@ -29,37 +29,22 @@ class LSTMMLP(bc.GraphStructure):
 
         # GRU
         cells = []
-        state_size = [] # size of c = h in LSTM
         recurrent_state_size = 0
 
         for size in rnnDim[1:]:
             cell = rnn.LSTMCell(size, activation=nonlin, state_is_tuple=False)
             cells.append(cell)
             recurrent_state_size += cell.state_size
-            state_size.append(cell.state_size)
 
         cell = rnn.MultiRNNCell(cells, state_is_tuple=False)
-
-        print(state_size)
-        print(recurrent_state_size)
         hiddenStateDim = tf.identity(tf.constant(value=[recurrent_state_size], dtype=tf.int32), name='h_dim')
-
-        # init_states = tf.split(tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init'), num_or_size_splits=state_size, axis = 1)
-        # print(init_states)
-        # init_state_list = []
-        # for i in range(len(cells)):
-        #     init_state_list.append(rnn.LSTMStateTuple(init_states[2*i], init_states[2*i+1]))
-        # init_state_tuple = tuple(init_state_list)
-
         init_state = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
-        # init_state_tuple = tuple(tf.split(init_state, num_or_size_splits=state_size, axis=1))
 
         # LSTM output
         LSTMOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.input, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state)
-        print("FCN")
+
         # FCN
         top = tf.reshape(LSTMOutput,shape=[-1, rnnDim[-1]], name='fcIn')
-        print("FCN_h")
 
         layer_n = 0
         for dim in mlpDim[:-1]:
