@@ -170,7 +170,7 @@ class PPO {
     ValueBatch valuePred(ld_.dataN);
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
-//    ld_.computeAdvantage(task_[0], vfunction_, lambda_);
+    ld_.computeAdvantage(task_[0], vfunction_, lambda_);
     Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
@@ -178,16 +178,19 @@ class PPO {
     Dtype KL = 0, KLsum = 0;
     int cnt = 0;
     vfunction_->forward(ld_.stateBat, valuePred);
-    ld_.computeAdvantage(task_[0],vfunction_,lambda_, true);
 
     for (int i = 0; i < n_epoch_; i++) {
-      while (ld_.Data->iterateBatch(minibatchSize_)) {
-
+      while (Dataset_.iterateBatch(minibatchSize_)) {
 //        policy_->test(ld_.cur_minibatch, stdev_o);
+
+//        std::cout << "states" << std::endl <<  Dataset_.states << std::endl;
+//        std::cout << "actions" << std::endl <<  Dataset_.actions << std::endl;
+//        std::cout << "val" << std::endl <<   ld_.valueBat << std::endl;
 
         Utils::timer->startTimer("Vfunction update");
         loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
         Utils::timer->stopTimer("Vfunction update");
+//        LOG(INFO) << "Vfunctionloss" << loss;
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
@@ -195,6 +198,7 @@ class PPO {
 
         if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.minibatch, stdev_o, policy_grad);
         else policy_->PPOpg(Dataset_.minibatch, stdev_o, policy_grad);
+//        LOG(INFO) << policy_grad.norm();
 
         Utils::timer->stopTimer("Gradient computation");
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
@@ -209,17 +213,17 @@ class PPO {
         KLsum += KL;
         cnt++;
       }
+      if (KL_adapt_) {
+        if (KL > KL_thres_ * 1.5)
+          KL_coeff_ *= 2;
+        if (KL < KL_thres_ / 1.5)
+          KL_coeff_ *= 0.5;
+
+        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
+      }
     }
     KL = KLsum / cnt;
 
-    if (KL_adapt_) {
-      if (KL > KL_thres_ * 1.5)
-        KL_coeff_ *= 2;
-      if (KL < KL_thres_ / 1.5)
-        KL_coeff_ *= 0.5;
-
-      policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
-    }
 
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");

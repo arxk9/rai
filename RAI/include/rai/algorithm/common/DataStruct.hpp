@@ -18,8 +18,7 @@ namespace Algorithm {
 template<typename Dtype>
 struct TensorBatch {
   TensorBatch() : tensor1Ds(0), tensor2Ds(0), tensor3Ds(0), maxLen(0), batchNum(0), batchID(0),
-                  isrecurrent_(false) {
-  };
+                  isrecurrent_(false) {};
 
   TensorBatch(int num1, int num2, int num3, int maxlen = 0, int batchNum_in = 0, bool isrecurrent = false)
       : tensor1Ds(num1),
@@ -55,7 +54,6 @@ struct TensorBatch {
     }
     for (int i = 0; i < tensor1Ds.size(); i++) {
       minibatch->tensor1Ds[i] = tensor1Ds[i].block(batchID, batchSize);
-
     }
   }
 
