@@ -11,6 +11,8 @@ class RecurrentDeterministicPolicy(pc.Policy):
         action_dim = int(gs.output.shape[-1])
         action = tf.identity(gs.output, name=self.output_names[0])
         state = gs.input
+        mask = tf.sequence_mask(gs.seq_length, name='mask')
+        action_masked = tf.boolean_mask(action, mask)
 
         # new placeholders
         action_target = tf.placeholder(dtype, shape=[None, None, action_dim], name='targetAction')
@@ -26,13 +28,6 @@ class RecurrentDeterministicPolicy(pc.Policy):
             train_using_critic_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate)
             manipulated_parameter_gradients = []
             for parameter in gs.l_param_list:
-                manipulated_parameter_gradients += [tf.gradients(action, parameter, gradient_from_critic)][0]
+                manipulated_parameter_gradients += [tf.gradients(action_masked, parameter, gradient_from_critic)][0]
             manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
             train_using_critic_apply_gradients = train_using_critic_optimizer.apply_gradients(manipulated_parameter_gradients_and_parameters, name='applyGradients')
-
-        # solvers
-        with tf.name_scope('trainUsingTargetQValue'):
-            core.square_loss_opt(dtype, action_target, action, tf.train.AdamOptimizer)
-
-        with tf.name_scope('trainUsingTargetQValue_huber'):
-            core.huber_loss_opt(dtype, action_target, action, tf.train.AdamOptimizer)

@@ -24,6 +24,7 @@ class RecurrentQfunction(bc.SpecializedFunction):
         # test = tf.identity(tf.cast(tf.shape(),dtype) ,name = 'test')
 
         # gradients
+
         jac_Q_wrt_State = tf.identity(tf.gradients(avg, gs.input1)[0], name='gradient_AvgOf_Q_wrt_State')
         jac_Q_wrt_Action = tf.identity(tf.gradients(avg, gs.input2)[0], name='gradient_AvgOf_Q_wrt_action')
 

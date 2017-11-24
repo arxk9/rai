@@ -90,7 +90,7 @@ class RDPG {
       tau_(tau),
       testingTrajN_(testingTrajN),
       task_(task),
-      ld_(acquisitor) {
+      ld_(acquisitor){
 
     ///Construct Dataset
     ld_.setData(&Dataset_);
@@ -177,10 +177,16 @@ class RDPG {
 
     Tensor<Dtype, 3> value_;
     Tensor<Dtype, 3> value_t("targetQValue");
+
+//    std::cout << Dataset_.states << std::endl<< std::endl;
+//    std::cout << Dataset_.actions << std::endl<< std::endl;
+
     timer->startTimer("SamplingHistory");
     memory->sampleRandomHistory(Dataset_, batSize_);
     timer->stopTimer("SamplingHistory");
 
+//    std::cout << Dataset_.states << std::endl<< std::endl;
+//    std::cout << Dataset_.actions << std::endl<< std::endl;
     value_.resize(1, Dataset_.maxLen, Dataset_.batchNum);
     value_t.resize(1, Dataset_.maxLen, Dataset_.batchNum);
 
@@ -190,15 +196,32 @@ class RDPG {
 
     for (unsigned batchID = 0; batchID < batSize_; batchID++) {
       if (TerminationType(Dataset_.termtypes[batchID]) == TerminationType::terminalState)
-        value_.eTensor()(1, Dataset_.lengths[batchID], batchID) = termValue;
+        value_.eTensor()(0, Dataset_.lengths[batchID], batchID) = termValue;
     }
     for (unsigned batchID = 0; batchID < batSize_; batchID++){
       for(unsigned timeID = 0; timeID<Dataset_.lengths[batchID]; timeID++)
       value_t.eTensor()(0,timeID,batchID) = Dataset_.costs.eTensor()(timeID,batchID)  + disFtr * value_.eTensor()(0,timeID,batchID) ;
     }
-//    std::cout << "val" << std::endl << value_ << std::endl;
+
 //    std::cout << "costs" << std::endl << Dataset_.costs << std::endl;
-//    std::cout << "TD" << std::endl << value_t << std::endl;
+//    std::cout << "val" << std::endl << value_.batch(0) << std::endl;
+//    std::cout << "TD" << std::endl << value_t.batch(0) << std::endl;
+//    StateBatch temp;
+//    Eigen::Matrix<Dtype, 1, Eigen::Dynamic> temp2;
+//    Eigen::Matrix<Dtype, 1, Eigen::Dynamic> temp3;
+//
+//    temp.resize(StateDim,Dataset_.maxLen * batSize_);
+//    temp2.resize(1,Dataset_.maxLen * batSize_);
+//    temp3.resize(1,Dataset_.maxLen * batSize_);
+//
+//    for(int i = 0; i<batSize_; i++){
+//      int strid = Dataset_.maxLen * i;
+//    temp.block(0,strid,StateDim, Dataset_.maxLen) = Dataset_.states.batch(0);
+//    temp2.block(0,strid,1, Dataset_.maxLen) = Dataset_.actions.batch(0);
+//    temp3.block(0,strid,1, Dataset_.maxLen) =  value_t.batch(0);
+//    }
+
+//    qfunctest_->performOneSolverIter(temp, temp2, temp3);
 
     qfunction_->performOneSolverIter(&Dataset_, value_t);
     Utils::timer->stopTimer("Qfunction update");
@@ -218,6 +241,7 @@ class RDPG {
   std::vector<Noise_ *> noise_;
   std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
   Qfunction_ *qfunction_, *qfunction_target_;
+
   Policy_ *policy_, *policy_target_;
   Acquisitor_ *acquisitor_;
   ReplayMemory_ *memory;

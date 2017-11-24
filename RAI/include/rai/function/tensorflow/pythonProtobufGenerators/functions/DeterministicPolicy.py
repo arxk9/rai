@@ -29,10 +29,3 @@ class DeterministicPolicy(pc.Policy):
                 manipulated_parameter_gradients += [tf.gradients(action, parameter, gradient_from_critic)][0]
             manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
             train_using_critic_apply_gradients = train_using_critic_optimizer.apply_gradients(manipulated_parameter_gradients_and_parameters, name='applyGradients')
-
-        # solvers
-        with tf.name_scope('trainUsingTargetQValue'):
-            core.square_loss_opt(dtype, action_target, action, tf.train.AdamOptimizer)
-
-        with tf.name_scope('trainUsingTargetQValue_huber'):
-            core.huber_loss_opt(dtype, action_target, action, tf.train.AdamOptimizer)

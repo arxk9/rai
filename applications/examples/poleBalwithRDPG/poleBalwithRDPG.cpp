@@ -107,11 +107,12 @@ int main(int argc, char *argv[]) {
   ReplayMemory Memory(1000);
 
   ////////////////////////// Define Function approximations //////////
-  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 3 32 / 32 16 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 3 32 / 32 16 1", learningRatePolicy);
+  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 3 32 / 32 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 3 64 / 32 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 32 / 32 16 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 32 / 32 16 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 64 / 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 64 / 32 1", learningRateQfunction);
+//  rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> qfunction2("cpu", "MLP2", "relu 1e-3 3 1 32 32 1", learningRateQfunction);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
@@ -126,7 +127,7 @@ int main(int argc, char *argv[]) {
                 noiseVector,
                 &acquisitor,
                 &Memory,
-                100,
+                30,
                 1);
   algorithm.setVisualizationLevel(0);
   algorithm.initiallyFillTheMemory();
@@ -170,7 +171,7 @@ int main(int argc, char *argv[]) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    algorithm.learnForNepisodes(10);
+    algorithm.learnForNepisodes(5);
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
@@ -186,13 +187,14 @@ int main(int argc, char *argv[]) {
 
       policy.forward(state_plot, action_plot);
       qfunction.forward(state_plot, action_plot, value_plot);
+
       graph->drawHeatMap(3, figurePropertiesSVC, minimal_X_extended.data(),
                          minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
       graph->drawFigure(3);
       graph->drawHeatMap(4, figurePropertiesSVA, minimal_X_extended.data(),
                          minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
       graph->drawFigure(4);
-    }
+          }
   }
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");
   graph->drawPieChartWith_RAI_Timer(5, timer->getTimedItems(), propChart);
