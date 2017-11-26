@@ -36,6 +36,8 @@ class MLP_fullyconnected {
     layersizes.push_back(ActionDim);
     ///[input hidden output]
 
+    if(activation == "tanh") isTanh=true;
+
     params.resize(2 * (layersizes.size() - 1));
     Ws.resize(layersizes.size() - 1);
     bs.resize(layersizes.size() - 1);
@@ -96,11 +98,10 @@ class MLP_fullyconnected {
       lo[cnt + 1] = Ws[cnt] * lo[cnt] + bs[cnt];
 
       for (int i = 0; i < lo[cnt + 1].size(); i++) {
-        if (act_.compare("tanh") == 0)
+        if (isTanh)
           lo[cnt + 1][i] = std::tanh(lo[cnt + 1][i]);
-        if (act_.compare("relu") == 0) {
+        else
           if (lo[cnt + 1][i] < 0) lo[cnt + 1][i] = 0;
-        }
       }
     }
 
@@ -126,6 +127,7 @@ class MLP_fullyconnected {
   std::string act_;
   Eigen::Matrix<double, ActionDim, ActionDim> cov;
   Noise_ noise_;
+  bool isTanh=false;
 
 };
 
