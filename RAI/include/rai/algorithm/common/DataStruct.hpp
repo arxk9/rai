@@ -99,22 +99,24 @@ struct history : public TensorBatch<Dtype> {
   using TensorBatch_::tensor2Ds;
   using TensorBatch_::tensor1Ds;
 
-  history() : TensorBatch_::TensorBatch(2, 2, 3, 0, 0), minibatch(nullptr) {
+  history() : TensorBatch_::TensorBatch(2, 3, 3, 0, 0), minibatch(nullptr) {
     tensor3Ds[0] = "state";
     tensor3Ds[1] = "sampledAction";
     tensor3Ds[2] = "actionNoise";
     tensor2Ds[0] = "costs";
     tensor2Ds[1] = "stdevs";
+    tensor2Ds[2] = "value";
     tensor1Ds[0] = "length";
     tensor1Ds[1] = "termtypes";
   };
   history(int maxlen, int batchNum_in, bool isrecurrent = false) :
-      TensorBatch_::TensorBatch(2, 2, 3, maxlen, batchNum_in, isrecurrent), minibatch(nullptr) {
+      TensorBatch_::TensorBatch(2, 3, 3, maxlen, batchNum_in, isrecurrent), minibatch(nullptr) {
     tensor3Ds[0] = "state";
     tensor3Ds[1] = "sampledAction";
     tensor3Ds[2] = "actionNoise";
     tensor2Ds[0] = "costs";
     tensor2Ds[1] = "stdevs";
+    tensor2Ds[2] = "value";
     tensor1Ds[0] = "length";
     tensor1Ds[1] = "termtypes";
   };
@@ -141,6 +143,7 @@ struct history : public TensorBatch<Dtype> {
   Tensor3D &actionNoises = tensor3Ds[2];
   Tensor2D &costs = tensor2Ds[0];
   Tensor2D &stdevs = tensor2Ds[1];
+  Tensor2D &values = tensor2Ds[2];
   Tensor1D &lengths = tensor1Ds[0];
   Tensor1D &termtypes = tensor1Ds[1];
 
@@ -166,24 +169,26 @@ struct historyWithAdvantage : public TensorBatch<Dtype> {
   using ValueFunc_ = rai::FuncApprox::ValueFunction<Dtype, stateDim>;
   using Task_ = rai::Task::Task<Dtype, stateDim, actionDim, 0>;
 
-  historyWithAdvantage() : TensorBatch_::TensorBatch(2, 3, 3, 0, 0), minibatch(nullptr) {
+  historyWithAdvantage() : TensorBatch_::TensorBatch(2, 4, 3, 0, 0), minibatch(nullptr) {
     tensor3Ds[0] = "state";
     tensor3Ds[1] = "sampledAction";
     tensor3Ds[2] = "actionNoise";
     tensor2Ds[0] = "costs";
     tensor2Ds[1] = "stdevs";
-    tensor2Ds[2] = "advantage";
+    tensor2Ds[2] = "value";
+    tensor2Ds[3] = "advantage";
     tensor1Ds[0] = "length";
     tensor1Ds[1] = "termtypes";
   };
   historyWithAdvantage(int maxlen, int batchNum_in, bool isrecurrent = false) :
-      TensorBatch_::TensorBatch(2, 3, 3, maxlen, batchNum_in, isrecurrent), minibatch(nullptr) {
+      TensorBatch_::TensorBatch(2, 4, 3, maxlen, batchNum_in, isrecurrent), minibatch(nullptr) {
     tensor3Ds[0] = "state";
     tensor3Ds[1] = "sampledAction";
     tensor3Ds[2] = "actionNoise";
     tensor2Ds[0] = "costs";
     tensor2Ds[1] = "stdevs";
-    tensor2Ds[2] = "advantage";
+    tensor2Ds[2] = "value";
+    tensor2Ds[3] = "advantage";
     tensor1Ds[0] = "length";
     tensor1Ds[1] = "termtypes";
   };
@@ -209,7 +214,8 @@ struct historyWithAdvantage : public TensorBatch<Dtype> {
   Tensor3D &actionNoises = tensor3Ds[2];
   Tensor2D &costs = tensor2Ds[0];
   Tensor2D &stdevs = tensor2Ds[1];
-  Tensor2D &advantages = tensor2Ds[2];
+  Tensor2D &values = tensor2Ds[2];
+  Tensor2D &advantages = tensor2Ds[3];
   Tensor1D &lengths = tensor1Ds[0];
   Tensor1D &termtypes = tensor1Ds[1];
   historyWithAdvantage *minibatch;
