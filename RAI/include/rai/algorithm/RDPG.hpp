@@ -68,7 +68,8 @@ class RDPG {
   using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
   using ReplayMemory_ = rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim>;
 
-  RDPG(std::vector<Task_ *> &task,
+  RDPG(FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> *testQ,
+      std::vector<Task_ *> &task,
        Qfunction_ *qfunction,
        Qfunction_ *qfunction_target,
        Policy_ *policy,
@@ -79,6 +80,7 @@ class RDPG {
        unsigned batchSize,
        unsigned testingTrajN,
        Dtype tau = 1e-3):
+      testQ_(testQ),
       qfunction_(qfunction),
       qfunction_target_(qfunction_target),
       policy_(policy),
@@ -104,7 +106,7 @@ class RDPG {
     policy_->copyAPFrom(policy_target_);
     qfunction_->copyAPFrom(qfunction_target_);
   };
-
+  FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> *testQ_;
   ~RDPG() {delete Dataset_.minibatch; };
 
   void initiallyFillTheMemory() {
@@ -176,7 +178,7 @@ class RDPG {
     Dtype disFtr = task_[0]->discountFtr();
 
     Tensor<Dtype, 3> value_;
-    Tensor<Dtype, 3> value_t("targetQValue");
+    Tensor<Dtype, 3> value_target("targetQValue");
 
 //    std::cout << Dataset_.states << std::endl<< std::endl;
 //    std::cout << Dataset_.actions << std::endl<< std::endl;
@@ -187,22 +189,34 @@ class RDPG {
 
 //    std::cout << Dataset_.states << std::endl<< std::endl;
 //    std::cout << Dataset_.actions << std::endl<< std::endl;
-    value_.resize(1, Dataset_.maxLen, Dataset_.batchNum);
-    value_t.resize(1, Dataset_.maxLen, Dataset_.batchNum);
-
+    value_.resize(1, Dataset_.maxLen, batSize_);
+    value_target.resize(1, Dataset_.maxLen, batSize_);
+    value_target.setZero();
     Utils::timer->startTimer("Qfunction update");
-    policy_target_->forward(Dataset_.states, Dataset_.actions);
-    qfunction_target_->forward(Dataset_.states, Dataset_.actions, value_);
+
+    ///Target
+    Tensor<Dtype, 3> action_target({ActionDim, Dataset_.maxLen, batSize_},"sampledAction");
+
+    policy_target_->forward(Dataset_.states, action_target);
+    qfunction_target_->forward(Dataset_.states, action_target, value_);
 
     for (unsigned batchID = 0; batchID < batSize_; batchID++) {
       if (TerminationType(Dataset_.termtypes[batchID]) == TerminationType::terminalState)
-        value_.eTensor()(0, Dataset_.lengths[batchID], batchID) = termValue;
+        value_target.eTensor()(0, Dataset_.lengths[batchID]-1 , batchID) = termValue; ///last elem for each target batch
     }
     for (unsigned batchID = 0; batchID < batSize_; batchID++){
-      for(unsigned timeID = 0; timeID<Dataset_.lengths[batchID]; timeID++)
-      value_t.eTensor()(0,timeID,batchID) = Dataset_.costs.eTensor()(timeID,batchID)  + disFtr * value_.eTensor()(0,timeID,batchID) ;
+      for(unsigned timeID = 0; timeID< Dataset_.lengths[batchID] - 2 ; timeID++)
+        value_target.eTensor()(0,timeID,batchID) = Dataset_.costs.eTensor()(timeID,batchID)  + disFtr * value_.eTensor()(0,timeID+1,batchID) ;
     }
+    StateBatch state_t(StateDim, batSize_*Dataset_.maxLen);
+    Eigen::Matrix<Dtype, 1 , -1> action_t(1, batSize_*Dataset_.maxLen);
+    Eigen::Matrix<Dtype, 1 , -1> value_t(1, batSize_*Dataset_.maxLen);
 
+    std::memcpy(state_t.data(), Dataset_.states.data(),sizeof(Dtype) *state_t.size());
+    std::memcpy(action_t.data(), Dataset_.actions.data(),sizeof(Dtype) *action_t.size());
+    std::memcpy(value_t.data(), value_target.data(),sizeof(Dtype) *value_t.size());
+
+    testQ_->performOneSolverIter(state_t, action_t, value_t);
 //    std::cout << "costs" << std::endl << Dataset_.costs << std::endl;
 //    std::cout << "val" << std::endl << value_.batch(0) << std::endl;
 //    std::cout << "TD" << std::endl << value_t.batch(0) << std::endl;
@@ -223,7 +237,7 @@ class RDPG {
 
 //    qfunctest_->performOneSolverIter(temp, temp2, temp3);
 
-    qfunction_->performOneSolverIter(&Dataset_, value_t);
+    qfunction_->performOneSolverIter(&Dataset_, value_target);
     Utils::timer->stopTimer("Qfunction update");
 
     Utils::timer->startTimer("Policy update");

@@ -104,22 +104,22 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Memory ////////////////////////////
-  ReplayMemory Memory(1000);
+  ReplayMemory Memory(500);
 
   ////////////////////////// Define Function approximations //////////
-  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 3 32 / 32 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 3 64 / 32 1", learningRatePolicy);
+  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 3 64 64 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "LSTMNet", "tanh 1e-3 3 64 64 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 64 / 32 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 64 / 32 1", learningRateQfunction);
-//  rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> qfunction2("cpu", "MLP2", "relu 1e-3 3 1 32 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 64 64 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 64 64 1", learningRateQfunction);
+  rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> qfunction2("cpu", "MLP2", "relu 1e-3 3 1 32 32 1", learningRateQfunction);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RDPG<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,
+      algorithm(&qfunction2, taskVector,
                 &qfunction,
                 &qfunction_target,
                 &policy,
@@ -194,7 +194,12 @@ int main(int argc, char *argv[]) {
       graph->drawHeatMap(4, figurePropertiesSVA, minimal_X_extended.data(),
                          minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
       graph->drawFigure(4);
-          }
+
+      qfunction2.forward(state_plot, action_plot, value_plot);
+      graph->drawHeatMap(5, figurePropertiesSVC, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
+      graph->drawFigure(5);
+  }
   }
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");
   graph->drawPieChartWith_RAI_Timer(5, timer->getTimedItems(), propChart);

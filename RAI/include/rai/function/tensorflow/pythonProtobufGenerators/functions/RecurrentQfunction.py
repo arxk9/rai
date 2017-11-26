@@ -30,8 +30,8 @@ class RecurrentQfunction(bc.SpecializedFunction):
 
         # solvers
         with tf.name_scope('trainUsingTargetQValue'):
-            core.square_loss_opt(dtype, q_value_target_masked, q_value_masked, tf.train.AdamOptimizer)
-            # core.square_loss_opt(dtype, q_value_target, q_value, tf.train.AdamOptimizer)
+            # core.square_loss_opt(dtype, q_value_target_masked, q_value_masked, tf.train.AdamOptimizer)
+            core.square_loss_opt(dtype, q_value_target, q_value, tf.train.AdamOptimizer)
 
         with tf.name_scope('trainUsingTargetQValue_huber'):
             core.huber_loss_opt(dtype, q_value_target_masked, q_value_masked, tf.train.AdamOptimizer)

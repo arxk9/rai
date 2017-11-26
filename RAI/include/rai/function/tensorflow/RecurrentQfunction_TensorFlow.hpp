@@ -125,6 +125,21 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   return 0;
   };
 
+  virtual Dtype performOneSolverIter( Tensor3D &states,  Tensor3D &actions, Tensor1D &lengths,Tensor3D &values){
+    std::vector<MatrixXD> vectorOfOutputs;
+    values = "targetQValue";
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
+
+    if(h.cols()!= states.batches()) h.resize(hdim, states.batches());
+    h.setZero();
+
+    this->tf_->run({states, actions, lengths, values, h, lr},
+                   {"trainUsingTargetQValue/loss"},
+                   {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
+
+    return vectorOfOutputs[0](0);
+  };
+
   virtual Dtype performOneSolverIter(history *minibatch, Tensor3D &values){
     std::vector<MatrixXD> vectorOfOutputs;
     values = "targetQValue";
