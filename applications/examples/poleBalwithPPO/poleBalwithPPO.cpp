@@ -19,8 +19,7 @@
 #include "rai/function/tensorflow/StochasticPolicy_TensorFlow.hpp"
 
 // algorithm
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp>
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+#include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>
 
 #include "rai/algorithm/PPO.hpp"
 
@@ -44,7 +43,7 @@ using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
-using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
+using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 //using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
 
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
@@ -78,37 +77,37 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
 
-    ////////////////////////// Define Function approximations //////////
-    Vfunction_TensorFlow Vfunction("gpu,0", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-    Policy_TensorFlow policy("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
+  ////////////////////////// Define Function approximations //////////
+  Vfunction_TensorFlow Vfunction("gpu,0", "MLP", "relu 1e-3 3 32 32 1", 0.001);
+  Policy_TensorFlow policy("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
 
 
-    ////////////////////////// Acquisitor
-    Acquisitor_ acquisitor;
+  ////////////////////////// Acquisitor
+  Acquisitor_ acquisitor;
 
-    ////////////////////////// Algorithm ////////////////////////////////
-    rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-        algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10);
+  ////////////////////////// Algorithm ////////////////////////////////
+  rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 3000);
 
-    algorithm.setVisualizationLevel(0);
+  algorithm.setVisualizationLevel(0);
 
-    /////////////////////// Plotting properties ////////////////////////
-    rai::Utils::Graph::FigProp2D
-        figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
-    rai::Utils::Graph::FigProp2D
-        figurePropertiesSur("N. Steps Taken", "loss", "Number of Steps Taken vs Surrogate loss");
-    rai::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "V function");
-    figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-    rai::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
-    figurePropertiesSVA.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-    rai::Utils::Graph::FigProp2D figurePropertieskl("N. Steps Taken", "KlD", "Number of Steps Taken vs KlD");
-    rai::Utils::Graph::FigProp2D
-        figurePropertiescoef("N. Steps Taken", "Kl_coeff", "Number of Steps Taken vs Kl_coeff");
-    rai::Utils::Graph::FigProp3D
-        figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
-    rai::Utils::Graph::FigPropPieChart propChart;
+  /////////////////////// Plotting properties ////////////////////////
+  rai::Utils::Graph::FigProp2D
+      figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
+  rai::Utils::Graph::FigProp2D
+      figurePropertiesSur("N. Steps Taken", "loss", "Number of Steps Taken vs Surrogate loss");
+  rai::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "V function");
+  figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+  rai::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
+  figurePropertiesSVA.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+  rai::Utils::Graph::FigProp2D figurePropertieskl("N. Steps Taken", "KlD", "Number of Steps Taken vs KlD");
+  rai::Utils::Graph::FigProp2D
+      figurePropertiescoef("N. Steps Taken", "Kl_coeff", "Number of Steps Taken vs Kl_coeff");
+  rai::Utils::Graph::FigProp3D
+      figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
+  rai::Utils::Graph::FigPropPieChart propChart;
 
-    ////////////////////////// Choose the computation mode //////////////
+  ////////////////////////// Choose the computation mode //////////////
 //  StateBatch state_plot(3, 2601);
 //  ActionBatch action_plot(1, 2601);
 //  CostBatch value_plot(1, 2601);
@@ -131,35 +130,37 @@ int main(int argc, char *argv[]) {
 //      state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
 //    }
 //  }
-  policy.dumpParam(RAI_LOG_PATH + "testp.txt");
-  Vfunction.dumpParam(RAI_LOG_PATH + "testv.txt");
-  for (int k = 0 ;k  <50 ; k++) {
 
-    policy.loadParam(RAI_LOG_PATH + "testp.txt");
-    Vfunction.loadParam(RAI_LOG_PATH + "testv.txt");
+//
+//  policy.dumpParam(RAI_LOG_PATH + "testp.txt");
+//  Vfunction.dumpParam(RAI_LOG_PATH + "testv.txt");
+//  for (int k = 0 ;k  <50 ; k++) {
+//
+//    policy.loadParam(RAI_LOG_PATH + "testp.txt");
+//    Vfunction.loadParam(RAI_LOG_PATH + "testv.txt");
 
-    ////////////////////////// Learning /////////////////////////////////
-    constexpr int loggingInterval = 80;
-    for (int iterationNumber = 1; iterationNumber <= 80; iterationNumber++) {
+  ////////////////////////// Learning /////////////////////////////////
+  constexpr int loggingInterval = 100;
+  for (int iterationNumber = 1; iterationNumber <= 200; iterationNumber++) {
 
-//      if (iterationNumber % loggingInterval == 0) {
-//        algorithm.setVisualizationLevel(1);
-//        taskVector[0]->enableVideoRecording();
-//      }
-      LOG(INFO) << iterationNumber << "th Iteration";
-      algorithm.runOneLoop(5000);
+    if (iterationNumber % loggingInterval == 0) {
+      algorithm.setVisualizationLevel(1);
+      taskVector[0]->enableVideoRecording();
+    }
+    LOG(INFO) << iterationNumber << "th Iteration";
+    algorithm.runOneLoop(5000);
 
-      if (iterationNumber % loggingInterval == 0) {
-        algorithm.setVisualizationLevel(0);
-        taskVector[0]->disableRecording();
-        graph->figure(1, figurePropertiesEVP);
-        graph->appendData(1, logger->getData("PerformanceTester/performance", 0),
-                          logger->getData("PerformanceTester/performance", 1),
-                          logger->getDataSize("PerformanceTester/performance"),
-                          rai::Utils::Graph::PlotMethods2D::linespoints,
-                          "performance",
-                          "lw 2 lc 4 pi 1 pt 5 ps 1");
-        graph->drawFigure(1, rai::Utils::Graph::OutputFormat::pdf);
+    if (iterationNumber % loggingInterval == 0) {
+      algorithm.setVisualizationLevel(0);
+      taskVector[0]->disableRecording();
+      graph->figure(1, figurePropertiesEVP);
+      graph->appendData(1, logger->getData("PerformanceTester/performance", 0),
+                        logger->getData("PerformanceTester/performance", 1),
+                        logger->getDataSize("PerformanceTester/performance"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "performance",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(1, rai::Utils::Graph::OutputFormat::pdf);
 
 //      policy.forward(state_plot, action_plot);
 //      Vfunction.forward(state_plot, value_plot);
@@ -178,12 +179,12 @@ int main(int argc, char *argv[]) {
 //      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
 //                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
 //      graph->drawFigure(5);
-      }
+//
     }
-
-//  policy.dumpParam(RAI_LOG_PATH + "/policy.txt");
-//  graph->drawPieChartWith_RAI_Timer(0, timer->getTimedItems(), propChart);
-//  graph->drawFigure(0, rai::Utils::Graph::OutputFormat::pdf);
-//    graph->waitForEnter();
   }
+  policy.dumpParam(RAI_LOG_PATH + "/policy.txt");
+  graph->drawPieChartWith_RAI_Timer(0, timer->getTimedItems(), propChart);
+  graph->drawFigure(0, rai::Utils::Graph::OutputFormat::pdf);
+  graph->waitForEnter();
+
 }

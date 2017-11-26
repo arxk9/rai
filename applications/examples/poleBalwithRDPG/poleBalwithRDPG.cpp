@@ -62,7 +62,7 @@ using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Qfunction_TensorFlow = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
 using ReplayMemory = rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim>;
-using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
+using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
 
 using NormalNoise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;

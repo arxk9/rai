@@ -29,8 +29,7 @@
 #include "rai/memory/ReplayMemoryHistory.hpp"
 
 // acquisitor
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 #include <rai/algorithm/common/LearningData.hpp>
 #include <rai/function/tensorflow/RecurrentQfunction_TensorFlow.hpp>

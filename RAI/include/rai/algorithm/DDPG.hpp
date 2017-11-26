@@ -23,8 +23,7 @@
 
 // acquisitor
 #include "rai/experienceAcquisitor/ExperienceTupleAcquisitor.hpp"
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 #include <rai/algorithm/common/PerformanceTester.hpp>
 
@@ -67,9 +66,7 @@ class DDPG {
   using Noise_ = Noise::Noise<Dtype, ActionDim>;
   using Trajectory = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::ExperienceTupleAcquisitor<Dtype, StateDim, ActionDim>;
-  //using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
   using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
- // using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
 
   DDPG(std::vector<Task_ *> &task,
        Qfunction_ *qfunction,

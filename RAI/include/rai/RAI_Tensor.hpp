@@ -251,7 +251,7 @@ class TensorBase {
   std::pair<std::string, tensorflow::Tensor> namedTensor_;
   std::vector<int> dim_;
   tensorflow::TensorShape dim_inv_; /// tensorflow dimension
-  long int size_;
+  long int size_=-1;
   Eigen::DSizes<Eigen::DenseIndex, NDim> esizes_;
   std::vector<tensorflow::Tensor> vecTens;
 };

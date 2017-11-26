@@ -29,8 +29,7 @@
 #include "rai/algorithm/AG_tree.hpp"
 
 // acquisitor
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp"
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 
 using namespace std;
 using namespace boost;

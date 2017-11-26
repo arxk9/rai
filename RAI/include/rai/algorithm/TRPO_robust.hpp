@@ -32,8 +32,7 @@
 #include "rai/memory/Trajectory.hpp"
 
 // acquisitor
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 
 // common

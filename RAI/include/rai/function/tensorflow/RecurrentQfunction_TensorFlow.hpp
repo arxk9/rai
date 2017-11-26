@@ -25,7 +25,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   typedef typename QfunctionBase::Tensor1D Tensor1D;
   typedef typename QfunctionBase::Tensor2D Tensor2D;
   typedef typename QfunctionBase::Tensor3D Tensor3D;
-  typedef typename QfunctionBase::history history;
+  typedef typename QfunctionBase::Dataset Dataset;
 
   typedef typename Pfunction_tensorflow ::InnerState InnerState;
 
@@ -140,7 +140,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
     return vectorOfOutputs[0](0);
   };
 
-  virtual Dtype performOneSolverIter(history *minibatch, Tensor3D &values){
+  virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &values){
     std::vector<MatrixXD> vectorOfOutputs;
     values = "targetQValue";
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
@@ -156,7 +156,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   };
 
 
-  virtual Dtype test(history *minibatch, Tensor3D &values){
+  virtual Dtype test(Dataset *minibatch, Tensor3D &values){
     std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
     values = "targetQValue";
@@ -174,7 +174,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
     return vectorOfOutputs[0](0);
   };
 
-  Dtype getGradient_AvgOf_Q_wrt_action(history *minibatch, Tensor3D &gradients) const
+  Dtype getGradient_AvgOf_Q_wrt_action(Dataset *minibatch, Tensor3D &gradients) const
   {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor2D h_({hdim, minibatch->batchNum}, 0, "h_init");

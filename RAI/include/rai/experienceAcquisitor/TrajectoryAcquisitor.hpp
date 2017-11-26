@@ -189,10 +189,13 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
   void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
     int batchID = 0;
     int dataID = 0;
+    if (!Data->useAdvantage) {
+      Data->useAdvantage = true;
+      if (Data->miniBatch) Data->miniBatch->useAdvantage = true;
+    }
 
     Data->advantages.resize(Data->maxLen, Data->batchNum);
     Data->advantages.setZero();
-    if (!Data->useAdvantage) Data->useAdvantage = true;
 
     for (auto &tra : traj) {
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
@@ -225,7 +228,10 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     int batchN = 0;
     int maxlen = 0;
 
-    if (policy->isRecurrent()) Data->isRecurrent = true;
+    if (policy->isRecurrent() && !Data->isRecurrent) {
+      Data->isRecurrent = true;
+      if (Data->miniBatch) Data->miniBatch->isRecurrent = true;
+    }
 
     for (auto &tra : traj) dataN += tra.size() - 1;
 
@@ -267,7 +273,10 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
 
     // update terimnal value
     if (vfunction) {
-      Data->useValue = true;
+      if (!Data->useValue) {
+        Data->useValue = true;
+        if (Data->miniBatch) Data->miniBatch->useValue = true;
+      }
       Eigen::Matrix<Dtype, 1, -1> termValueBat;
       Eigen::Matrix<Dtype, StateDim, -1> termStateBat;
 
@@ -286,20 +295,14 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
 
       int colID = 0;
       if (policy->isRecurrent()) {
-        for (int traID = 0; traID < traj.size(); traID++) {
-          for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-            Data->values.eMat()(timeID,traID) = traj[traID].valueTraj[timeID];
-          }
-        }
-      }else{
-        for (int traID = 0; traID < traj.size(); traID++) {
-          for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
-//          if(maxlen != 1) advantageTensor.eMat()(colID,traID) = traj[traID].valueTraj[timeID];
-            Data->values.col(colID) = traj[traID].valueTraj[timeID];
-          }
-        }
+        for (int traID = 0; traID < traj.size(); traID++)
+          for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
+            Data->values.eMat()(timeID, traID) = traj[traID].valueTraj[timeID];
+      } else {
+        for (int traID = 0; traID < traj.size(); traID++)
+          for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
+            Data->values.eMat()(0, colID++) = traj[traID].valueTraj[timeID];
       }
-//      if(maxlen == 1) valueTensor = valueBat;
     }
   }
 

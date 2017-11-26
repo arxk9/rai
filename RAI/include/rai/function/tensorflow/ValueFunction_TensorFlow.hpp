@@ -19,6 +19,10 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   typedef typename ValueFunctionBase::Gradient Gradient;
   typedef typename ValueFunctionBase::Jacobian Jacobian;
 
+  typedef typename ValueFunctionBase::Tensor1D Tensor1D;
+  typedef typename ValueFunctionBase::Tensor2D Tensor2D;
+  typedef typename ValueFunctionBase::Tensor3D Tensor3D;
+
   ValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
   }
@@ -49,6 +53,12 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     values = vectorOfOutputs[0];
   }
 
+  virtual void forward(Tensor3D &states, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states}, {"value"}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+
   virtual Dtype performOneSolverIter(StateBatch &states, ValueBatch &values) {
     std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
@@ -67,6 +77,19 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                     {"predictedValue", old_values},
                     {"trainUsingTRValue/learningRate", this->learningRate_},
                     {"updateBNparams", this->notUpdateBN}},
+                   {"trainUsingTRValue/loss"},
+                   {"trainUsingTRValue/solver"}, loss);
+    return loss[0](0);
+  }
+
+  virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
+    std::vector<MatrixXD> loss;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+
+    this->tf_->run({states,
+                    values,
+                    old_values,
+                    lr},
                    {"trainUsingTRValue/loss"},
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);

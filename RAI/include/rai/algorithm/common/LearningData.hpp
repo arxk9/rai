@@ -8,7 +8,6 @@
 
 #include <rai/memory/Trajectory.hpp>
 #include <rai/RAI_core>
-#include <rai/function/common/StochasticPolicy.hpp>
 #include <rai/common/VectorHelper.hpp>
 #include "rai/tasks/common/Task.hpp"
 
@@ -32,62 +31,36 @@ class LearningData {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
 
-  LearningData() : maxLen(0), batchNum(0), batchID(0), miniBatch(nullptr) {
+ public:
+  LearningData() : maxLen(0), batchNum(0), batchID(0), miniBatch(nullptr), extraTensor1D(0), extraTensor2D(0), extraTensor3D(0) {
     states = "state";
     actions = "sampledAction";
     actionNoises = "actionNoise";
 
     costs = "costs";
-    values = "value";
+    values = "targetValue";
     advantages = "advantage";
 //    stdevs = "stdevs";
 
     lengths = "length";
     termtypes = "termtypes";
   };
- private:
-  virtual void fillminiBatch(int batchSize = 0) {
 
-    if (miniBatch->batchNum != batchSize || miniBatch->maxLen != maxLen) {
-      miniBatch->resize(maxLen, batchSize);
-    }
-
-    miniBatch->states = states.batchBlock(batchID, batchSize);
-    miniBatch->actions = actions.batchBlock(batchID, batchSize);
-    miniBatch->actionNoises = actionNoises.batchBlock(batchID, batchSize);
-    miniBatch->costs = costs.block(0, batchID, maxLen, batchSize);
-
-    if (useValue) miniBatch->values = values.block(0, batchID, maxLen, batchSize);
-    if (useAdvantage) miniBatch->advantages = advantages.block(0, batchID, maxLen, batchSize);
-//    miniBatch->stdevs = stdevs.block(0, batchID, ActionDim, batchSize);
-
-    if (isRecurrent)  miniBatch->lengths = lengths.block(batchID, batchSize);
-    miniBatch->termtypes = termtypes.block(batchID, batchSize);
-
-    for (int i = 0; i < tensor3Ds.size(); i++) {
-      miniBatch->tensor3Ds[i] = tensor3Ds[i].batchBlock(batchID, batchSize);
-    }
-    for (int i = 0; i < tensor2Ds.size(); i++) {
-      miniBatch->tensor2Ds[i] = tensor2Ds[i].block(0, batchID, miniBatch->tensor2Ds[i].rows(), batchSize);
-    }
-    for (int i = 0; i < tensor1Ds.size(); i++) {
-      miniBatch->tensor1Ds[i] = tensor1Ds[i].block(batchID, batchSize);
-    }
-  }
-
- public:
   ///method for additional data
-  void append(Tensor1D &newData){
-    tensor1Ds.push_back(newData);
-    if(miniBatch) miniBatch->tensor1Ds.push_back(newData);
+  void append(Tensor1D &newData) {
+    if(newData.size() == -1) newData.resize(0); //rai Tensor is not initialized
+    extraTensor1D.push_back(newData);
+    if (miniBatch) miniBatch->extraTensor1D.push_back(newData);
   }
-  void append(Tensor2D &newData){
-    tensor2Ds.push_back(newData);
-    if(miniBatch) miniBatch->tensor2Ds.push_back(newData);
+  void append(Tensor2D &newData) {
+    if(newData.size() == -1) newData.resize(0,0); //rai Tensor is not initialized
+    extraTensor2D.push_back(newData);
+    if (miniBatch) miniBatch->extraTensor2D.push_back(newData);
   }
-  void append(Tensor3D &newData){
-    tensor3Ds.push_back(newData);
-    if(miniBatch) miniBatch->tensor3Ds.push_back(newData);
+  void append(Tensor3D &newData) {
+    if(newData.size() == -1) newData.resize(0,0,0); //rai Tensor is not initialized
+    extraTensor3D.push_back(newData);
+    if (miniBatch) miniBatch->extraTensor3D.push_back(newData);
   }
 
   bool iterateBatch(int batchSize) {
@@ -121,16 +94,6 @@ class LearningData {
 
     if (isRecurrent) lengths.resize(batches);
     termtypes.resize(batches);
-
-    for (int i = 0; i < tensor3Ds.size(); i++) {
-      miniBatch->tensor3Ds[i].resize(miniBatch->tensor3Ds[i].rows(),maxLen,batchNum);
-    }
-    for (int i = 0; i < tensor2Ds.size(); i++) {
-      miniBatch->tensor2Ds[i].resize(miniBatch->tensor2Ds[i].rows(), batchNum);
-    }
-    for (int i = 0; i < tensor1Ds.size(); i++) {
-      miniBatch->tensor1Ds[i].resize(batchNum);
-    }
   }
 
   virtual void setZero() {
@@ -145,11 +108,49 @@ class LearningData {
     if (isRecurrent) lengths.setZero();
     termtypes.setZero();
 
-    for (auto &ten3D: tensor3Ds) ten3D.setZero();
-    for (auto &ten2D: tensor2Ds) ten2D.setZero();
-    for (auto &ten1D: tensor1Ds) ten1D.setZero();
+    for (auto &ten3D: extraTensor3D) ten3D.setZero();
+    for (auto &ten2D: extraTensor2D) ten2D.setZero();
+    for (auto &ten1D: extraTensor1D) ten1D.setZero();
   }
 
+ private:
+  virtual void fillminiBatch(int batchSize = 0) {
+
+    if (miniBatch->batchNum != batchSize || miniBatch->maxLen != maxLen) {
+      miniBatch->resize(maxLen, batchSize);
+    }
+
+    miniBatch->states = states.batchBlock(batchID, batchSize);
+    miniBatch->actions = actions.batchBlock(batchID, batchSize);
+    miniBatch->actionNoises = actionNoises.batchBlock(batchID, batchSize);
+    miniBatch->costs = costs.block(0, batchID, maxLen, batchSize);
+
+    if (useValue) miniBatch->values = values.block(0, batchID, maxLen, batchSize);
+    if (useAdvantage) miniBatch->advantages = advantages.block(0, batchID, maxLen, batchSize);
+//    miniBatch->stdevs = stdevs.block(0, batchID, ActionDim, batchSize);
+
+    if (isRecurrent) miniBatch->lengths = lengths.block(batchID, batchSize);
+    miniBatch->termtypes = termtypes.block(batchID, batchSize);
+
+    for (int i = 0; i < extraTensor3D.size(); i++) {
+      if (miniBatch->extraTensor3D[i].batches()!= batchSize || miniBatch->extraTensor3D[i].rows()!=extraTensor3D[i].rows() || miniBatch->extraTensor3D[i].cols()!=extraTensor3D[i].cols() )
+        miniBatch->extraTensor3D[i].resize(extraTensor3D[i].rows(),extraTensor3D[i].cols(), batchSize);
+      miniBatch->extraTensor3D[i] = extraTensor3D[i].batchBlock(batchID, batchSize);
+    }
+    for (int i = 0; i < extraTensor2D.size(); i++) {
+      if (miniBatch->extraTensor2D[i].cols() != batchSize || miniBatch->extraTensor2D[i].rows()!=extraTensor2D[i].rows())
+        miniBatch->extraTensor2D[i].resize(extraTensor2D[i].rows(), batchSize);
+
+      miniBatch->extraTensor2D[i] = extraTensor2D[i].block(0, batchID, extraTensor2D[i].rows(), batchSize);
+    }
+    for (int i = 0; i < extraTensor1D.size(); i++) {
+      if (miniBatch->extraTensor1D[i].dim(0) != batchSize!= batchSize)
+        miniBatch->extraTensor1D[i].resize(batchSize);
+      miniBatch->extraTensor1D[i] = extraTensor1D[i].block(batchID, batchSize);
+    }
+  }
+
+ public:
   int maxLen;
   int batchNum;
   int batchID;
@@ -170,9 +171,9 @@ class LearningData {
   Tensor1D termtypes;
 
   //vectors for additional data
-  std::vector<rai::Tensor<Dtype, 3>> tensor3Ds;
-  std::vector<rai::Tensor<Dtype, 2>> tensor2Ds;
-  std::vector<rai::Tensor<Dtype, 1>> tensor1Ds;
+  std::vector<rai::Tensor<Dtype, 3>> extraTensor3D;
+  std::vector<rai::Tensor<Dtype, 2>> extraTensor2D;
+  std::vector<rai::Tensor<Dtype, 1>> extraTensor1D;
 
   LearningData<Dtype, StateDim, ActionDim> *miniBatch;
 };

@@ -8,8 +8,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
-#include "Qfunction.hpp"
 #include "ParameterizedFunction.hpp"
+#include <rai/algorithm/common/LearningData.hpp>
 
 namespace rai {
 namespace FuncApprox {
@@ -20,6 +20,7 @@ class Policy : public virtual ParameterizedFunction <Dtype, stateDimension, acti
 public:
 
   using FunctionBase = ParameterizedFunction <Dtype, stateDimension, actionDimension>;
+  using Dataset = rai::Algorithm::LearningData<Dtype,stateDimension, actionDimension>;
 
   typedef typename FunctionBase::Input State;
   typedef typename FunctionBase::InputBatch StateBatch;
@@ -34,7 +35,6 @@ public:
   typedef typename FunctionBase::Jacobian Jacobian;
   typedef typename FunctionBase::JacobianWRTparam JacobianWRTparam;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> JacoqWRTparam;
-  using Qfunction_ =  Qfunction<Dtype, stateDimension, actionDimension>;
 
   Policy(){};
   virtual ~Policy(){};

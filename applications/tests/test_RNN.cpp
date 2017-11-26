@@ -30,7 +30,6 @@
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 #include <rai/algorithm/common/LearningData.hpp>
-#include <rai/algorithm/common/DataStruct.hpp>
 
 #include <vector>
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>

@@ -20,7 +20,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   typedef typename ValueFunctionBase::ValueBatch ValueBatch;
   typedef typename ValueFunctionBase::Gradient Gradient;
   typedef typename Pfunction_tensorflow ::InnerState InnerState;
-  typedef typename ValueFunctionBase::historyWithA historyWithA_;
+
 
   RecurrentValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
@@ -99,20 +99,20 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                    {"trainUsingTargetValue/solver"}, loss);
     return loss[0](0);
   }
-  virtual Dtype performOneSolverIter(history *minibatch, Tensor3D &values){
-    std::vector<MatrixXD> vectorOfOutputs;
-    values = "targetValue";
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
-
-    if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
-    h.setZero();
-
-    this->tf_->run({minibatch->states, minibatch->lengths, values, h, lr},
-                   {"trainUsingTargetValue/loss"},
-                   {"trainUsingTargetValue/solver"}, vectorOfOutputs);
-
-    return vectorOfOutputs[0](0);
-  };
+//  virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &values){
+//    std::vector<MatrixXD> vectorOfOutputs;
+//    values = "targetValue";
+//    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
+//
+//    if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
+//    h.setZero();
+//
+//    this->tf_->run({minibatch->states, minibatch->lengths, values, h, lr},
+//                   {"trainUsingTargetValue/loss"},
+//                   {"trainUsingTargetValue/solver"}, vectorOfOutputs);
+//
+//    return vectorOfOutputs[0](0);
+//  };
 
   virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
     std::vector<MatrixXD> loss, dummy;

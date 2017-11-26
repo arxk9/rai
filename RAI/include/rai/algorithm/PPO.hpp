@@ -32,11 +32,9 @@
 #include "rai/memory/Trajectory.hpp"
 
 // acquisitor
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 #include <rai/algorithm/common/LearningData.hpp>
-#include <rai/algorithm/common/DataStruct.hpp>
 
 // common
 #include "raiCommon/enumeration.hpp"
@@ -63,7 +61,7 @@ class PPO {
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
-  typedef rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim>  TensorBatch_;
+  typedef rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> Dataset;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
@@ -102,12 +100,16 @@ class PPO {
       KL_thres_(KL_thres),
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
-      Ent_coeff_(Ent_coeff),
-      ld_(acquisitor), Dataset_() {
+      Ent_coeff_(Ent_coeff), Dataset_() {
 
     ///Construct Dataset
-    ld_.setData(&Dataset_);
-    Dataset_.minibatch = new TensorBatch_;
+    acquisitor_->setData(&Dataset_);
+    Dataset_.miniBatch = new Dataset;
+
+    ///Additional valueTensor for Trustregion update
+    //// Tensor
+    Tensor<Dtype,2> valuePred("predictedValue");
+    Dataset_.append(valuePred);
 
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
@@ -131,7 +133,7 @@ class PPO {
     updatePolicyVar();
   };
 
-  ~PPO() {delete Dataset_.minibatch;};
+  ~PPO() {delete Dataset_.miniBatch;};
 
   void runOneLoop(int numOfSteps) {
     iterNumber_++;
@@ -140,11 +142,11 @@ class PPO {
                             policy_,
                             task_[0]->timeLimit(),
                             testingTrajN_,
-                            ld_.stepsTaken(),
+                            acquisitor_->stepsTaken(),
                             vis_lv_,
                             std::to_string(iterNumber_));
     LOG(INFO) << "Simulation";
-    ld_.acquireVineTrajForNTimeSteps(task_,
+    acquisitor_->acquireVineTrajForNTimeSteps(task_,
                                      noiseBasePtr_,
                                      policy_,
                                      numOfSteps,
@@ -152,6 +154,7 @@ class PPO {
                                      numOfBranchPerJunct_,
                                      vfunction_,
                                      vis_lv_);
+    acquisitor_->saveData(task_[0],policy_,vfunction_);
 
     LOG(INFO) << "PPO Updater";
     PPOUpdater();
@@ -164,31 +167,33 @@ class PPO {
   void PPOUpdater() {
 
     Utils::timer->startTimer("policy Training");
-    Utils::timer->startTimer("GAE");
 
-    /// Update Advantage
-    ValueBatch valuePred(ld_.dataN);
+    Utils::timer->startTimer("GAE");
+    acquisitor_->computeAdvantage(task_[0], vfunction_, lambda_);
+    Utils::timer->stopTimer("GAE");
+
+
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
-    ld_.computeAdvantage(task_[0], vfunction_, lambda_);
-    Utils::timer->stopTimer("GAE");
 
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0, KLsum = 0;
     int cnt = 0;
-    vfunction_->forward(ld_.stateBat, valuePred);
+
+    /// Append predicted value to Dataset_ for trust region update
+    Dataset_.extraTensor2D[0].resize(Dataset_.maxLen,Dataset_.batchNum);
+
+    vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
     for (int i = 0; i < n_epoch_; i++) {
-      while (Dataset_.iterateBatch(minibatchSize_)) {
-//        policy_->test(ld_.cur_minibatch, stdev_o);
+      Utils::timer->startTimer("iterate");
+      bool cont =  Dataset_.iterateBatch(minibatchSize_);
+      Utils::timer->stopTimer("iterate");
 
-//        std::cout << "states" << std::endl <<  Dataset_.states << std::endl;
-//        std::cout << "actions" << std::endl <<  Dataset_.actions << std::endl;
-//        std::cout << "val" << std::endl <<   ld_.valueBat << std::endl;
-
+      if (cont) {
         Utils::timer->startTimer("Vfunction update");
-        loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
+        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states, Dataset_.miniBatch->values, Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
 //        LOG(INFO) << "Vfunctionloss" << loss;
 
@@ -196,8 +201,8 @@ class PPO {
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
         Utils::timer->startTimer("Gradient computation");
 
-        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.minibatch, stdev_o, policy_grad);
-        else policy_->PPOpg(Dataset_.minibatch, stdev_o, policy_grad);
+        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
+        else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
 //        LOG(INFO) << policy_grad.norm();
 
         Utils::timer->stopTimer("Gradient computation");
@@ -207,7 +212,7 @@ class PPO {
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("Adam update");
 
-        KL = policy_->PPOgetkl(Dataset_.minibatch, stdev_o);
+        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
 
         KLsum += KL;
@@ -232,9 +237,9 @@ class PPO {
     LOG(INFO) << "Mean KL divergence per epoch = " << KL;
     if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
-    Utils::logger->appendData("Stdev", ld_.stepsTaken(), policy_grad.norm());
-    Utils::logger->appendData("klcoef", ld_.stepsTaken(), KL_coeff_);
-    Utils::logger->appendData("klD", ld_.stepsTaken(), KLsum / n_epoch_);
+    Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
+    Utils::logger->appendData("klcoef", acquisitor_->stepsTaken(), KL_coeff_);
+    Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KLsum / n_epoch_);
   }
 
   void updatePolicyVar() {
@@ -256,8 +261,10 @@ class PPO {
   Acquisitor_ *acquisitor_;
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
-  LearningData<Dtype, StateDim, ActionDim> ld_;
-  historyWithAdvantage<Dtype, StateDim, ActionDim> Dataset_;
+  Dataset Dataset_;
+
+
+
   /////////////////////////// Algorithmic parameter ///////////////////
   int numOfJunct_;
   int numOfBranchPerJunct_;
@@ -273,9 +280,6 @@ class PPO {
   Dtype KL_thres_;
   double timeLimit;
   bool KL_adapt_;
-
-  /////////////////////////// batches
-  ValueBatch advantage_, bellmanErr_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;

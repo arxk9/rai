@@ -7,8 +7,6 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
-#include <rai/algorithm/common/DataStruct.hpp>
-#include "ParameterizedFunction.hpp"
 
 namespace rai {
 namespace FuncApprox {
@@ -17,9 +15,7 @@ template<typename Dtype, int stateDimension>
 class ValueFunction : public virtual ParameterizedFunction <Dtype, stateDimension, 1>  {
 
 public:
-
   using FunctionBase = ParameterizedFunction <Dtype, stateDimension, 1>;
-  using historyWithA = rai::Algorithm::historyWithAdvantage<Dtype,stateDim, actionDim>;
 
   typedef typename FunctionBase::Input State;
   typedef typename FunctionBase::InputBatch StateBatch;
@@ -27,6 +23,10 @@ public:
   typedef typename FunctionBase::OutputBatch ValueBatch;
   typedef typename FunctionBase::Gradient Gradient;
   typedef typename FunctionBase::Jacobian Jacobian;
+  typedef typename FunctionBase::Tensor1D Tensor1D;
+  typedef typename FunctionBase::Tensor2D Tensor2D;
+  typedef typename FunctionBase::Tensor3D Tensor3D;
+
   ValueFunction(){};
   virtual ~ValueFunction(){};
 
@@ -34,7 +34,10 @@ public:
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
-
+  virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &targetOutputs, Tensor2D &old_prediction) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  };
 };
 
 }} // namespaces
