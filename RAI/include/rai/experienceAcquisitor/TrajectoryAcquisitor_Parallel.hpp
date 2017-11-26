@@ -1,9 +1,10 @@
 //
-// Created by jhwangbo on 3/23/17.
+// Created by joonho on 11/26/17.
 //
 
-#ifndef RAI_TRAJECTORYACQUISITOR_MULTITHREADBATCH_HPP
-#define RAI_TRAJECTORYACQUISITOR_MULTITHREADBATCH_HPP
+#ifndef RAI_TRAJECTORYACQUISITOR_BATCH_HPP
+#define RAI_TRAJECTORYACQUISITOR_BATCH_HPP
+
 #include "TrajectoryAcquisitor.hpp"
 #include "Acquisitor.hpp"
 #include "rai/memory/Trajectory.hpp"
@@ -16,7 +17,7 @@ namespace rai {
 namespace ExpAcq {
 
 template<typename Dtype, int StateDim, int ActionDim>
-class TrajectoryAcquisitor_MultiThreadBatch : public TrajectoryAcquisitor<Dtype, StateDim, ActionDim> {
+class TrajectoryAcquisitor_Parallel : public TrajectoryAcquisitor<Dtype, StateDim, ActionDim> {
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
@@ -53,4 +54,5 @@ class TrajectoryAcquisitor_MultiThreadBatch : public TrajectoryAcquisitor<Dtype,
 }
 }
 
-#endif //RAI_TRAJECTORYACQUISITOR_MULTITHREADBATCH_HPP
+
+#endif //RAI_TRAJECTORYACQUISITOR_BATCH_HPP

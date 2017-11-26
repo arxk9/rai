@@ -27,12 +27,13 @@
 #include "rai/RAI_core"
 #include "rai/RAI_Tensor.hpp"
 
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 #include <rai/algorithm/common/LearningData.hpp>
 #include <rai/algorithm/common/DataStruct.hpp>
 
 #include <vector>
+#include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>
 #include "rai/memory/ReplayMemoryHistory.hpp"
 
 using namespace rai;
@@ -50,7 +51,7 @@ using PolicyBase = rai::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 using RnnQfunc = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
 using RnnDPolicy = rai::FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using RnnPolicy = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
+using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 using Task_ = rai::Task::PoleBalancing<Dtype>;
 
 using MatrixXD = Eigen::Matrix<Dtype, -1, -1>;
@@ -80,8 +81,6 @@ int main() {
   const int sampleN = 5;
   Acquisitor_ acquisitor;
   rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
-
-  ///test Memory
   {
     Task_ task;
     task.setTimeLimitPerEpisode(0.2);
@@ -95,60 +94,78 @@ int main() {
 
     std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
     std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
-    ////
-    TensorBatch_ Dataset;
-    Dataset.minibatch = new TensorBatch_;
-    ld_.setData(&Dataset);
-
-    for(int k = 0; k < 3; k++) {
-      std::cout << "iter" <<std::endl;
-      ld_.acquireTrajForNTimeSteps(taskVector, noiseVector, &policy, 8, &Vfunc);
-
-      std::cout << ld_.stateBat << std::endl << std::endl;
-      std::cout << ld_.valueBat << std::endl << std::endl;
-
-      ld_.computeAdvantage(taskVector[0], &Vfunc, 0.96, true);
-
-      std::cout << Dataset.advantages << std::endl;
-      LOG(INFO) << Dataset.maxLen << ", " << Dataset.batchNum;
-      for (int i = 0; i < Dataset.batchNum; i++) {
-        std::cout << "batch" << i << std::endl << Dataset.states.batch(i) << std::endl << std::endl;
-      }
-
-      std::cout << "iterate" << std::endl;
-      while (Dataset.iterateBatch(0)) {
-        std::cout << Dataset.batchID << std::endl;
-        std::cout << Dataset.minibatch->states << std::endl << std::endl;
-        std::cout << Dataset.minibatch->advantages << std::endl << std::endl;
-      }
-    }
-    /// Not RNN
-    FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim> policy2("cpu", "MLP", "tanh 1e-3 3 5 8 1", 0.001);
-    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc2("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
-
-    ld_.acquireTrajForNTimeSteps(taskVector, noiseVector, &policy2, 8, &Vfunc);
-
-    std::cout << ld_.stateBat << std::endl << std::endl;
-    std::cout << ld_.valueBat << std::endl << std::endl;
-
-    ld_.computeAdvantage(taskVector[0],&Vfunc, 0.96, true);
-
-    std::cout << Dataset.advantages << std::endl;
-
-//    LOG(INFO) << Dataset.maxLen << ", " << Dataset.batchNum;
-//    for(int i=0; i<Dataset.batchNum; i++){
-//      std::cout << "batch" << i << std::endl<< Dataset.states.batch(i) << std::endl<< std::endl;
-//    }
-//
-//    std::cout << "iterate" << std::endl;
-    while(Dataset.iterateBatch(5)){
-//      std::cout << Dataset.batchID<<std::endl;
-//      std::cout << Dataset.minibatch->states<< std::endl<< std::endl;
-      std::cout << Dataset.minibatch->advantages << std::endl;
-
-    }
+    acquisitor.acquireVineTrajForNTimeSteps(taskVector,noiseVector,&policy,10,0,0,&Vfunc);
 
   }
+
+//  ///test Memory
+//  {
+//    Task_ task;
+//    task.setTimeLimitPerEpisode(0.2);
+//
+//    NoiseCov covariance = NoiseCov::Identity();
+//    NormNoise noise(covariance);
+////    NoNoise noise;
+////
+//    RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
+//    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
+//
+//    std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
+//    std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
+//    ////
+//    TensorBatch_ Dataset;
+//    Dataset.minibatch = new TensorBatch_;
+//    ld_.setData(&Dataset);
+//
+//    for(int k = 0; k < 3; k++) {
+//      std::cout << "iter" <<std::endl;
+//      ld_.acquireTrajForNTimeSteps(taskVector, noiseVector, &policy, 8, &Vfunc);
+//
+//      std::cout << ld_.stateBat << std::endl << std::endl;
+//      std::cout << ld_.valueBat << std::endl << std::endl;
+//
+//      ld_.computeAdvantage(taskVector[0], &Vfunc, 0.96, true);
+//
+//      std::cout << Dataset.advantages << std::endl;
+//      LOG(INFO) << Dataset.maxLen << ", " << Dataset.batchNum;
+//      for (int i = 0; i < Dataset.batchNum; i++) {
+//        std::cout << "batch" << i << std::endl << Dataset.states.batch(i) << std::endl << std::endl;
+//      }
+//
+//      std::cout << "iterate" << std::endl;
+//      while (Dataset.iterateBatch(0)) {
+//        std::cout << Dataset.batchID << std::endl;
+//        std::cout << Dataset.minibatch->states << std::endl << std::endl;
+//        std::cout << Dataset.minibatch->advantages << std::endl << std::endl;
+//      }
+//    }
+//    /// Not RNN
+//    FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim> policy2("cpu", "MLP", "tanh 1e-3 3 5 8 1", 0.001);
+//    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc2("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
+//
+//    ld_.acquireTrajForNTimeSteps(taskVector, noiseVector, &policy2, 8, &Vfunc);
+//
+//    std::cout << ld_.stateBat << std::endl << std::endl;
+//    std::cout << ld_.valueBat << std::endl << std::endl;
+//
+//    ld_.computeAdvantage(taskVector[0],&Vfunc, 0.96, true);
+//
+//    std::cout << Dataset.advantages << std::endl;
+//
+////    LOG(INFO) << Dataset.maxLen << ", " << Dataset.batchNum;
+////    for(int i=0; i<Dataset.batchNum; i++){
+////      std::cout << "batch" << i << std::endl<< Dataset.states.batch(i) << std::endl<< std::endl;
+////    }
+////
+////    std::cout << "iterate" << std::endl;
+//    while(Dataset.iterateBatch(5)){
+////      std::cout << Dataset.batchID<<std::endl;
+////      std::cout << Dataset.minibatch->states<< std::endl<< std::endl;
+//      std::cout << Dataset.minibatch->advantages << std::endl;
+//
+//    }
+//
+//  }
 
 
   /// Test RQFUNC
