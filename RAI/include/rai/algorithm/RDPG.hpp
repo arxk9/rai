@@ -192,8 +192,8 @@ class RDPG {
     value_.resize(1, Dataset_.maxLen, batSize_);
     value_target.resize(1, Dataset_.maxLen, batSize_);
     value_target.setZero();
-    Utils::timer->startTimer("Qfunction update");
 
+    Utils::timer->startTimer("Qfunction update");
     ///Target
     Tensor<Dtype, 3> action_target({ActionDim, Dataset_.maxLen, batSize_},"sampledAction");
 
@@ -216,6 +216,7 @@ class RDPG {
     std::memcpy(action_t.data(), Dataset_.actions.data(),sizeof(Dtype) *action_t.size());
     std::memcpy(value_t.data(), value_target.data(),sizeof(Dtype) *value_t.size());
 
+//    std::cout << state_t << std::endl;
     testQ_->performOneSolverIter(state_t, action_t, value_t);
 //    std::cout << "costs" << std::endl << Dataset_.costs << std::endl;
 //    std::cout << "val" << std::endl << value_.batch(0) << std::endl;
@@ -234,8 +235,6 @@ class RDPG {
 //    temp2.block(0,strid,1, Dataset_.maxLen) = Dataset_.actions.batch(0);
 //    temp3.block(0,strid,1, Dataset_.maxLen) =  value_t.batch(0);
 //    }
-
-//    qfunctest_->performOneSolverIter(temp, temp2, temp3);
 
     qfunction_->performOneSolverIter(&Dataset_, value_target);
     Utils::timer->stopTimer("Qfunction update");

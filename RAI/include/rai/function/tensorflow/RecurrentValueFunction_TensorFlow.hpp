@@ -19,6 +19,8 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   typedef typename ValueFunctionBase::Value Value;
   typedef typename ValueFunctionBase::ValueBatch ValueBatch;
   typedef typename ValueFunctionBase::Gradient Gradient;
+  typedef typename Pfunction_tensorflow ::InnerState InnerState;
+  typedef typename ValueFunctionBase::historyWithA historyWithA_;
 
   RecurrentValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
@@ -30,27 +32,58 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                                     std::string graphParam,
                                     Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
-          "RecurrentVfunction", computeMode, graphName, graphParam, learningRate) {
+          "RecurrentVfunction", computeMode, graphName, graphParam, learningRate), h("h_init") {
+    hdim = this->getInnerStatesize();
+    h.resize(hdim, 0);
+    h.setZero();
   }
 
   ~RecurrentValueFunction_TensorFlow() {};
 
-  virtual void forward(State &state, RecurrentState &rcrntState, Dtype &value) {
+  virtual void forward(State &state, Dtype &value) {
     std::vector<MatrixXD> vectorOfOutputs;
+    MatrixXD h_, length;
+    length.resize(1,1);
+    h_.resize(hdim,1);
+    h_.setZero();
+
     this->tf_->run({{"state", state},
-                    {"init_rcrnt_state", rcrntState},
-                    {"updateBNparams", this->notUpdateBN}},
+                    {"length", length},
+                    {"h_init", h_}},
                    {"value"}, {}, vectorOfOutputs);
     value = vectorOfOutputs[0](0);
   }
+  virtual void forward(StateBatch &states, ValueBatch &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
+    Tensor1D len({states.cols()}, 1, "length");
+    stateT.copyDataFrom(states);
 
-  virtual void forward(StateBatch &states, RecurrentStateBatch &rcrntStates, ValueBatch &values) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states},
-                    {"init_rcrnt_state", rcrntStates}
-                       { "updateBNparams", this->notUpdateBN }},
-                   {"value"}, {}, vectorOfOutputs);
-    values = vectorOfOutputs[0];
+    if (h.cols() != states.cols()) {
+      h.resize(hdim, states.cols());
+    }
+    h.setZero();
+//    }
+
+    this->tf_->run({stateT,  h, len}, {"value", "h_state"}, {}, vectorOfOutputs);
+    std::memcpy(values.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * values.size());
+    h.copyDataFrom(vectorOfOutputs[1]);
+  }
+
+  virtual void forward(Tensor3D &states, Tensor3D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+
+    if (h.cols() != states.batches()) {
+      h.resize(hdim, states.batches());
+    }
+    h.setZero();
+//    }
+
+    this->tf_->run({states,  h, len}, {"value", "h_state"}, {}, vectorOfOutputs);
+//    h.copyDataFrom(vectorOfOutputs[1]);
+    values.copyDataFrom(vectorOfOutputs[0]);
+//    LOG(INFO) << h.eMat();
   }
 
   virtual Dtype performOneSolverIter(std::vector<StateBatch> &states,
@@ -66,10 +99,49 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                    {"trainUsingTargetValue/solver"}, loss);
     return loss[0](0);
   }
+  virtual Dtype performOneSolverIter(history *minibatch, Tensor3D &values){
+    std::vector<MatrixXD> vectorOfOutputs;
+    values = "targetValue";
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
+
+    if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
+    h.setZero();
+
+    this->tf_->run({minibatch->states, minibatch->lengths, values, h, lr},
+                   {"trainUsingTargetValue/loss"},
+                   {"trainUsingTargetValue/solver"}, vectorOfOutputs);
+
+    return vectorOfOutputs[0](0);
+  };
+
+  virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
+    std::vector<MatrixXD> loss, dummy;
+    this->tf_->run({{"state", states},
+                    {"targetValue", values},
+                    {"predictedValue", old_values},
+                    {"trainUsingTRValue/learningRate", this->learningRate_},
+                    {"updateBNparams", this->notUpdateBN}},
+                   {"trainUsingTRValue/loss"},
+                   {"trainUsingTRValue/solver"}, loss);
+    return loss[0](0);
+  }
+
+  virtual int getInnerStatesize() {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
+    return vectorOfOutputs[0].scalar<int>()();
+  }
+
+  virtual void getInnerStates(InnerState &h_out){
+    h_out = h;
+  }
+
+  int hiddenStateDim() { return hdim; }
 
  protected:
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
-
+  int hdim = 0;
+  Tensor2D h;
 };
 } // namespace FuncApprox
 } // namespace rai

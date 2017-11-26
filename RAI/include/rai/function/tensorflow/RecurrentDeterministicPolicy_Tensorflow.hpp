@@ -147,8 +147,9 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(minibatch, gradients);
 //    std::cout << "grad" << std::endl << gradients<< std::endl;
 
-    this->tf_->run({minibatch->states, minibatch->lengths, h, gradients, lr}, {},
+    this->tf_->run({minibatch->states, minibatch->lengths, h, gradients, lr}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
+    LOG(INFO) << dummy[0](0);
     return averageQ;
   }
   Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states) {};

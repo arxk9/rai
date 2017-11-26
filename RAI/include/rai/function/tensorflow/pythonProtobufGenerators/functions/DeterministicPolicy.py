@@ -27,5 +27,6 @@ class DeterministicPolicy(pc.Policy):
             manipulated_parameter_gradients = []
             for parameter in gs.l_param_list:
                 manipulated_parameter_gradients += [tf.gradients(action, parameter, gradient_from_critic)][0]
+            grad_norm = tf.reduce_sum([tf.norm(grad) for grad in manipulated_parameter_gradients], name='gradnorm')
             manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
             train_using_critic_apply_gradients = train_using_critic_optimizer.apply_gradients(manipulated_parameter_gradients_and_parameters, name='applyGradients')

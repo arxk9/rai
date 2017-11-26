@@ -7,7 +7,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
-
+#include <rai/algorithm/common/DataStruct.hpp>
 #include "ParameterizedFunction.hpp"
 
 namespace rai {
@@ -19,6 +19,7 @@ class ValueFunction : public virtual ParameterizedFunction <Dtype, stateDimensio
 public:
 
   using FunctionBase = ParameterizedFunction <Dtype, stateDimension, 1>;
+  using historyWithA = rai::Algorithm::historyWithAdvantage<Dtype,stateDim, actionDim>;
 
   typedef typename FunctionBase::Input State;
   typedef typename FunctionBase::InputBatch StateBatch;

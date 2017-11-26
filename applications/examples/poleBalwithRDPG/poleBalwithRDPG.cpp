@@ -91,27 +91,33 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Define Noise Model //////////////////////
-//  std::vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
-//      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.2 , 1, 0.05));
+  std::vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
+      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.15, 1.5, 0.05));
+  std::vector<Noise *> noiseVector;
+  for (auto &noise : noiseVec)
+    noiseVector.push_back(&noise);
+//
+//  NoiseCovariance covariance = NoiseCovariance::Identity();
+//  std::vector<NormalNoise> noiseVec(nThread, NormalNoise(covariance));
 //  std::vector<Noise *> noiseVector;
 //  for (auto &noise : noiseVec)
 //    noiseVector.push_back(&noise);
 
-  NoiseCovariance covariance = NoiseCovariance::Identity();
-  std::vector<NormalNoise> noiseVec(nThread, NormalNoise(covariance));
-  std::vector<Noise *> noiseVector;
-  for (auto &noise : noiseVec)
-    noiseVector.push_back(&noise);
-
   ////////////////////////// Define Memory ////////////////////////////
-  ReplayMemory Memory(500);
+  ReplayMemory Memory(1000);
 
   ////////////////////////// Define Function approximations //////////
-  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 3 64 64 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "LSTMNet", "tanh 1e-3 3 64 64 1", learningRatePolicy);
+//  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 3 128 64 1", learningRatePolicy);
+//  Policy_TensorFlow policy_target("gpu,0", "LSTMNet", "tanh 1e-3 3 128 64 1", learningRatePolicy);
+//
+//  Qfunction_TensorFlow qfunction("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 128 64 1", learningRateQfunction);
+//  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 128 64 1", learningRateQfunction);
+    Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 3 128 / 64 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 3 128 / 64 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 64 64 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 64 64 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 128 / 64 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 3 1 128 / 64 1", learningRateQfunction);
+
   rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> qfunction2("cpu", "MLP2", "relu 1e-3 3 1 32 32 1", learningRateQfunction);
 
   ////////////////////////// Acquisitor
@@ -127,7 +133,7 @@ int main(int argc, char *argv[]) {
                 noiseVector,
                 &acquisitor,
                 &Memory,
-                30,
+                100,
                 1);
   algorithm.setVisualizationLevel(0);
   algorithm.initiallyFillTheMemory();
@@ -171,6 +177,7 @@ int main(int argc, char *argv[]) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
+
     algorithm.learnForNepisodes(5);
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

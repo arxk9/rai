@@ -83,9 +83,10 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     std::vector<MatrixXD> dummy;
     this->tf_->run({{"state", states},
                     {"trainUsingCritic/gradientFromCritic", gradients},
-                    {"trainUsingCritic/learningRate", this->learningRate_}}, {},
+                    {"trainUsingCritic/learningRate", this->learningRate_}}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
     this->tf_->run({{"state", states}}, {}, {"action"}, dummy);
+    LOG(INFO) << dummy[0](0);
     return averageQ;
   }
 

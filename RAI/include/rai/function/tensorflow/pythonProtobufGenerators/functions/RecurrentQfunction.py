@@ -23,6 +23,7 @@ class RecurrentQfunction(bc.SpecializedFunction):
         avg = tf.reduce_mean(q_value_masked, name='average_Q_value')
         # test = tf.identity(tf.cast(tf.shape(),dtype) ,name = 'test')
 
+
         # gradients
 
         jac_Q_wrt_State = tf.identity(tf.gradients(avg, gs.input1)[0], name='gradient_AvgOf_Q_wrt_State')
