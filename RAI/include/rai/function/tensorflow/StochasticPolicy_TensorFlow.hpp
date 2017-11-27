@@ -144,6 +144,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    vectorOfOutputs);
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
+
   virtual void PPOpg_kladapt(Tensor3D &states,
                              Tensor3D &action,
                              Tensor3D &actionNoise,
