@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 10;
+  constexpr int loggingInterval = 50;
   for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(5000);
+    algorithm.runOneLoop(6000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

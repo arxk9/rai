@@ -67,7 +67,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                     {"predictedValue", old_values},
                     {"trainUsingTRValue/learningRate", this->learningRate_},
                     {"updateBNparams", this->notUpdateBN}},
-                   {"trainUsingTRValue/loss"}
+                   {"trainUsingTRValue/loss"},
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
