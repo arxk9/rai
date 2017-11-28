@@ -47,7 +47,7 @@ class RecurrentVfunction(bc.SpecializedFunction):
             vfloss1 = tf.square(value - value_target)
             clip_rate = clip_param[0]
 
-            vpredclipped = value - tf.clip_by_value(value - value_pred, -clip_rate, clip_rate)
+            vpredclipped = value_pred - tf.clip_by_value(value - value_pred, -clip_rate, clip_rate)
             vfloss2 = tf.square(vpredclipped - value_target)
 
             TR_loss = .5 * tf.reduce_mean(tf.maximum(vfloss1, vfloss2), name='loss')
