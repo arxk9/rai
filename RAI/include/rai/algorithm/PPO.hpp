@@ -191,14 +191,13 @@ class PPO {
         Utils::timer->startTimer("Vfunction update");
         loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states, Dataset_.miniBatch->values, Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
+        LOG(INFO)  << loss;
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
         Utils::timer->startTimer("Gradient computation");
-
         if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
         else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
-
         Utils::timer->stopTimer("Gradient computation");
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 
