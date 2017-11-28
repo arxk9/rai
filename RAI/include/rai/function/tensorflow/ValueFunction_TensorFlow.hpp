@@ -22,7 +22,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   typedef typename ValueFunctionBase::Tensor1D Tensor1D;
   typedef typename ValueFunctionBase::Tensor2D Tensor2D;
   typedef typename ValueFunctionBase::Tensor3D Tensor3D;
-  typedef typename ValueFunctionBase::Dataset Dataset;
 
   ValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -83,12 +82,12 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     return loss[0](0);
   }
 
-  virtual Dtype performOneSolverIter_trustregion(Dataset * minibatch, Tensor2D &old_values) {
+  virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
     std::vector<MatrixXD> loss;
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
 
-    this->tf_->run({minibatch->states,
-                    minibatch->values,
+    this->tf_->run({states,
+                    values,
                     old_values,
                     lr},
                    {"trainUsingTRValue/loss"},

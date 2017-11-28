@@ -44,7 +44,7 @@ using rai::Task::CommandDim;
 using Task_ = rai::Task::QuadrotorControl<Dtype>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 using Policy = rai::FuncApprox::Policy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Vfunction = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim, ActionDim>;
+using Vfunction = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
 using Acquisitor = rai::ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
 
 int main(int argc, char *argv[]) {
