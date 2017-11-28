@@ -4,12 +4,12 @@
 namespace rai {
 namespace FuncApprox {
 
-template<typename Dtype, int stateDim>
+template<typename Dtype, int stateDim, int actionDim>
 class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dtype, stateDim, 1>,
-                                 public virtual ValueFunction<Dtype, stateDim> {
+                                 public virtual ValueFunction<Dtype, stateDim, actionDim> {
 
  public:
-  using ValueFunctionBase = ValueFunction<Dtype, stateDim>;
+  using ValueFunctionBase = ValueFunction<Dtype, stateDim,actionDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, 1>;
 
   typedef typename ValueFunctionBase::State State;

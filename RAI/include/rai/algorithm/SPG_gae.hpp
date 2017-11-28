@@ -67,7 +67,7 @@ class SPG_gae {
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
   using Policy_ = FuncApprox::StochasticPolicy<Dtype, StateDim, ActionDim>;
-  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
+  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim, ActionDim>;
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
@@ -370,7 +370,7 @@ class SPG_gae {
   std::vector<Task_ *> task_;
   std::vector<Noise_ *> noise_;
   std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
-  FuncApprox::ValueFunction<Dtype, StateDim> *vfunction_;
+  FuncApprox::ValueFunction<Dtype, StateDim, ActionDim> *vfunction_;
   Policy_ *policy_;
   Acquisitor_ *acquisitor_;
   Dtype lambda_;

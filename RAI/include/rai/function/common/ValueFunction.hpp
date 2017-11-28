@@ -11,11 +11,12 @@
 namespace rai {
 namespace FuncApprox {
 
-template<typename Dtype, int stateDimension>
+template<typename Dtype, int stateDimension, int actionDimension>
 class ValueFunction : public virtual ParameterizedFunction <Dtype, stateDimension, 1>  {
 
 public:
   using FunctionBase = ParameterizedFunction <Dtype, stateDimension, 1>;
+  using DataSet = rai::Algorithm::LearningData<Dtype, stateDimension, actionDimension>;
 
   typedef typename FunctionBase::Input State;
   typedef typename FunctionBase::InputBatch StateBatch;

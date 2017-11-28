@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10,0,false);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10,3000,false);
 
   algorithm.setVisualizationLevel(0);
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(5000);
+    algorithm.runOneLoop(6000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
