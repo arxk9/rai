@@ -47,12 +47,12 @@ class TensorBase {
     init(dim, name);
     eTensor().setConstant(constant);
   }
-
-  // copy constructor
-  TensorBase(TensorBase<Dtype, NDim>& copy, std::string name=""){
-    init(copy.dim(), name);
-    memcpy(data(), copy.data(), size()* sizeof(Dtype));
-  }
+//
+//  // copy constructor
+//  TensorBase(TensorBase<Dtype, NDim>& copy, std::string name=""){
+//    init(copy.dim(), name);
+//    memcpy(data(), copy.data(), size()* sizeof(Dtype));
+//  }
 
 ///Eigen Tensor constructor is abigous with std::vector<int> constructor ...
 //  // copy constructor from Eigen Tensor
