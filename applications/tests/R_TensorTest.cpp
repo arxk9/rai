@@ -8,6 +8,10 @@ void test(Eigen::Matrix<float, -1, -1> ten2D);
 void test2(std::pair<std::string, tensorflow::Tensor> ten);
 
 int main() {
+  std::vector<rai::Tensor<float, 2>> tenvec;
+  rai::Tensor<float, 2> tensor("test");
+  tenvec.push_back(tensor);
+  std::cout << tenvec.size();
 
   rai::Tensor<float, 2> ten({3, 4}, "test tensor");
   Eigen::Matrix<float, 3, 4> eMat;
@@ -72,33 +76,33 @@ int main() {
 
   //////Test conservativeResize///
 
-  std::cout << "ten : "<<std::endl<<ten << std::endl;
-  ten.conservativeResize(4,5);
-  std::cout << "ten.conservativeResize(4,5) :"<<std::endl <<ten << std::endl<< std::endl;
+  std::cout << "ten : " << std::endl << ten << std::endl;
+  ten.conservativeResize(4, 5);
+  std::cout << "ten.conservativeResize(4,5) :" << std::endl << ten << std::endl << std::endl;
 
-  rai::Tensor<float, 3> ten3D2({3, 4, 2},"temp");
+  rai::Tensor<float, 3> ten3D2({3, 4, 2}, "temp");
   ten3D2 = ten3D;
-  std::cout << "ten3D : "<<std::endl<<ten3D << std::endl;
-  ten3D2.conservativeResize(2,4,2);
-  std::cout << "ten3D.conservativeResize(2,4,2) :"<<std::endl <<ten3D2 << std::endl;
+  std::cout << "ten3D : " << std::endl << ten3D << std::endl;
+  ten3D2.conservativeResize(2, 4, 2);
+  std::cout << "ten3D.conservativeResize(2,4,2) :" << std::endl << ten3D2 << std::endl;
   ten3D2 = ten3D;
-  ten3D2.conservativeResize(3,3,2);
-  std::cout << "ten3D.conservativeResize(3,3,2) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2.conservativeResize(3, 3, 2);
+  std::cout << "ten3D.conservativeResize(3,3,2) :" << std::endl << ten3D2 << std::endl;
   ten3D2 = ten3D;
-  ten3D2.conservativeResize(3,4,1);
-  std::cout << "ten3D.conservativeResize(3,4,1) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2.conservativeResize(3, 4, 1);
+  std::cout << "ten3D.conservativeResize(3,4,1) :" << std::endl << ten3D2 << std::endl;
   ten3D2 = ten3D;
-  ten3D2.conservativeResize(3,3,1);
-  std::cout << "ten3D.conservativeResize(3,3,1) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2.conservativeResize(3, 3, 1);
+  std::cout << "ten3D.conservativeResize(3,3,1) :" << std::endl << ten3D2 << std::endl;
   ten3D2 = ten3D;
-  ten3D2.conservativeResize(2,4,1);
-  std::cout << "ten3D.conservativeResize(2,4,1) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2.conservativeResize(2, 4, 1);
+  std::cout << "ten3D.conservativeResize(2,4,1) :" << std::endl << ten3D2 << std::endl;
   ten3D2 = ten3D;
-  ten3D2.conservativeResize(2,3,2);
-  std::cout << "ten3D.conservativeResize(2,3,2) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2.conservativeResize(2, 3, 2);
+  std::cout << "ten3D.conservativeResize(2,3,2) :" << std::endl << ten3D2 << std::endl;
   ten3D2 = ten3D;
-  ten3D2.conservativeResize(4,5,3);
-  std::cout << "ten3D.conservativeResize(4,5,3) :"<<std::endl <<ten3D2 << std::endl;
+  ten3D2.conservativeResize(4, 5, 3);
+  std::cout << "ten3D.conservativeResize(4,5,3) :" << std::endl << ten3D2 << std::endl;
 }
 
 void test(Eigen::Matrix<float, -1, -1> ten2D) {
