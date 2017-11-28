@@ -15,7 +15,7 @@
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
 
 // Neural network
-#include "rai/function/tensorflow/RecurrentValueFunction_TensorFlow.hpp"
+#include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp"
 
 // algorithm
@@ -41,7 +41,7 @@ using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
+using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  Vfunction_TensorFlow Vfunction("cpu", "GRUMLP", "relu 1e-3 3 16 / 32 16 1", 0.001);
-  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 1e-3 3 16 / 32 16 1", 0.001);
+  Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
+  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 1e-3 3 16 / 16 16 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor

@@ -23,7 +23,7 @@ class BellmanTupleSet {
   typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, -1> CostBatch;
   typedef Trajectory<Dtype, stateDim, actionDim> Trajectory_;
-  typedef FuncApprox::ValueFunction<Dtype, stateDim, actionDim> Vfunction_;
+  typedef FuncApprox::ValueFunction<Dtype, stateDim> Vfunction_;
 
   class BellmanTuple {
    public:

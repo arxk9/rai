@@ -68,7 +68,7 @@ class PPO {
   using Policy_ = FuncApprox::StochasticPolicy<Dtype, StateDim, ActionDim>;
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
-  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim,ActionDim>;
+  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
 
   PPO(std::vector<Task_ *> &tasks,
       ValueFunc_ *vfunction,
@@ -183,6 +183,7 @@ class PPO {
 
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen,Dataset_.batchNum);
+
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
     for (int i = 0; i < n_epoch_; i++) {

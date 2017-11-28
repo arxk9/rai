@@ -27,7 +27,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
   using StateBatch = Eigen::Matrix<Dtype, StateDim, -1>;
   using ActionBatch = Eigen::Matrix<Dtype, ActionDim, -1>;
   using ReplayMemory_ = Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
-  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim, ActionDim>;
+  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
   using ValueBatch = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
   using DataSet = rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>;
 
@@ -197,48 +197,21 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     Data->advantages.resize(Data->maxLen, Data->batchNum);
     Data->advantages.setZero();
 
-    Eigen::Matrix<Dtype,StateDim, -1> stateMat;
-    Eigen::Matrix<Dtype,1, -1> ValueMat;
-    Eigen::Matrix<Dtype,1, -1> BellmanErr;
-    Eigen::Matrix<Dtype,1, -1> Advs;
-
     for (auto &tra : traj) {
-      ///compute advantage for each trajectory
-//      ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
-      stateMat.resize(StateDim,tra.size());
-
-      for (int colID = 0; colID < tra.size(); colID++) {
-        stateMat.col(colID) = tra.stateTraj[colID];
-      }
-      ValueMat.resize(tra.size());
-      BellmanErr.resize(tra.size() - 1);
-      Advs.resize(1, tra.size() - 1);
-      Advs[tra.size() - 2] = BellmanErr[tra.size() - 2];
-
-      vfunction->forward(stateMat,ValueMat);
-
-      if (tra.termType == TerminationType::terminalState)
-        ValueMat[tra.size() - 1] = task->termValue();
-      for (int i = 0; i < tra.size() - 1; i++)
-        BellmanErr[i] = ValueMat[i + 1] * task->discountFtr() + tra.costTraj[i] - ValueMat[i];
-      Dtype fctr = task->discountFtr() * lambda;
-      for (int timeID = tra.size() - 3; timeID > -1; timeID--)
-        Advs[timeID] = fctr * Advs[timeID + 1] + Advs[timeID];
-
-      ///save
+      ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
       if (normalize) {
-        rai::Math::MathFunc::normalize(Advs);
+        rai::Math::MathFunc::normalize(advTra);
       }
 
       if (Data->isRecurrent) {
         //RNN
-        Data->advantages.block(0, batchID, Advs.cols(), 1) = Advs.transpose();
+        Data->advantages.block(0, batchID, advTra.cols(), 1) = advTra.transpose();
       } else {
         //BatchN = DataN
-        Data->advantages.block(0, dataID, 1, Advs.cols()) = Advs;
+        Data->advantages.block(0, dataID, 1, advTra.cols()) = advTra;
       }
 
-      dataID += Advs.cols();
+      dataID += advTra.cols();
       batchID++;
     }
   }

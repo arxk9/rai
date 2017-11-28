@@ -70,7 +70,7 @@ class TRPO_gae {
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
-  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim, ActionDim>;
+  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
   using Policy_ = FuncApprox::StochasticPolicy<Dtype, StateDim, ActionDim>;
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;

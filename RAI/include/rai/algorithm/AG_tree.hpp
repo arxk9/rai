@@ -67,7 +67,7 @@ class AG_tree {
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
   AG_tree(std::vector<Task_*> &task,
-          FuncApprox::ValueFunction<Dtype, StateDim, ActionDim> *vfunction,
+          FuncApprox::ValueFunction<Dtype, StateDim> *vfunction,
           FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy,
           std::vector<Noise_*> &noise,
           Acquisitor_* acquisitor,
@@ -333,7 +333,7 @@ class AG_tree {
 
   /////////////////////////// Core //////////////////////////////////////////
   std::vector<Task_*> task_;
-  FuncApprox::ValueFunction<Dtype, StateDim, ActionDim> *vfunction_;
+  FuncApprox::ValueFunction<Dtype, StateDim> *vfunction_;
   FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy_;
   Acquisitor_* acquisitor_;
   std::vector<Noise_*> noise_;

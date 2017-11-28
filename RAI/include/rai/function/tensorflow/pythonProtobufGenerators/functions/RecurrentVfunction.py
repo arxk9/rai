@@ -5,20 +5,19 @@ import core
 
 class RecurrentVfunction(bc.SpecializedFunction):
     input_names = ['state']
-    output_names = ['value']
+    output_names = ['value'
 
     def __init__(self, dtype, gs):
         super(RecurrentVfunction, self).__init__(dtype, gs)
         # variables
-        value = tf.squeeze(input=gs.output,axis=2, name=self.output_names[0])
-        print(value)
+        value = tf.identity(gs.output, name=self.output_names[0])
         state_dim = gs.input.shape[1]
         state = gs.input
         clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
 
         # new placeholders
-        value_target = tf.placeholder(dtype, shape=[None, None], name='targetValue') ## [#batches, maxlen]
-        value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
+        value_target = tf.placeholder(dtype, shape=[None, None, 1], name='targetValue')
+        value_pred = tf.placeholder(dtype, shape=[None,None, 1], name='predictedValue')
 
         mask = tf.sequence_mask(gs.seq_length, name='mask')
         q_value_target_masked = tf.boolean_mask(value_target, mask)
@@ -33,6 +32,9 @@ class RecurrentVfunction(bc.SpecializedFunction):
         # gradients
         jac_V_wrt_State = tf.identity(tf.gradients(avg, state)[0], name='gradient_AvgOf_V_wrt_State')
 
+        jac_Q_wrt_State = tf.identity(tf.gradients(avg, gs.input1)[0], name='gradient_AvgOf_Q_wrt_State')
+        jac_Q_wrt_Action = tf.identity(tf.gradients(avg, gs.input2)[0], name='gradient_AvgOf_Q_wrt_action')
+
         # solvers
         with tf.name_scope('trainUsingTargetValue'):
             core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer)
@@ -45,7 +47,7 @@ class RecurrentVfunction(bc.SpecializedFunction):
             vfloss1 = tf.square(value - value_target)
             clip_rate = clip_param[0]
 
-            vpredclipped = value_pred - tf.clip_by_value(value - value_pred, -clip_rate, clip_rate)
+            vpredclipped = value - tf.clip_by_value(value - value_pred, -clip_rate, clip_rate)
             vfloss2 = tf.square(vpredclipped - value_target)
 
             TR_loss = .5 * tf.reduce_mean(tf.maximum(vfloss1, vfloss2), name='loss')
