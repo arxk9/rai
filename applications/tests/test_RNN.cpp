@@ -89,7 +89,7 @@ int main() {
 //    NoNoise noise;
 //
     RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
-    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
+    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim, ActionDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
 
     std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
     std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};

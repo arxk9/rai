@@ -188,7 +188,7 @@ class PPO {
     for (int i = 0; i < n_epoch_; i++) {
       if (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
-        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states, Dataset_.miniBatch->values, Dataset_.miniBatch->extraTensor2D[0]);
+        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch, Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
 
         policy_->getStdev(stdev_o);

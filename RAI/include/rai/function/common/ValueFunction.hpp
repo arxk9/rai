@@ -16,7 +16,7 @@ class ValueFunction : public virtual ParameterizedFunction <Dtype, stateDimensio
 
 public:
   using FunctionBase = ParameterizedFunction <Dtype, stateDimension, 1>;
-  using DataSet = rai::Algorithm::LearningData<Dtype, stateDimension, actionDimension>;
+  using Dataset = rai::Algorithm::LearningData<Dtype, stateDimension, actionDimension>;
 
   typedef typename FunctionBase::Input State;
   typedef typename FunctionBase::InputBatch StateBatch;
@@ -35,7 +35,7 @@ public:
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
-  virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &targetOutputs, Tensor2D &old_prediction) {
+  virtual Dtype performOneSolverIter_trustregion(Dataset *minibatch, Tensor2D &old_prediction) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };

@@ -21,7 +21,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   typedef typename ValueFunctionBase::Tensor1D Tensor1D;
   typedef typename ValueFunctionBase::Tensor2D Tensor2D;
   typedef typename ValueFunctionBase::Tensor3D Tensor3D;
-  typedef typename ValueFunctionBase::DataSet DataSet;
+  typedef typename ValueFunctionBase::Dataset Dataset;
 
   RecurrentValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
@@ -88,30 +88,21 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   }
 
 
-  virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
+  virtual Dtype performOneSolverIter_trustregion(Dataset * minibatch , Tensor2D &old_values) {
     std::vector<MatrixXD> loss, dummy;
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+    Tensor2D hiddenState({hiddenStateDim(),  minibatch->states.batches()},0, "h_init");
 
-    this->tf_->run({states,
-                    values,
+    this->tf_->run({minibatch->states,
+                    minibatch->values,
+                    minibatch->lengths,
                     old_values,
-                    lr},
+                    lr,h},
                    {"trainUsingTRValue/loss"},
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
 
-  virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
-    std::vector<MatrixXD> loss, dummy;
-    this->tf_->run({{"state", states},
-                    {"targetValue", values},
-                    {"predictedValue", old_values},
-                    {"trainUsingTRValue/learningRate", this->learningRate_},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"trainUsingTRValue/loss"},
-                   {"trainUsingTRValue/solver"}, loss);
-    return loss[0](0);
-  }
 
   virtual int getInnerStatesize() {
     std::vector<tensorflow::Tensor> vectorOfOutputs;

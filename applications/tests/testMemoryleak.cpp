@@ -50,7 +50,7 @@ typedef typename PolicyBase::ActionBatch ActionBatch;
 typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
 using Task_ = rai::Task::PoleBalancing<Dtype>;
 
-using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
+using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim, ActionDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 
 using namespace rai;
