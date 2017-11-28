@@ -49,16 +49,15 @@ class TensorBase {
   }
 
   // copy constructor
-  TensorBase(const TensorBase<Dtype, NDim>& copy, std::string name=""){
+  TensorBase(const TensorBase<Dtype, NDim>& copy){
     if (copy.size() != -1 ) {
-      init(copy.dim(), name);
+      init(copy.dim(), copy.getName());
       memcpy(data(), copy.data(), size() * sizeof(Dtype));
     }
     else {
-      setName(name);
+      setName(copy.getName());
       setDataType();
     }
-//    copy.data();
   }
 
 ///Eigen Tensor constructor is abigous with std::vector<int> constructor ...
