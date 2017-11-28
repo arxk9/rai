@@ -58,7 +58,8 @@ class LearningData {
                                     int numofjunct,
                                     int numOfBranchPerJunct,
                                     ValueFunc_ *vfunction = nullptr,
-                                    int vis_lv = 0) {
+                                    int vis_lv = 0,
+                                    bool noisifyState = false) {
     std::vector<Trajectory_> trajectories;
     double dt = task[0]->dt();
     double timeLimit = task[0]->timeLimit();
@@ -138,6 +139,8 @@ class LearningData {
       tra.clear();
     for (auto &noise : noise)
       noise->initializeNoise();
+
+    if(noisifyState) task[0]->noisifyState(rolloutstartState);
 
     trajAcquisitor_->acquire(task, policy, noise, trajectories, rolloutstartState, timeLimit, true);
 

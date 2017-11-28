@@ -47,7 +47,7 @@ using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, St
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
-#define nThread 4
+#define nThread 10
 
 int main(int argc, char *argv[]) {
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::TRPO_gae<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 2, 3, 1);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 1, false);
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   constexpr int loggingInterval = 50;
   ////////////////////////// Learning /////////////////////////////////
 
-  for (int iterationNumber = 0; iterationNumber < 101; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 51; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
