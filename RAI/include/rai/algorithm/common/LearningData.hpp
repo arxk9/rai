@@ -161,7 +161,7 @@ class LearningData {
   Tensor3D states;
   Tensor3D actions;
   Tensor3D actionNoises;
-
+//  Tensor3D hiddenstates;
   Tensor2D costs;
   Tensor2D values;
   Tensor2D advantages;

@@ -188,10 +188,10 @@ class PPO {
 
     for (int i = 0; i < n_epoch_; i++) {
       if (Dataset_.iterateBatch(minibatchSize_)) {
+        LOG(INFO) << i << "minibatchSize_ ";
         Utils::timer->startTimer("Vfunction update");
         loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states, Dataset_.miniBatch->values, Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
-        LOG(INFO)  << loss;
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();

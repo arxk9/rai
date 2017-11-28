@@ -56,7 +56,7 @@ class RDPG {
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
-  typedef rai::Algorithm::history<Dtype, StateDim, ActionDim> TensorBatch_;
+//  typedef rai::Algorithm::history<Dtype, StateDim, ActionDim> TensorBatch_;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::Noise<Dtype, ActionDim>;

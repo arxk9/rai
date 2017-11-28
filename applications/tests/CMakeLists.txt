@@ -27,3 +27,7 @@ target_link_libraries(testRnn ${RAI_LINK})
 add_executable(memory ${RAI_TASK_SRC} testMemoryleak.cpp)
 target_include_directories(memory PUBLIC)
 target_link_libraries(memory ${RAI_LINK})
+
+add_executable(data ${RAI_TASK_SRC} testData.cpp)
+target_include_directories(data PUBLIC)
+target_link_libraries(data ${RAI_LINK})
