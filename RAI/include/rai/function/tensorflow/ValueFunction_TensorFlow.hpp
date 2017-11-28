@@ -107,7 +107,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
-
   virtual Dtype performOneSolverIter_infimum(StateBatch &states, ValueBatch &values, Dtype linSlope) {
     std::vector<MatrixXD> loss, dummy;
     auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
