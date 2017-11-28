@@ -5,19 +5,20 @@ import core
 
 class RecurrentVfunction(bc.SpecializedFunction):
     input_names = ['state']
-    output_names = ['value'
+    output_names = ['value']
 
     def __init__(self, dtype, gs):
         super(RecurrentVfunction, self).__init__(dtype, gs)
         # variables
-        value = tf.identity(gs.output, name=self.output_names[0])
+        value = tf.squeeze(gs.output, axis=2, name=self.output_names[0])
+        print(value)
         state_dim = gs.input.shape[1]
         state = gs.input
         clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
 
         # new placeholders
-        value_target = tf.placeholder(dtype, shape=[None, None, 1], name='targetValue')
-        value_pred = tf.placeholder(dtype, shape=[None,None, 1], name='predictedValue')
+        value_target = tf.placeholder(dtype, shape=[None, None], name='targetValue')
+        value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
 
         mask = tf.sequence_mask(gs.seq_length, name='mask')
         q_value_target_masked = tf.boolean_mask(value_target, mask)
@@ -31,9 +32,6 @@ class RecurrentVfunction(bc.SpecializedFunction):
 
         # gradients
         jac_V_wrt_State = tf.identity(tf.gradients(avg, state)[0], name='gradient_AvgOf_V_wrt_State')
-
-        jac_Q_wrt_State = tf.identity(tf.gradients(avg, gs.input1)[0], name='gradient_AvgOf_Q_wrt_State')
-        jac_Q_wrt_Action = tf.identity(tf.gradients(avg, gs.input2)[0], name='gradient_AvgOf_Q_wrt_action')
 
         # solvers
         with tf.name_scope('trainUsingTargetValue'):

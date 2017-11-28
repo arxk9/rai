@@ -108,7 +108,7 @@ class PPO {
 
     ///Additional valueTensor for Trustregion update
     //// Tensor
-    Tensor<Dtype,2> valuePred("predictedValue");
+    Tensor<Dtype, 2> valuePred("predictedValue");
     Dataset_.append(valuePred);
 
     Utils::logger->addVariableToLog(2, "klD", "");
@@ -133,7 +133,7 @@ class PPO {
     updatePolicyVar();
   };
 
-  ~PPO() {delete Dataset_.miniBatch;};
+  ~PPO() { delete Dataset_.miniBatch; };
 
   void runOneLoop(int numOfSteps) {
     iterNumber_++;
@@ -147,14 +147,14 @@ class PPO {
                             std::to_string(iterNumber_));
     LOG(INFO) << "Simulation";
     acquisitor_->acquireVineTrajForNTimeSteps(task_,
-                                     noiseBasePtr_,
-                                     policy_,
-                                     numOfSteps,
-                                     numOfJunct_,
-                                     numOfBranchPerJunct_,
-                                     vfunction_,
-                                     vis_lv_);
-    acquisitor_->saveData(task_[0],policy_,vfunction_);
+                                              noiseBasePtr_,
+                                              policy_,
+                                              numOfSteps,
+                                              numOfJunct_,
+                                              numOfBranchPerJunct_,
+                                              vfunction_,
+                                              vis_lv_);
+    acquisitor_->saveData(task_[0], policy_, vfunction_);
 
     LOG(INFO) << "PPO Updater";
     PPOUpdater();
@@ -172,7 +172,6 @@ class PPO {
     acquisitor_->computeAdvantage(task_[0], vfunction_, lambda_);
     Utils::timer->stopTimer("GAE");
 
-
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
 
@@ -182,15 +181,21 @@ class PPO {
     int cnt = 0;
 
     /// Append predicted value to Dataset_ for trust region update
-    Dataset_.extraTensor2D[0].resize(Dataset_.maxLen,Dataset_.batchNum);
+    Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
 
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
     for (int i = 0; i < n_epoch_; i++) {
-      if (Dataset_.iterateBatch(minibatchSize_)) {
-        LOG(INFO) << i << "minibatchSize_ ";
+      while (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
-        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states, Dataset_.miniBatch->values, Dataset_.miniBatch->extraTensor2D[0]);
+        if (policy_->isRecurrent())
+          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+                                                              Dataset_.miniBatch->values,
+                                                              Dataset_.miniBatch->extraTensor2D[0],Dataset_.miniBatch->lengths);
+        else
+        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+                                                            Dataset_.miniBatch->values,
+                                                            Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
 
         policy_->getStdev(stdev_o);
@@ -221,7 +226,6 @@ class PPO {
       }
     }
     KL = KLsum / cnt;
-
 
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
@@ -255,8 +259,6 @@ class PPO {
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
   Dataset Dataset_;
-
-
 
   /////////////////////////// Algorithmic parameter ///////////////////
   int numOfJunct_;

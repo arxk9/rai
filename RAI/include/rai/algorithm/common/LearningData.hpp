@@ -68,6 +68,8 @@ class LearningData {
     if (cur_batch_size >= batchNum - batchID || cur_batch_size == 0) {
       cur_batch_size = batchNum - batchID;
     }
+//    LOG(INFO) << batchID << "batchID ";
+
     if (batchID >= batchNum) {
       batchID = 0;
       return false;
