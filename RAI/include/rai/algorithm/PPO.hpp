@@ -187,11 +187,7 @@ class PPO {
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
     for (int i = 0; i < n_epoch_; i++) {
-      Utils::timer->startTimer("iterate");
-      bool cont =  Dataset_.iterateBatch(minibatchSize_);
-      Utils::timer->stopTimer("iterate");
-
-      if (cont) {
+      if (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
         loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states, Dataset_.miniBatch->values, Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");

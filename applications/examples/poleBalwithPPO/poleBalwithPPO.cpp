@@ -49,7 +49,7 @@ using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, 
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
-#define nThread 3
+#define nThread 10
 
 int main(int argc, char *argv[]) {
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
-    task.setRealTimeFactor(1.5);
+    task.setRealTimeFactor(3);
     task.setTimeLimitPerEpisode(25.0);
     taskVector.push_back(&task);
   }
@@ -108,40 +108,33 @@ int main(int argc, char *argv[]) {
   rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
-//  StateBatch state_plot(3, 2601);
-//  ActionBatch action_plot(1, 2601);
-//  CostBatch value_plot(1, 2601);
-//  MatrixXD minimal_X_extended(1, 2601);
-//  MatrixXD minimal_Y_extended(1, 2601);
-//
-//  MatrixXD minimal_X_sampled(1, 2601);
-//  MatrixXD minimal_Y_sampled(1, 2601);
-//  ActionBatch action_sampled(1, 2601);
-//  MatrixXD arrowTip(1, 2601);
-//  MatrixXD zeros2601(1, 5601);
-//  zeros2601.setZero();
-//
-//  for (int i = 0; i < 51; i++) {
-//    for (int j = 0; j < 51; j++) {
-//      minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
-//      minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
-//      state_plot(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
-//      state_plot(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
-//      state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
-//    }
-//  }
+  StateBatch state_plot(3, 2601);
+  ActionBatch action_plot(1, 2601);
+  CostBatch value_plot(1, 2601);
+  MatrixXD minimal_X_extended(1, 2601);
+  MatrixXD minimal_Y_extended(1, 2601);
 
-//
-//  policy.dumpParam(RAI_LOG_PATH + "testp.txt");
-//  Vfunction.dumpParam(RAI_LOG_PATH + "testv.txt");
-//  for (int k = 0 ;k  <50 ; k++) {
-//
-//    policy.loadParam(RAI_LOG_PATH + "testp.txt");
-//    Vfunction.loadParam(RAI_LOG_PATH + "testv.txt");
+  MatrixXD minimal_X_sampled(1, 2601);
+  MatrixXD minimal_Y_sampled(1, 2601);
+  ActionBatch action_sampled(1, 2601);
+  MatrixXD arrowTip(1, 2601);
+  MatrixXD zeros2601(1, 5601);
+  zeros2601.setZero();
+
+  for (int i = 0; i < 51; i++) {
+    for (int j = 0; j < 51; j++) {
+      minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
+      minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
+      state_plot(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
+      state_plot(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
+      state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
+    }
+  }
+
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 100;
-  for (int iterationNumber = 1; iterationNumber <= 200; iterationNumber++) {
+  constexpr int loggingInterval = 10;
+  for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
@@ -162,24 +155,24 @@ int main(int argc, char *argv[]) {
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1, rai::Utils::Graph::OutputFormat::pdf);
 
-//      policy.forward(state_plot, action_plot);
-//      Vfunction.forward(state_plot, value_plot);
-//      graph->figure(2, figurePropertieskl);
-//      graph->appendData(2, logger->getData("klD", 0),
-//                        logger->getData("klD", 1),
-//                        logger->getDataSize("klD"),
-//                        rai::Utils::Graph::PlotMethods2D::linespoints,
-//                        "klD",
-//                        "lw 2 lc 4 pi 1 pt 5 ps 1");
-//      graph->drawFigure(2);
-//
-//      graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
-//                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
-//      graph->drawFigure(4);
-//      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
-//                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
-//      graph->drawFigure(5);
-//
+      policy.forward(state_plot, action_plot);
+      Vfunction.forward(state_plot, value_plot);
+      graph->figure(2, figurePropertieskl);
+      graph->appendData(2, logger->getData("klD", 0),
+                        logger->getData("klD", 1),
+                        logger->getDataSize("klD"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "klD",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(2);
+
+      graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
+      graph->drawFigure(4);
+      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
+      graph->drawFigure(5);
+
     }
   }
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");
