@@ -1,3 +1,4 @@
+#include <rai/algorithm/common/LearningData.hpp>
 #include "rai/function/common/ValueFunction.hpp"
 #include "common/ParameterizedFunction_TensorFlow.hpp"
 
@@ -125,6 +126,22 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
+
+//  template <int actionDim>
+//  virtual Dtype performOneSolverIter_trustregion(rai::Algorithm::LearningData<Dtype,stateDim, actionDim>* minibatch , Tensor2D &old_values) {
+//    std::vector<MatrixXD> loss;
+//    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+//    Tensor2D hiddenState({hiddenStateDim(),  minibatch->states.batches()},0, "h_init");
+//
+//    this->tf_->run({minibatch->states,
+//                    minibatch->values,
+//                    minibatch->lengths,
+//                    old_values,
+//                    lr,hiddenState},
+//                   {"trainUsingTRValue/loss"},
+//                   {"trainUsingTRValue/solver"}, loss);
+//    return loss[0](0);
+//  }
 
   virtual int getInnerStatesize() {
     std::vector<tensorflow::Tensor> vectorOfOutputs;

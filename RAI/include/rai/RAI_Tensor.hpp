@@ -49,9 +49,16 @@ class TensorBase {
   }
 
   // copy constructor
-  TensorBase(TensorBase<Dtype, NDim>& copy, std::string name=""){
-    init(copy.dim(), name);
-    memcpy(data(), copy.data(), size()* sizeof(Dtype));
+  TensorBase(const TensorBase<Dtype, NDim>& copy, std::string name=""){
+    if (copy.size() != -1 ) {
+      init(copy.dim(), name);
+      memcpy(data(), copy.data(), size() * sizeof(Dtype));
+    }
+    else {
+      setName(name);
+      setDataType();
+    }
+//    copy.data();
   }
 
 ///Eigen Tensor constructor is abigous with std::vector<int> constructor ...
@@ -126,9 +133,11 @@ class TensorBase {
   }
 
   Dtype *data() {
-    return eTensor().data();
+    return namedTensor_.second.flat<Dtype>().data();
   }
-
+  const Dtype *data() const {
+    return namedTensor_.second.flat<Dtype>().data();
+  }
   ////////////////////////////////
   /// tensorflow tensor mirror ///
   ////////////////////////////////
@@ -208,7 +217,7 @@ class TensorBase {
   int rows() { return dim_[0]; }
   int cols() { return dim_[1]; }
   int batches() { return dim_[2]; }
-  int size() { return size_; }
+  const int size() const { return size_; }
 
   /// you lose all data calling resize
   void resize(const std::vector<int> dim) {

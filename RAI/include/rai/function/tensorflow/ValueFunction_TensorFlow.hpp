@@ -81,6 +81,19 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
+//  template <int actionDim>
+//  virtual Dtype performOneSolverIter_trustregion(rai::Algorithm::LearningData<Dtype,stateDim, actionDim>* minibatch , Tensor2D &old_values) {
+//    std::vector<MatrixXD> loss;
+//    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+//
+//    this->tf_->run({minibatch->states,
+//                    minibatch->values,
+//                    old_values,
+//                    lr},
+//                   {"trainUsingTRValue/loss"},
+//                   {"trainUsingTRValue/solver"}, loss);
+//    return loss[0](0);
+//  }
 
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
     std::vector<MatrixXD> loss;

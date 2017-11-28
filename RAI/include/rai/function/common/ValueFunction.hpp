@@ -34,10 +34,16 @@ public:
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
+
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &targetOutputs, Tensor2D &old_prediction) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
+//  template <int actionDimension>
+//  virtual Dtype performOneSolverIter_trustregion(rai::Algorithm::LearningData<Dtype,stateDimension, actionDimension>* dataset, Tensor2D &old_prediction) {
+//    LOG(FATAL) << "NOT IMPLEMENTED";
+//    return Dtype(0);
+//  };
 };
 
 }} // namespaces
