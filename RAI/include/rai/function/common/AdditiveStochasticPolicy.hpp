@@ -16,6 +16,8 @@ class AdditiveStochasticPolicy : public virtual StochasticPolicy<Dtype, stateDim
  public:
   using Policy_ = StochasticPolicy<Dtype, stateDim, actionDim>;
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
+  using PolicyBase = StochasticPolicy<Dtype, stateDim, actionDim>;
+
   typedef typename Policy_::State State;
   typedef typename Policy_::StateBatch StateBatch;
   typedef typename Policy_::Action Action;

@@ -47,7 +47,7 @@ using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, St
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
-#define nThread 4
+#define nThread 10
 
 int main(int argc, char *argv[]) {
 
