@@ -1,5 +1,5 @@
 # 1. Contributors
-Main developer: Jemin Hwangbo (RSL, ETH Zurich, Switzerland, jhwangbo@ethz.ch), Joonho Lee (ETH Zurich, Switzerland, jolee@ethz.ch)
+Main developers: Jemin Hwangbo (RSL, ETH Zurich, Switzerland, jhwangbo@ethz.ch), Joonho Lee (ETH Zurich, Switzerland, jolee@ethz.ch)
 
 Contributors: Michael Ackermann (ETH Zurich, Switzerland)
 
