@@ -124,14 +124,18 @@ sudo apt-get install $APT_GET_FLAGS liburdfdom-dev
 cd $(dirname "$RAI_ROOT")
 git clone https://bitbucket.org/jhwangbo/raicommon.git
 cd raicommon
-cmake CMakeLists.txt && sudo make install -j
+mkdir build
+cd build
+cmake .. && sudo make install -j
 
 # RAI_Graphics
 cd $(dirname "$RAI_ROOT")
 git clone https://bitbucket.org/jhwangbo/raigraphics_opengl.git
 cd raigraphics_opengl
 sudo ./install.sh
-cmake CMakeLists.txt && sudo make install -j
+mkdir build
+cd build
+cmake .. && sudo make install -j
 
 cd $RAI_ROOT
 exit

@@ -64,7 +64,7 @@ using Acquisitor_ = rai::ExpAcq::ExperienceTupleAcquisitor_Parallel<Dtype, State
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
 Dtype learningRateQfunction = 1e-3;
 Dtype learningRatePolicy = 1e-3;
-#define nThread 2
+#define nThread 10
 
 int main(int argc, char *argv[]) {
 

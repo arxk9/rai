@@ -84,7 +84,8 @@ class TRPO_gae {
                 int K = 0,
                 int numofjunctions = 0,
                 unsigned testingTrajN = 1,
-                Dtype Cov = 1) :
+                Dtype Cov = 1,
+                bool noisifyState = false) :
       task_(tasks),
       vfunction_(vfunction),
       policy_(policy),
@@ -99,7 +100,8 @@ class TRPO_gae {
       klD_threshold(0.01),
       cov_in(Cov),
       ld_(acquisitor),
-      Dataset_(){
+      Dataset_(),
+      noisifyState_(noisifyState){
     ld_.appendData(&Dataset_);
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
@@ -143,7 +145,8 @@ class TRPO_gae {
                                      numOfJunct_,
                                      numOfBranchPerJunct_,
                                      vfunction_,
-                                     vis_lv_);
+                                     vis_lv_,
+                                     noisifyState_);
     LOG(INFO) << "Vfunction update";
     VFupdate();
     LOG(INFO) << "Policy update";
@@ -280,6 +283,7 @@ class TRPO_gae {
   Dtype discFactor;
   Dtype dt;
   double timeLimit;
+  bool noisifyState_=false;
 
   /////////////////////////// batches
   ValueBatch advantage_, bellmanErr_;
