@@ -58,6 +58,7 @@ class TensorBase {
       setName(name);
       setDataType();
     }
+//    copy.data();
   }
 
 ///Eigen Tensor constructor is abigous with std::vector<int> constructor ...
@@ -199,9 +200,7 @@ class TensorBase {
 //  Dtype *operator[](int x) {
 //    return vecTens[x].flat<Dtype>().data();
 //  };
-  Dtype & at(int i) {
-    return namedTensor_.second.flat<Dtype>().data()[i];
-  };
+
   Dtype &operator[](int i) {
     return namedTensor_.second.flat<Dtype>().data()[i];
   };
@@ -276,7 +275,6 @@ class Tensor : public rai::TensorBase<Dtype, NDim> {
  public:
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
-  using TensorBase::at;
   using TensorBase::operator =;
   using TensorBase::operator [];
   using TensorBase::operator std::pair<std::string, tensorflow::Tensor>;
@@ -300,7 +298,6 @@ class Tensor<Dtype, 1> : public rai::TensorBase<Dtype, 1> {
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
   using TensorBase::resize;
-  using TensorBase::at;
   using TensorBase::operator=;
   using TensorBase::operator[];
 
@@ -361,7 +358,6 @@ class Tensor<Dtype, 2> : public rai::TensorBase<Dtype, 2> {
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
   using TensorBase::resize;
-  using TensorBase::at;
   using TensorBase::operator=;
   using TensorBase::operator[];
 
@@ -463,7 +459,6 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   using TensorBase::TensorBase;
   using TensorBase::eTensor;
   using TensorBase::resize;
-  using TensorBase::at;
   using TensorBase::operator=;
   using TensorBase::operator[];
 
