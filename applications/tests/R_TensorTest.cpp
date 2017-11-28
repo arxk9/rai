@@ -15,6 +15,7 @@ int main() {
 
   rai::Tensor<float, 2> ten({3, 4}, "test tensor");
   Eigen::Matrix<float, 3, 4> eMat;
+
   Eigen::Tensor<float, 2> eigenTen(3, 4);
   tensorflow::Tensor tfTensor(tensorflow::DataType::DT_FLOAT, tensorflow::TensorShape({4, 3}));
   ten.row(1);
