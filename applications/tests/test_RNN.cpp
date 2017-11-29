@@ -167,43 +167,55 @@ int main() {
 //
 //  }
   RnnVfunc vfunction1("gpu,0", "GRUNet", "tanh 1 64 1", 0.01);
-Tensor3D state_("state");
+  RnnVfunc vfunction2("gpu,0", "GRUNet", "tanh 1 64 1", 0.01);
+
+  Tensor3D state_("state");
   Tensor2D value_target("targetValue");
+  Tensor2D value_predicted("predictedValue");
+
   Tensor1D lengths("length");
 
   RandomNumberGenerator<Dtype> rn_v;
-  Utils::Graph::FigProp3D figure1properties("state", "T", "value", "Vfunction test data");
+  Utils::Graph::FigProp3D figure1properties("state", "T", "value", "Vfunction Squared error");
+  Utils::Graph::FigProp3D figure1properties2("state", "T", "value", "Vfunction Trustregion iter");
 
-  int len = 128;
-  int batsize = 128;
- int iterN = 1000;
+  int len = 64;
+  int batsize = 4;
+ int iterN = 20;
   ///plot
 
   MatrixXD state_dim0, state_dim1, value_dat;
-  MatrixXD state_dim02, state_dim12, value_dat2;
+  MatrixXD state_dim02, state_dim12, value_dat2, value_dat3;
 
 
   state_.resize(1,len,batsize);
   value_target.resize(len,batsize);
+  value_predicted.resize(len,batsize);
+
   lengths.resize(batsize);
   lengths.setConstant(len);
-Dtype loss;
+Dtype loss1, loss2;
   int colID = 0;
   for(int iter = 0 ; iter < iterN ; iter ++) {
+
     for (int b = 0; b < batsize; b++) {
       for (int t = 0; t < len; t++) {
         Dtype state = 5 * rn_v.sampleNormal();
-        Dtype Noise = 0.5 * rn_v.sampleNormal();
-        Dtype targV =  std::sin(0.01 * t *2* M_PI) ;//* std::sin((state + Noise)*0.25);
-        state_.eTensor()(0, t, b) = state+Noise;
+        Dtype targV =  std::sin(0.01 * t *2* M_PI) * std::sin(state*0.25);
+        state_.eTensor()(0, t, b) = state;
         value_target.eTensor()(t, b) = targV;
       }
     }
-    for (int k = 0 ; k < 10 ; k++)
-    loss = vfunction1.performOneSolverIter(state_,value_target,lengths);
-    std::cout << "iter :" << iter << " loss :" << loss << std::endl;
-  }
 
+    vfunction2.forward(state_,value_predicted);
+    ///train for 10 epoch
+    for (int k = 0 ; k < 10 ; k++){
+    loss1 = vfunction1.performOneSolverIter(state_,value_target,lengths);
+      loss2 = vfunction2.performOneSolverIter_trustregion(state_,value_target,value_predicted,lengths);
+    }
+    std::cout << "Squared error iter :" << iter << " loss :" << loss1 << std::endl;
+    std::cout << "Trust Region  iter :" << iter << " loss :" << loss2 << std::endl;
+  }
 
   state_.resize(1,len,batsize);
 
@@ -214,16 +226,16 @@ Dtype loss;
   state_dim02.resize(1,batsize * len);
   state_dim12.resize(1,batsize * len);
   value_dat2.resize(1,batsize * len);
+  value_dat3.resize(1,batsize * len);
 
 colID = 0;
   for (int b = 0; b < batsize; b++) {
     for (int t = 0; t < len; t++) {
       Dtype state = 5 * rn_v.sampleNormal();
-      Dtype targV =  std::sin(0.01 * t *2* M_PI);
+      Dtype targV =  std::sin(0.01 * t *2* M_PI) * std::sin(state*0.25);
       value_dat(0,colID) = targV;
       state_dim0(0,colID) = state;
       state_dim1(0,colID) = t;
-
 
       state_.eTensor()(0, t, b) = state;
       state_dim02(0,colID) = state ;
@@ -232,12 +244,17 @@ colID = 0;
   }
   Tensor2D value_predict("value");
   value_predict.resize(len,batsize);
+  Tensor2D value_predict2("value");
+  value_predict2.resize(len,batsize);
 
   vfunction1.forward(state_, value_predict);
+  vfunction2.forward(state_, value_predict2);
+
   colID = 0;
   for (int b = 0; b < batsize; b++) {
     for (int t = 0; t < len; t++) {
       value_dat2(0,colID) = value_predict.eMat()(t,b);
+      value_dat3(0,colID++) = value_predict2.eMat()(t,b);
     }
   }
   Utils::graph->figure3D(1, figure1properties);
@@ -245,8 +262,15 @@ colID = 0;
   Utils::graph->append3D_Data(1, state_dim02.data(), state_dim12.data(), value_dat2.data(), value_dat2.cols(), false, Utils::Graph::PlotMethods3D::points, "Output");
   Utils::graph->drawFigure(1);
 
+  Utils::graph->figure3D(2, figure1properties2);
+  Utils::graph->append3D_Data(2, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "groundtruth");
+  Utils::graph->append3D_Data(2, state_dim02.data(), state_dim12.data(), value_dat3.data(), value_dat3.cols(), false, Utils::Graph::PlotMethods3D::points, "Output");
+  Utils::graph->drawFigure(2);
 
   Utils::graph->waitForEnter();
+
+
+
 //  /// Test RQFUNC
 //  {
 //  RnnQfunc qfunction1("cpu", "GRUMLP2", "tanh 1e-3 3 3 5 / 10 1", 0.001);

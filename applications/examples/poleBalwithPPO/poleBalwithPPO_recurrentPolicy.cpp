@@ -9,7 +9,8 @@
 #include <Eigen/Dense>
 
 // task
-#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -32,7 +33,9 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-using Task = rai::Task::PO_PoleBalancing<Dtype>;
+//using Task = rai::Task::PO_PoleBalancing<Dtype>;
+using Task = rai::Task::PoleBalancing<Dtype>;
+
 using State = Task::State;
 using StateBatch = Task::StateBatch;
 using Action = Task::Action;
@@ -75,8 +78,8 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "relu 1e-3 1 128 / 16 1", 0.001);
-  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 1 128 / 16 1", 0.001);
+  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "relu 1e-3 3 128 / 16 1", 0.001);
+  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 3 128 / 16 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
@@ -84,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 30, 0, false);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 0, false);
 
   algorithm.setVisualizationLevel(0);
 
@@ -104,16 +107,10 @@ int main(int argc, char *argv[]) {
   figurePropertiescoef.xlabel = "N. Steps Taken";
   figurePropertiescoef.ylabel = "Kl_coeff";
 
-  rai::Utils::Graph::FigProp3D figurePropertiesSVGradient;
-  figurePropertiesSVGradient.title = "Qfunction training data";
-  figurePropertiesSVGradient.xlabel = "angle";
-  figurePropertiesSVGradient.ylabel = "angular velocity";
-  figurePropertiesSVGradient.zlabel = "value";
-
   rai::Utils::Graph::FigProp3D figurePropertiesSVC;
   figurePropertiesSVC.title = "V function";
   figurePropertiesSVC.xlabel = "angle";
-  figurePropertiesSVC.ylabel = "angular velocity";
+  figurePropertiesSVC.ylabel = "T";
   figurePropertiesSVC.zlabel = "value";
   figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
 
@@ -127,28 +124,24 @@ int main(int argc, char *argv[]) {
   rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
-  StateBatch state_plot(3, 2601);
-  ActionBatch action_plot(1, 2601);
-  CostBatch value_plot(1, 2601);
-  MatrixXD minimal_X_extended(1, 2601);
-  MatrixXD minimal_Y_extended(1, 2601);
-
-  MatrixXD minimal_X_sampled(1, 2601);
-  MatrixXD minimal_Y_sampled(1, 2601);
-  ActionBatch action_sampled(1, 2601);
-  MatrixXD arrowTip(1, 2601);
-  MatrixXD zeros2601(1, 5601);
-  zeros2601.setZero();
-
-  for (int i = 0; i < 51; i++) {
-    for (int j = 0; j < 51; j++) {
-      minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
-      minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
-      state_plot(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
-      state_plot(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
-      state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
-    }
-  }
+//  Dtype lim = taskVec[0].timeLimit();
+//  rai::Tensor<Dtype, 3> state_plot("state");
+//  rai::Tensor<Dtype,2> v_plot;
+//  MatrixXD state_plot0, state_plot1, v_plot0;
+//  state_plot0.resize(1, 51 * 51);
+//  state_plot1.resize(1, 51 * 51);
+//  state_plot.resize(1, 51, 51);
+//  v_plot.resize(51,51);
+//  v_plot0.resize(1, 51* 51);
+//
+//  int colID = 0;
+//  for (int i = 0; i < 51; i++) {
+//    for (int t = 0; t < 51; t++) {
+//      state_plot.eTensor()(0, t, i) = -M_PI + M_PI * i / 25.0;
+//      state_plot0(colID) = -M_PI + M_PI * i / 25.0;
+//      state_plot1(colID++) = lim/50.0 * t;
+//    }
+//  }
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
@@ -173,8 +166,17 @@ int main(int argc, char *argv[]) {
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1);
 
-      policy.forward(state_plot, action_plot);
-      Vfunction.forward(state_plot, value_plot);
+//      policy.forward(state_plot, action_plot);
+//      Vfunction.forward(state_plot, v_plot);
+//      std::cout << v_plot << std::endl;
+//      int colID = 0;
+//      for (int i = 0; i < 50; i++) {
+//        for (int t = 0; t < 50; t++) {
+//          v_plot0(0,colID++) = v_plot.eMat()(t,i);
+//        }
+//      }
+
+
       graph->figure(2, figurePropertieskl);
       graph->appendData(2, logger->getData("klD", 0),
                         logger->getData("klD", 1),
@@ -183,13 +185,6 @@ int main(int argc, char *argv[]) {
                         "klD",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(2);
-
-      graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
-                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
-      graph->drawFigure(4);
-      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
-                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
-      graph->drawFigure(5);
     }
   }
 

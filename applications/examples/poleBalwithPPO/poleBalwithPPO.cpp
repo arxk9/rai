@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
       state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
     }
   }
-
+  std::cout << state_plot<<std::endl;
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(10000);
+    algorithm.runOneLoop(5000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
