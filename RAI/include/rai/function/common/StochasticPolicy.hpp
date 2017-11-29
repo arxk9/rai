@@ -104,6 +104,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
 
   virtual void forward(State &state, Action &action) =0;
   virtual void forward(Tensor3D &states, Tensor3D &actions) =0;
+  virtual void forward(StateBatch &state, ActionBatch &action) = 0;
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
     LOG(FATAL) << "Not implemented";

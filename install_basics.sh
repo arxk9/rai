@@ -122,6 +122,7 @@ sudo apt-get install $APT_GET_FLAGS liburdfdom-dev
 
 # RAI_Common
 cd $(dirname "$RAI_ROOT")
+sudo rm -rf raicommon
 git clone https://bitbucket.org/jhwangbo/raicommon.git
 cd raicommon
 mkdir build
@@ -130,6 +131,7 @@ cmake .. && sudo make install -j
 
 # RAI_Graphics
 cd $(dirname "$RAI_ROOT")
+sudo rm -rf raigraphics_opengl
 git clone https://bitbucket.org/jhwangbo/raigraphics_opengl.git
 cd raigraphics_opengl
 sudo ./install.sh
