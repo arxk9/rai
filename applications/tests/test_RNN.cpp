@@ -166,7 +166,7 @@ int main() {
 //    }
 //
 //  }
-  RnnVfunc vfunction1("cpu", "GRUMLP", "tanh 1e-3 1 64 / 10 1", 0.001);
+  RnnVfunc vfunction1("gpu,0", "GRUNet", "tanh 1 64 1", 0.01);
 Tensor3D state_("state");
   Tensor2D value_target("targetValue");
   Tensor1D lengths("length");
@@ -174,14 +174,14 @@ Tensor3D state_("state");
   RandomNumberGenerator<Dtype> rn_v;
   Utils::Graph::FigProp3D figure1properties("state", "T", "value", "Vfunction test data");
 
-  int len = 100;
-  int batsize = 10;
- int iterN = 100;
+  int len = 128;
+  int batsize = 128;
+ int iterN = 1000;
   ///plot
+
   MatrixXD state_dim0, state_dim1, value_dat;
-  state_dim0.resize(1,batsize * len*iterN);
-  state_dim1.resize(1,batsize * len*iterN);
-  value_dat.resize(1,batsize * len*iterN);
+  MatrixXD state_dim02, state_dim12, value_dat2;
+
 
   state_.resize(1,len,batsize);
   value_target.resize(len,batsize);
@@ -194,36 +194,40 @@ Dtype loss;
       for (int t = 0; t < len; t++) {
         Dtype state = 5 * rn_v.sampleNormal();
         Dtype Noise = 0.5 * rn_v.sampleNormal();
-        Dtype targV =  5 * std::sin(0.05 * t) * std::sin((state + Noise)*0.25);
+        Dtype targV =  std::sin(0.01 * t *2* M_PI) ;//* std::sin((state + Noise)*0.25);
         state_.eTensor()(0, t, b) = state+Noise;
         value_target.eTensor()(t, b) = targV;
-        value_dat(0,colID) = targV;
-        state_dim0(0,colID) = state + Noise ;
-        state_dim1(0,colID++) = t;
       }
     }
     for (int k = 0 ; k < 10 ; k++)
     loss = vfunction1.performOneSolverIter(state_,value_target,lengths);
     std::cout << "iter :" << iter << " loss :" << loss << std::endl;
   }
-  Utils::graph->figure3D(1, figure1properties);
-  Utils::graph->append3D_Data(1, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "groundtruth");
+
+
+  state_.resize(1,len,batsize);
+
 
   state_dim0.resize(1,batsize * len);
   state_dim1.resize(1,batsize * len);
   value_dat.resize(1,batsize * len);
-  colID = 0;
+  state_dim02.resize(1,batsize * len);
+  state_dim12.resize(1,batsize * len);
+  value_dat2.resize(1,batsize * len);
 
-  state_.resize(1,len,batsize);
-  value_target.resize(len,batsize);
-
+colID = 0;
   for (int b = 0; b < batsize; b++) {
     for (int t = 0; t < len; t++) {
       Dtype state = 5 * rn_v.sampleNormal();
-      Dtype targV = t * std::sin((state) /4);
+      Dtype targV =  std::sin(0.01 * t *2* M_PI);
+      value_dat(0,colID) = targV;
+      state_dim0(0,colID) = state;
+      state_dim1(0,colID) = t;
+
+
       state_.eTensor()(0, t, b) = state;
-      state_dim0(0,colID) = state ;
-      state_dim1(0,colID++) = t;
+      state_dim02(0,colID) = state ;
+      state_dim12(0,colID++) = t;
     }
   }
   Tensor2D value_predict("value");
@@ -233,10 +237,12 @@ Dtype loss;
   colID = 0;
   for (int b = 0; b < batsize; b++) {
     for (int t = 0; t < len; t++) {
-      value_dat(0,colID) = value_predict.eMat()(t,b);
+      value_dat2(0,colID) = value_predict.eMat()(t,b);
     }
   }
-//  Utils::graph->append3D_Data(1, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "Output");
+  Utils::graph->figure3D(1, figure1properties);
+  Utils::graph->append3D_Data(1, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "groundtruth");
+  Utils::graph->append3D_Data(1, state_dim02.data(), state_dim12.data(), value_dat2.data(), value_dat2.cols(), false, Utils::Graph::PlotMethods3D::points, "Output");
   Utils::graph->drawFigure(1);
 
 
