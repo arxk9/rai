@@ -9,8 +9,8 @@
 #include <Eigen/Dense>
 
 // task
-//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
-#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -33,8 +33,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-//using Task = rai::Task::PO_PoleBalancing<Dtype>;
-using Task = rai::Task::PoleBalancing<Dtype>;
+using Task = rai::Task::PO_PoleBalancing<Dtype>;
+//using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "relu 1e-3 3 128 / 16 1", 0.001);
-  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 3 128 / 16 1", 0.001);
+  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "relu 1e-3 2 64 / 32 1", 0.001);
+  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
@@ -124,27 +124,9 @@ int main(int argc, char *argv[]) {
   rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
-//  Dtype lim = taskVec[0].timeLimit();
-//  rai::Tensor<Dtype, 3> state_plot("state");
-//  rai::Tensor<Dtype,2> v_plot;
-//  MatrixXD state_plot0, state_plot1, v_plot0;
-//  state_plot0.resize(1, 51 * 51);
-//  state_plot1.resize(1, 51 * 51);
-//  state_plot.resize(1, 51, 51);
-//  v_plot.resize(51,51);
-//  v_plot0.resize(1, 51* 51);
-//
-//  int colID = 0;
-//  for (int i = 0; i < 51; i++) {
-//    for (int t = 0; t < 51; t++) {
-//      state_plot.eTensor()(0, t, i) = -M_PI + M_PI * i / 25.0;
-//      state_plot0(colID) = -M_PI + M_PI * i / 25.0;
-//      state_plot1(colID++) = lim/50.0 * t;
-//    }
-//  }
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 50;
+  constexpr int loggingInterval = 10;
   for (int iterationNumber = 0; iterationNumber < 250; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
@@ -152,7 +134,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(10000);
+    algorithm.runOneLoop(5000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
@@ -165,16 +147,6 @@ int main(int argc, char *argv[]) {
                         "performance",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1);
-
-//      policy.forward(state_plot, action_plot);
-//      Vfunction.forward(state_plot, v_plot);
-//      std::cout << v_plot << std::endl;
-//      int colID = 0;
-//      for (int i = 0; i < 50; i++) {
-//        for (int t = 0; t < 50; t++) {
-//          v_plot0(0,colID++) = v_plot.eMat()(t,i);
-//        }
-//      }
 
 
       graph->figure(2, figurePropertieskl);

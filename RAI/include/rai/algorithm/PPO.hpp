@@ -185,38 +185,6 @@ class PPO {
 
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
-//    ///Visualize Data
-//    rai::Tensor<Dtype,2> testv;
-//    rai::Tensor<Dtype,2> v_plot;
-//    MatrixXD state_plot0, state_plot1, v_plot0;
-//    state_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-//    state_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-//    v_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-//
-//    int colID = 0;
-//    for (int i = 0; i < Dataset_.batchNum; i++) {
-//      for (int t = 0; t <  Dataset_.maxLen ; t++) {
-//        v_plot0(colID) = Dataset_.values.eMat()(t,i);
-//        state_plot0(colID) = Dataset_.states.eTensor()(0,t,i);
-//        state_plot1(colID++) = t;
-//      }
-//    }
-//    rai::Utils::Graph::FigProp3D figprop;
-//    figprop.title = "V function";
-//    figprop.xlabel = "angle";
-//    figprop.ylabel = "T";
-//    figprop.zlabel = "value";
-//    figprop.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-//
-//
-//    Utils::graph->figure3D(4, figprop);
-//    Utils::graph->append3D_Data(4, state_plot0.data(), state_plot1.data(), v_plot0.data(), v_plot0.cols(), false, Utils::Graph::PlotMethods3D::points, "groundtruth");
-//    Utils::graph->drawFigure(4);
-//
-//    graph -> waitForEnter();
-    std::cout << "dataTest"<<std::endl;
-    std::cout << Dataset_.values.row(0) << std::endl;
-    std::cout << Dataset_.extraTensor2D[0].row(0) << std::endl << std::endl;
     for (int i = 0; i < n_epoch_; i++) {
       while (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
@@ -229,22 +197,6 @@ class PPO {
                                                             Dataset_.miniBatch->values,
                                                             Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
-
-
-//        testv.resize(Dataset_.maxLen, Dataset_.miniBatch->batchNum);
-//
-//        vfunction_->forward(Dataset_.miniBatch->states,testv);
-//
-//        Eigen::Matrix<Dtype, -1, -1 > test1, test2, test3;
-//        test1 = Dataset_.miniBatch->values.eMat(); // target
-//        test2= testv.eMat();
-//        test3 = (test1 - test2).array().square();
-//
-//        LOG(INFO)  << 0.5 * test3.mean()<< std::endl;
-//        LOG(INFO) << loss;
-
-
-
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();

@@ -20,7 +20,7 @@
 namespace rai {
 namespace Task {
 
-constexpr int StateDim = 1;
+constexpr int StateDim = 2;
 constexpr int ActionDim = 1;
 constexpr int CommandDim = 0;
 
@@ -115,7 +115,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
 
   void getState(State &state) {
     Dtype theta = generalizedCoordinates_(0);
-    state << theta;
+    state << cos(theta), sin(theta);
   }
 
   virtual void setInitialStateWithGeneralizedCoordinate(const Eigen::VectorXd &in) {
