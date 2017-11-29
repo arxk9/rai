@@ -46,7 +46,7 @@ using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, 
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
-#define nThread 7
+#define nThread 10
 
 int main(int argc, char *argv[]) {
 
@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  Vfunction_TensorFlow Vfunction("cpu", "GRUMLP", "relu 1e-3 1 16 / 32 16 1", 0.001);
-  Policy_TensorFlow policy("cpu", "GRUMLP", "tanh 1e-3 1 16 / 32 16 1", 0.001);
+  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "relu 1e-3 1 128 / 16 1", 0.001);
+  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 1 128 / 16 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 0, false);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 30, 0, false);
 
   algorithm.setVisualizationLevel(0);
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(6000);
+    algorithm.runOneLoop(10000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

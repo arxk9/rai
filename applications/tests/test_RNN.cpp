@@ -12,6 +12,7 @@
 #include "rai/function/tensorflow/StochasticPolicy_TensorFlow.hpp"
 #include "rai/function/tensorflow/RecurrentQfunction_TensorFlow.hpp"
 #include <rai/noiseModel/NoNoise.hpp>
+#include "rai/function/tensorflow/RecurrentValueFunction_TensorFlow.hpp"
 
 #include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
 #include "rai/function/common/Policy.hpp"
@@ -32,8 +33,7 @@
 #include <rai/algorithm/common/LearningData.hpp>
 
 #include <vector>
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>
-#include "rai/memory/ReplayMemoryHistory.hpp"
+//#include "rai/memory/ReplayMemoryHistory.hpp"
 
 using namespace rai;
 
@@ -44,10 +44,11 @@ using std::cin;
 constexpr int StateDim = 3;
 constexpr int ActionDim = 1;
 
-using Dtype = float;
+using Dtype = double;
 
 using PolicyBase = rai::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
-using RnnQfunc = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
+using RnnVfunc = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
+//using RnnQfunc = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
 using RnnDPolicy = rai::FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using RnnPolicy = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
@@ -66,36 +67,36 @@ using NoNoise = rai::Noise::NoNoise<Dtype, ActionDim>;
 
 using NoiseCov = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
-using TensorBatchBase = rai::Algorithm::TensorBatch<Dtype>;
+//using TensorBatchBase = rai::Algorithm::TensorBatch<Dtype>;
 //using TensorBatch = rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim>;
 using Tensor3D = Tensor<Dtype, 3>;
 using Tensor2D = Tensor<Dtype, 2>;
 using Tensor1D = Tensor<Dtype, 1>;
 typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> JacobianQwrtActionBatch;
-typedef rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim>  TensorBatch_;
+//typedef rai::Algorithm::historyWithAdvantage<Dtype, StateDim, ActionDim>  TensorBatch_;
 using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
 int main() {
   RAI_init();
   const int sampleN = 5;
   Acquisitor_ acquisitor;
-  rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
-  {
-    Task_ task;
-    task.setTimeLimitPerEpisode(0.2);
-
-    NoiseCov covariance = NoiseCov::Identity();
-    NormNoise noise(covariance);
-//    NoNoise noise;
+//  rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
+//  {
+//    Task_ task;
+//    task.setTimeLimitPerEpisode(0.2);
 //
-    RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
-    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
-
-    std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
-    std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
-    acquisitor.acquireVineTrajForNTimeSteps(taskVector,noiseVector,&policy,10,0,0,&Vfunc);
-
-  }
+//    NoiseCov covariance = NoiseCov::Identity();
+//    NormNoise noise(covariance);
+////    NoNoise noise;
+////
+//    RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
+//    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
+//
+//    std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
+//    std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
+//    acquisitor.acquireVineTrajForNTimeSteps(taskVector,noiseVector,&policy,10,0,0,&Vfunc);
+//
+//  }
 
 //  ///test Memory
 //  {
@@ -165,9 +166,82 @@ int main() {
 //    }
 //
 //  }
+  RnnVfunc vfunction1("cpu", "GRUMLP", "tanh 1e-3 1 64 / 10 1", 0.001);
+Tensor3D state_("state");
+  Tensor2D value_target("targetValue");
+  Tensor1D lengths("length");
+
+  RandomNumberGenerator<Dtype> rn_v;
+  Utils::Graph::FigProp3D figure1properties("state", "T", "value", "Vfunction test data");
+
+  int len = 100;
+  int batsize = 10;
+ int iterN = 100;
+  ///plot
+  MatrixXD state_dim0, state_dim1, value_dat;
+  state_dim0.resize(1,batsize * len*iterN);
+  state_dim1.resize(1,batsize * len*iterN);
+  value_dat.resize(1,batsize * len*iterN);
+
+  state_.resize(1,len,batsize);
+  value_target.resize(len,batsize);
+  lengths.resize(batsize);
+  lengths.setConstant(len);
+Dtype loss;
+  int colID = 0;
+  for(int iter = 0 ; iter < iterN ; iter ++) {
+    for (int b = 0; b < batsize; b++) {
+      for (int t = 0; t < len; t++) {
+        Dtype state = 5 * rn_v.sampleNormal();
+        Dtype Noise = 0.5 * rn_v.sampleNormal();
+        Dtype targV =  5 * std::sin(0.05 * t) * std::sin((state + Noise)*0.25);
+        state_.eTensor()(0, t, b) = state+Noise;
+        value_target.eTensor()(t, b) = targV;
+        value_dat(0,colID) = targV;
+        state_dim0(0,colID) = state + Noise ;
+        state_dim1(0,colID++) = t;
+      }
+    }
+    for (int k = 0 ; k < 10 ; k++)
+    loss = vfunction1.performOneSolverIter(state_,value_target,lengths);
+    std::cout << "iter :" << iter << " loss :" << loss << std::endl;
+  }
+  Utils::graph->figure3D(1, figure1properties);
+  Utils::graph->append3D_Data(1, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "groundtruth");
+
+  state_dim0.resize(1,batsize * len);
+  state_dim1.resize(1,batsize * len);
+  value_dat.resize(1,batsize * len);
+  colID = 0;
+
+  state_.resize(1,len,batsize);
+  value_target.resize(len,batsize);
+
+  for (int b = 0; b < batsize; b++) {
+    for (int t = 0; t < len; t++) {
+      Dtype state = 5 * rn_v.sampleNormal();
+      Dtype targV = t * std::sin((state) /4);
+      state_.eTensor()(0, t, b) = state;
+      state_dim0(0,colID) = state ;
+      state_dim1(0,colID++) = t;
+    }
+  }
+  Tensor2D value_predict("value");
+  value_predict.resize(len,batsize);
+
+  vfunction1.forward(state_, value_predict);
+  colID = 0;
+  for (int b = 0; b < batsize; b++) {
+    for (int t = 0; t < len; t++) {
+      value_dat(0,colID) = value_predict.eMat()(t,b);
+    }
+  }
+//  Utils::graph->append3D_Data(1, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "Output");
+  Utils::graph->drawFigure(1);
 
 
-  /// Test RQFUNC
+  Utils::graph->waitForEnter();
+//  /// Test RQFUNC
 //  {
 //  RnnQfunc qfunction1("cpu", "GRUMLP2", "tanh 1e-3 3 3 5 / 10 1", 0.001);
 //
@@ -275,14 +349,12 @@ int main() {
 //  }
 //
 //  qfunction1.getGradient_AvgOf_Q_wrt_action(DATA.minibatch, Gradtest);
-////    Eigen::Matrix<Dtype,-1,-1> sss1 = Gradtest.batch(0);
-////    Eigen::Matrix<Dtype,-1,-1> sss2 = GradtestNum.batch(0);
 //
 //  cout << "jaco from TF is       " << endl << Gradtest << endl;
 //  cout << "jaco from numerical is" << endl << GradtestNum << endl;
 //
 //  RnnDPolicy DPolicy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 10 3", 0.001);
-
-
+//
+//
 //  }
 };

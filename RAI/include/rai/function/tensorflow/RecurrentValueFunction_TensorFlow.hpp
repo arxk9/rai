@@ -90,6 +90,20 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
 //    LOG(INFO) << h.eMat();
   }
 
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values, Tensor1D & lengths) {
+    std::vector<MatrixXD> loss;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
+    Tensor2D hiddenState({hiddenStateDim(), states.batches()},0, "h_init");
+
+    this->tf_->run({states,
+                    values,
+                    lengths,
+                    hiddenState,
+                    lr},
+                   {"trainUsingTargetValue/loss"},
+                   {"trainUsingTargetValue/solver"}, loss);
+    return loss[0](0);
+  }
 
   virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
     std::vector<MatrixXD> loss, dummy;
@@ -118,6 +132,26 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
+
+  virtual bool isRecurrent() {
+    return true;
+  }
+
+  virtual void reset(int n) {
+    //n:index
+    if (n >= h.cols())
+      h.conservativeResize(hdim, n + 1);
+
+    h.col(n).setZero();
+  }
+
+  virtual void terminate(int n) {
+    int coldim = h.cols() - 1;
+    LOG_IF(FATAL, coldim < 0) << "Initialize Innerstates first (Call reset)";
+    LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
+    h.removeCol(n);
+  }
+
   virtual int getInnerStatesize() {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);

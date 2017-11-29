@@ -185,10 +185,13 @@ class PPO {
 
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
+    rai::Tensor<Dtype,2> testv;
+
+
     for (int i = 0; i < n_epoch_; i++) {
       while (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
-        if (policy_->isRecurrent())
+        if (vfunction_->isRecurrent())
           loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0],Dataset_.miniBatch->lengths);
@@ -197,6 +200,18 @@ class PPO {
                                                             Dataset_.miniBatch->values,
                                                             Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
+        testv.resize(Dataset_.maxLen, Dataset_.miniBatch->batchNum);
+
+        vfunction_->forward(Dataset_.miniBatch->states,testv);
+
+        Eigen::Matrix<Dtype, -1, -1 > test1, test2, test3;
+        test1 = Dataset_.miniBatch->values.eMat(); // target
+        test2= testv.eMat();
+        test3 = (test1 - test2).array().square();
+
+        LOG(INFO)  <<test3.mean()<< std::endl;
+        LOG(INFO) << loss;
+
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
