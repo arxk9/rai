@@ -188,6 +188,7 @@ class PPO {
     for (int i = 0; i < n_epoch_; i++) {
       while (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
+
         if (vfunction_->isRecurrent())
           loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,

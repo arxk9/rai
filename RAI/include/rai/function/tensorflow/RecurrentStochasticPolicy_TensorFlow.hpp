@@ -43,7 +43,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename PolicyBase::Dataset Dataset;
-  typedef typename Pfunction_tensorflow ::HiddenState HiddenState;
 
   RecurrentStochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -230,12 +229,8 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     return vectorOfOutputs[0].scalar<int>()();
   }
 
-  virtual void getHiddenStates(HiddenState &h_out){
+  virtual void getHiddenStates(Tensor2D &h_out){
     h_out = h;
-  }
-
-  const &HiddenState getHiddenStates(){
-    return
   }
 
   int hiddenStateDim() { return hdim; }

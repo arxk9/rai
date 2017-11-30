@@ -33,8 +33,6 @@ class ParameterizedFunction {
   typedef Eigen::Matrix<Dtype, inputDimension, 1> Gradient;
   typedef Eigen::Matrix<Dtype, outputDimension, Eigen::Dynamic> JacobianWRTparam;
 
-  typedef Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic> HiddenState;
-
   typedef rai::Tensor<Dtype, 1> Tensor1D;
   typedef rai::Tensor<Dtype, 2> Tensor2D;
   typedef rai::Tensor<Dtype, 3> Tensor3D;
@@ -155,7 +153,7 @@ class ParameterizedFunction {
   virtual void reset(int n) {}
   virtual void terminate(int n) {}
   virtual int getHiddenStatesize() { return 0; }
-  virtual void getHiddenStates(HiddenState &h_out){LOG(FATAL) << "NOT IMPLEMENTED"; }
+  virtual void getHiddenStates(Tensor2D &h_out){LOG(FATAL) << "NOT IMPLEMENTED"; }
 
   LibraryID libraryID_ = LibraryID::notSpecified;
   int parameterSize = 0;

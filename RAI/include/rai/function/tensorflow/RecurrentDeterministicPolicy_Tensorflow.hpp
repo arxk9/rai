@@ -187,7 +187,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     return vectorOfOutputs[0].scalar<int>()();
   }
 
-  virtual void getHiddenStates(HiddenState &h_out){
+  virtual void getHiddenStates(T &h_out){
     h_out = h;
   }
 

@@ -9,13 +9,15 @@
 #include <Eigen/Dense>
 
 // task
-#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
-//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
 
 // Neural network
+#include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
+
 #include "rai/function/tensorflow/RecurrentValueFunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp"
 
@@ -33,8 +35,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-using Task = rai::Task::PO_PoleBalancing<Dtype>;
-//using Task = rai::Task::PoleBalancing<Dtype>;
+//using Task = rai::Task::PO_PoleBalancing<Dtype>;
+using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -44,7 +46,9 @@ using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
+//using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
+using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
+
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
@@ -64,7 +68,7 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(10);
+    task.setTimeLimitPerEpisode(15);
     taskVector.push_back(&task);
   }
 
@@ -80,8 +84,11 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Define Function approximations //////////
 //  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
 //  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
-  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMNet", "tanh 1e-3 2 64 32 1", 0.001);
-  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 2 64 32 1", 0.001);
+//  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMNet", "tanh 1e-3 2 128 1", 0.001);
+  Vfunction_TensorFlow Vfunction("gpu,0", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
+
+
+  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 3 128 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor

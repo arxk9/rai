@@ -276,9 +276,9 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
         Data->states.partiallyFillBatch(i, traj[i].stateTraj, 1);
         Data->actions.partiallyFillBatch(i, traj[i].actionTraj, 1);
         Data->actionNoises.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
-        for (int timeID = 0; timeID < traj[i].size() - 1; timeID++) {
-          Data->costs.eMat()(timeID, i) = traj[i].costTraj[timeID];
-        }
+//        for (int timeID = 0; timeID < traj[i].size() - 1; timeID++) {
+//          Data->costs.eMat()(timeID, i) = traj[i].costTraj[timeID];
+//        }
         Data->lengths[i] = traj[i].stateTraj.size() - 1;
         Data->termtypes[i] = Dtype(traj[i].termType);
       }
@@ -308,7 +308,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
       Eigen::Matrix<Dtype, 1, -1> termValueBat;
       Eigen::Matrix<Dtype, StateDim, -1> termStateBat;
 
-      Data->values.resize(maxlen, batchN);
       termValueBat.resize(1, traj.size());
       termStateBat.resize(StateDim, traj.size());
 
@@ -322,11 +321,14 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
         }
 
       int colID = 0;
-      if (policy->isRecurrent()) {
+      if (vfunction->isRecurrent()) {
+        Data->values.resize(maxlen, batchN);
         for (int traID = 0; traID < traj.size(); traID++)
           for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
             Data->values.eMat()(timeID, traID) = traj[traID].valueTraj[timeID];
       } else {
+        Data->values.resize(1, dataN);
+
         for (int traID = 0; traID < traj.size(); traID++)
           for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
             Data->values.eMat()(0, colID++) = traj[traID].valueTraj[timeID];

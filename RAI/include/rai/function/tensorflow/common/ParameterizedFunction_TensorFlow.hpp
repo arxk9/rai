@@ -32,7 +32,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   typedef typename PfunctionBase::ParameterGradient ParameterGradient;
   typedef typename PfunctionBase::JacobianWRTparam JacobianWRTparam;
   typedef typename PfunctionBase::Parameter Parameter;
-  typedef typename PfunctionBase::HiddenState HiddenState;
 
   /*
    * When setting nThreads = 0, TensorFlow uses the number of core to determine the number of threads.

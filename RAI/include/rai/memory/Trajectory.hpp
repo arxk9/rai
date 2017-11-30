@@ -25,7 +25,7 @@ class Trajectory {
   typedef Eigen::Matrix<Dtype, actionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
-  typedef Eigen::Matrix<Dtype, -1, -1> HiddenState;
+  typedef Eigen::Matrix<Dtype, -1, 1> HiddenState;
 
   typedef Eigen::Matrix<Dtype, 1, -1> CostBatch;
 //  using Vfunction_ = FuncApprox::ValueFunction<Dtype, stateDim>;
@@ -145,7 +145,7 @@ class Trajectory {
       sum += elem;
     return sum / valueTraj.size();
   }
-  
+
   void printOutTraj(){
     updateMatrix();
     std::cout << "--------------------------------------------------------" << std::endl;
