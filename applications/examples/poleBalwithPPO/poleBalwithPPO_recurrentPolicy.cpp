@@ -78,8 +78,10 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "relu 1e-3 2 64 / 32 1", 0.001);
-  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
+//  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
+//  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
+  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMNet", "tanh 1e-3 2 64 32 1", 0.001);
+  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 2 64 32 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
@@ -87,7 +89,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 0, false);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 0, true);
 
   algorithm.setVisualizationLevel(0);
 
@@ -126,15 +128,15 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Choose the computation mode //////////////
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 10;
-  for (int iterationNumber = 0; iterationNumber < 250; iterationNumber++) {
+  constexpr int loggingInterval = 50;
+  for (int iterationNumber = 0; iterationNumber < 301; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(5000);
+    algorithm.runOneLoop(10000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
@@ -146,7 +148,7 @@ int main(int argc, char *argv[]) {
                         rai::Utils::Graph::PlotMethods2D::linespoints,
                         "performance",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
-      graph->drawFigure(1);
+      graph->drawFigure(1, rai::Utils::Graph::OutputFormat::pdf);
 
 
       graph->figure(2, figurePropertieskl);
@@ -156,7 +158,7 @@ int main(int argc, char *argv[]) {
                         rai::Utils::Graph::PlotMethods2D::linespoints,
                         "klD",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
-      graph->drawFigure(2);
+      graph->drawFigure(2, rai::Utils::Graph::OutputFormat::pdf);
     }
   }
 

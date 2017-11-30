@@ -52,7 +52,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
     this->timeLimit_ = 25.0;
 
     generalizedCoordinates_ << M_PI, 0;
-    initialState_ << M_PI;
+    initialState_ << M_PI,0;
     setVersion(taskVersion);
     initialStateType_ = fixed;
     initialStateType_ = initialStateType;
@@ -92,7 +92,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
 
   virtual void init() {
     if (initialStateType_ == fixed) {
-      generalizedCoordinates_ << initialState_[0], 0;
+      generalizedCoordinates_ << initialState_;
     } else if (initialStateType_ == random) {
       generalizedCoordinates_ << rn_.sampleUniform() * M_PI, rn_.sampleUniform();
     }
@@ -110,7 +110,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
   }
 
   void initTo(const State &state) {
-    generalizedCoordinates_ << state[0], 0;
+    generalizedCoordinates_ << std::atan2(state(1), state(0)), 0;
   }
 
   void getState(State &state) {
@@ -132,7 +132,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
 
   void setVersion(TaskVersion taskVersion) {
     if (taskVersion == easy) {
-      maxTorque_ = 3.0;
+      maxTorque_ = 2.0;
     } else {
       maxTorque_ = 0.5;
     }
@@ -248,7 +248,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
   double lastAction_ = 0;
 
   Eigen::Matrix<Dtype, 2, 1> generalizedCoordinates_;
-  Eigen::Matrix<Dtype, 1, 1> initialState_;
+  Eigen::Matrix<Dtype, 2, 1> initialState_;
   RandomNumberGenerator<Dtype> rn_;
   InitialStateType initialStateType_;
   TaskVersion taskVersion_;

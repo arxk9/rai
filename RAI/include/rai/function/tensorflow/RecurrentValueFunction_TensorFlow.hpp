@@ -20,7 +20,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   typedef typename ValueFunctionBase::Value Value;
   typedef typename ValueFunctionBase::ValueBatch ValueBatch;
   typedef typename ValueFunctionBase::Gradient Gradient;
-  typedef typename Pfunction_tensorflow ::InnerState InnerState;
+  typedef typename Pfunction_tensorflow ::HiddenState HiddenState;
 
   typedef typename ValueFunctionBase::Tensor1D Tensor1D;
   typedef typename ValueFunctionBase::Tensor2D Tensor2D;
@@ -37,7 +37,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                                     Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
           "RecurrentVfunction", computeMode, graphName, graphParam, learningRate), h("h_init") {
-    hdim = this->getInnerStatesize();
+    hdim = this->getHiddenStatesize();
     h.resize(hdim, 0);
     h.setZero();
   }
@@ -152,13 +152,13 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
     h.removeCol(n);
   }
 
-  virtual int getInnerStatesize() {
+  virtual int getHiddenStatesize() {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
     return vectorOfOutputs[0].scalar<int>()();
   }
 
-  virtual void getInnerStates(InnerState &h_out){
+  virtual void getHiddenStates(HiddenState &h_out){
     h_out = h;
   }
 

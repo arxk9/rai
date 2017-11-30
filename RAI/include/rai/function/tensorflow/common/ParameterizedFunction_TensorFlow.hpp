@@ -32,7 +32,7 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   typedef typename PfunctionBase::ParameterGradient ParameterGradient;
   typedef typename PfunctionBase::JacobianWRTparam JacobianWRTparam;
   typedef typename PfunctionBase::Parameter Parameter;
-  typedef typename PfunctionBase::InnerState InnerState;
+  typedef typename PfunctionBase::HiddenState HiddenState;
 
   /*
    * When setting nThreads = 0, TensorFlow uses the number of core to determine the number of threads.
@@ -247,7 +247,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
 
   TensorFlowNeuralNetwork<Dtype> *tf_;
   MatrixXD learningRate_;
-  InnerState Innerstate_;
 
   const MatrixXD notUpdateBN = (MatrixXD(1, 1) << 0).finished();
   const MatrixXD updateBN = (MatrixXD(1, 1) << 1).finished();

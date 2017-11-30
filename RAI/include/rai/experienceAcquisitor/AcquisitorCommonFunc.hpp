@@ -201,6 +201,8 @@ class CommonFunc {
       policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
+      if(policy->isRecurrent())
+        policy->getHiddenStates()
       colId = 0;
       for (int taskID = 0; taskID < ThreadN; taskID++) {
         if (!active[taskID]) continue;

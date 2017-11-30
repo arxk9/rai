@@ -39,8 +39,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
-  typedef typename Qfunction_::history history;
-  typedef typename Pfunction_tensorflow ::InnerState InnerState;
+  typedef typename Pfunction_tensorflow ::HiddenState HiddenState;
 
   RecurrentDeterministicPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -52,7 +51,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
                                           Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
           "RecurrentDeterministicPolicy", computeMode, graphName, graphParam, learningRate), h("h_init") {
-    hdim = this->getInnerStatesize();
+    hdim = this->getHiddenStatesize();
     h.resize(hdim, 0);
   }
 
@@ -182,13 +181,13 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     h.removeCol(n);
   }
 
-  virtual int getInnerStatesize() {
+  virtual int getHiddenStatesize() {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
     return vectorOfOutputs[0].scalar<int>()();
   }
 
-  virtual void getInnerStates(InnerState &h_out){
+  virtual void getHiddenStates(HiddenState &h_out){
     h_out = h;
   }
 

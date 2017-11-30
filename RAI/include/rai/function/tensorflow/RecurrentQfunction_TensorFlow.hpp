@@ -27,7 +27,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   typedef typename QfunctionBase::Tensor3D Tensor3D;
   typedef typename QfunctionBase::Dataset Dataset;
 
-  typedef typename Pfunction_tensorflow ::InnerState InnerState;
+  typedef typename Pfunction_tensorflow ::HiddenState HiddenState;
 
 
   RecurrentQfunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
@@ -40,7 +40,7 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
                                 Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
           "RecurrentQfunction", computeMode, graphName, graphParam, learningRate), h("h_init") {
-    hdim = this->getInnerStatesize();
+    hdim = this->getHiddenStatesize();
     h.resize(hdim, 0);
     h.setZero();
   }
@@ -186,13 +186,13 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
     return vectorOfOutputs[1].scalar<Dtype>()();
   }
 
-  virtual int getInnerStatesize() {
+  virtual int getHiddenStatesize() {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
     return vectorOfOutputs[0].scalar<int>()();
   }
 
-  virtual void getInnerStates(InnerState &h_out){
+  virtual void getHiddenStates(HiddenState &h_out){
     h_out = h;
   }
 

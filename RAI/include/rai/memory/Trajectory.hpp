@@ -46,10 +46,10 @@ class Trajectory {
     matrixUpdated = false;
     gaeUpdated = false;
   }
-//
-//  void pushBackHiddenState(HiddenState &hiddenState){
-//    hiddenStateTraj.push_back(hiddenState);
-//  }
+
+  void pushBackHiddenState(HiddenState &hiddenState){
+    hiddenStateTraj.push_back(hiddenState);
+  }
 
   void terminateTrajectoryAndUpdateValueTraj(TerminationType termTypeArg,
                                              State &terminalState,
@@ -145,33 +145,7 @@ class Trajectory {
       sum += elem;
     return sum / valueTraj.size();
   }
-
-//  CostBatch& getGAE(Vfunction_ *vfunction,
-//                    Dtype gamma,
-//                    Dtype lambda,
-//                    Dtype terminalCost) {
-//    if (gaeUpdated) return advantage;
-//    updateBellmanErr(vfunction, gamma, terminalCost);
-//    advantage.resize(1, size() - 1);
-//    advantage[size() - 2] = bellmanErr[size() - 2];
-//    Dtype fctr = gamma * lambda;
-//    for (int timeID = size() - 3; timeID > -1; timeID--)
-//      advantage[timeID] = fctr * advantage[timeID + 1] + bellmanErr[timeID];
-//    gaeUpdated = true;
-//    return advantage;
-//  }
-//
-//  void updateBellmanErr(Vfunction_ *baseline, Dtype discFtr, Dtype termCost) {
-//    updateMatrix();
-//    valueMat.resize(size());
-//    bellmanErr.resize(size() - 1);
-//    baseline->forward(stateTrajMat, valueMat);
-//    if (termType == TerminationType::terminalState)
-//      valueMat[size() - 1] = termCost;
-//    for (int i = 0; i < size() - 1; i++)
-//      bellmanErr[i] = valueMat[i + 1] * discFtr + costTraj[i] - valueMat[i];
-//  }
-
+  
   void printOutTraj(){
     updateMatrix();
     std::cout << "--------------------------------------------------------" << std::endl;
@@ -222,7 +196,6 @@ class Trajectory {
   std::vector<Dtype> costTraj, accumCostTraj;
   std::vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;
-  CostBatch valueMat, bellmanErr, advantage;
   Dtype terminalValue_ = Dtype(0);
   Dtype discountFct_ = Dtype(0);
 
