@@ -6,7 +6,7 @@ Contributors: Michael Ackermann (ETH Zurich, Switzerland)
 # 2. Installation
 Clone
 
-(if you are going to use GPU) Install Nvidia driver, Cuda, Cudnn if you use GPU.
+(if you are going to use GPU) Install Nvidia driver, Cuda, Cudnn.
 
 Run install.sh: *./install_basics.sh*
 
