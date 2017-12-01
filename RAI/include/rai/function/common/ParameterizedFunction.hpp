@@ -46,6 +46,10 @@ class ParameterizedFunction {
 
   /// must be implemented all by function libraries
 
+  virtual void test(Tensor3D &intputs, Tensor2D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
+
   virtual void forward(Input &input, Output &output) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };

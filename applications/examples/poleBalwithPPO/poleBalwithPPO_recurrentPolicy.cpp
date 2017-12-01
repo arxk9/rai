@@ -66,9 +66,9 @@ int main(int argc, char *argv[]) {
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
-    task.setDiscountFactor(0.995);
+    task.setDiscountFactor(0.9);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(15);
+    task.setTimeLimitPerEpisode(5);
     taskVector.push_back(&task);
   }
 
@@ -82,11 +82,14 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Define Function approximations //////////
 //  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
 //  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
-  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMMLP", "tanh 1e-3 2 32 / 32 32 1", 0.001);
+//  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMMLP", "tanh 1e-3 2 32 / 32 32 1", 0.01);
+//  Vfunction_TensorFlow Vfunction("gpu,0", "GRUNet", "tanh 2 64 1", 0.01);
+  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 32 1", 0.01);
+
 //  Vfunction_TensorFlow Vfunction("gpu,0", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
 
 
-  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 2 32 / 32 32 1", 0.001);
+  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 2 64 / 32 32 1", 0.01);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
@@ -94,7 +97,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 0, true);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 50, 0, true);
 
   algorithm.setVisualizationLevel(0);
 
@@ -141,7 +144,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(20000);
+    algorithm.runOneLoop(10000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
