@@ -20,7 +20,6 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   typedef typename ValueFunctionBase::Value Value;
   typedef typename ValueFunctionBase::ValueBatch ValueBatch;
   typedef typename ValueFunctionBase::Gradient Gradient;
-  typedef typename Pfunction_tensorflow ::HiddenState HiddenState;
 
   typedef typename ValueFunctionBase::Tensor1D Tensor1D;
   typedef typename ValueFunctionBase::Tensor2D Tensor2D;
@@ -147,7 +146,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
 
   virtual void terminate(int n) {
     int coldim = h.cols() - 1;
-    LOG_IF(FATAL, coldim < 0) << "Initialize Innerstates first (Call reset)";
+    LOG_IF(FATAL, coldim < 0) << "Initialize Hiddenstates first (Call reset)";
     LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
     h.removeCol(n);
   }
@@ -158,7 +157,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
     return vectorOfOutputs[0].scalar<int>()();
   }
 
-  virtual void getHiddenStates(HiddenState &h_out){
+  virtual void getHiddenStates(Tensor2D &h_out){
     h_out = h;
   }
 

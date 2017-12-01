@@ -218,7 +218,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
 
   virtual void terminate(int n) {
     int coldim = h.cols() - 1;
-    LOG_IF(FATAL, coldim < 0) << "Initialize Innerstates first (Call reset)";
+    LOG_IF(FATAL, coldim < 0) << "Initialize Hiddenstates first (Call reset)";
     LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
     h.removeCol(n);
   }

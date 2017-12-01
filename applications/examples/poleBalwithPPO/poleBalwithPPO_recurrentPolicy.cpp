@@ -9,8 +9,8 @@
 #include <Eigen/Dense>
 
 // task
-//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
-#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -35,8 +35,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-//using Task = rai::Task::PO_PoleBalancing<Dtype>;
-using Task = rai::Task::PoleBalancing<Dtype>;
+using Task = rai::Task::PO_PoleBalancing<Dtype>;
+//using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -46,8 +46,8 @@ using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-//using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
-using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
+using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
+//using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
 
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
@@ -73,9 +73,7 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Define Noise Model //////////////////////
-  Dtype Stdev = 1;
-
-  NoiseCovariance covariance = NoiseCovariance::Identity() * Stdev;
+  NoiseCovariance covariance = NoiseCovariance::Identity();
   std::vector<Noise> noiseVec(nThread, Noise(covariance));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
@@ -84,11 +82,11 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Define Function approximations //////////
 //  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
 //  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
-//  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMNet", "tanh 1e-3 2 128 1", 0.001);
-  Vfunction_TensorFlow Vfunction("gpu,0", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
+  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMMLP", "tanh 1e-3 2 32 / 32 32 1", 0.001);
+//  Vfunction_TensorFlow Vfunction("gpu,0", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
 
 
-  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 3 128 1", 0.001);
+  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 2 32 / 32 32 1", 0.001);
 //  Policy_TensorFlow policy("cpu", "GRUNet", "tanh 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
@@ -96,7 +94,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 0, true);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 0, true);
 
   algorithm.setVisualizationLevel(0);
 
@@ -135,15 +133,15 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Choose the computation mode //////////////
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 50;
-  for (int iterationNumber = 0; iterationNumber < 301; iterationNumber++) {
+  constexpr int loggingInterval = 20;
+  for (int iterationNumber = 0; iterationNumber < 300; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(10000);
+    algorithm.runOneLoop(20000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

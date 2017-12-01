@@ -185,19 +185,24 @@ class PPO {
 
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
+
     for (int i = 0; i < n_epoch_; i++) {
+
       while (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
-
-        if (vfunction_->isRecurrent())
+        if (vfunction_->isRecurrent()){
           loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0],Dataset_.miniBatch->lengths);
-        else
-        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
-                                                            Dataset_.miniBatch->values,
-                                                            Dataset_.miniBatch->extraTensor2D[0]);
+        }
+        else{
+          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+                                                              Dataset_.miniBatch->values,
+                                                              Dataset_.miniBatch->extraTensor2D[0]);
+        }
+
         Utils::timer->stopTimer("Vfunction update");
+//        LOG(INFO) << "vfuncloss"<<loss;
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
@@ -238,6 +243,62 @@ class PPO {
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klcoef", acquisitor_->stepsTaken(), KL_coeff_);
     Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KLsum / n_epoch_);
+
+    ///Visualize Data
+    rai::Tensor<Dtype,2> testv;
+    rai::Tensor<Dtype,2> v_plot;
+
+    MatrixXD state_plot0, state_plot1, v_plot0,v_plot1;
+    state_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+    state_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+    v_plot.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+    v_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+    v_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+
+    int colID = 0;
+    vfunction_->forward(Dataset_.states, v_plot);
+
+
+    for (int i = 0; i < Dataset_.batchNum; i++) {
+      for (int t = 0; t <  Dataset_.maxLen ; t++) {
+        v_plot0(colID) = Dataset_.values.eMat()(t,i);
+        v_plot1(colID) = v_plot.eMat()(t,i);
+
+        state_plot0(colID) = std::atan2(Dataset_.states.eTensor()(0,t,i),Dataset_.states.eTensor()(1,t,i)) ;
+
+        if(policy_->isRecurrent())
+        state_plot1(colID++) = t;
+        else state_plot1(colID++) = Dataset_.states.eTensor()(2,t,i);
+      }
+    }
+    colID = 0;
+//    for (int i = 0; i < Dataset_.batchNum; i++) {
+//      for (int t = 0; t <  Dataset_.maxLen ; t++) {
+//        if(t < Dataset_.maxLen -1) {
+//          state_plot1(colID) = state_plot0(colID + 1) - state_plot0(colID);
+//          if (abs(state_plot1(colID))> M_PI) state_plot1(colID) = 0;
+//        }
+//        else state_plot1(colID) = 0;
+//        colID++;
+//      }
+//    }
+    rai::Utils::Graph::FigProp3D figprop;
+    figprop.title = "V function";
+    figprop.xlabel = "angle";
+    figprop.ylabel = ",";
+    figprop.zlabel = "value";
+    figprop.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+
+
+    Utils::graph->figure3D(5, figprop);
+    Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot0.data(), v_plot0.cols(),
+                                false, Utils::Graph::PlotMethods3D::points, "groundtruth");
+
+    Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot1.data(), v_plot0.cols(),
+                                false, Utils::Graph::PlotMethods3D::points, "learned");
+    Utils::graph->drawFigure(5);
+
+//    graph -> waitForEnter();
   }
 
   void updatePolicyVar() {

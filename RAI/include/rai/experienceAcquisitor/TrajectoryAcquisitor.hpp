@@ -32,6 +32,9 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
   using DataSet = rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>;
 
  public:
+  DataSet *Data = nullptr;
+  std::vector<Trajectory> traj;
+
   virtual Dtype acquire(std::vector<Task_ *> &taskset,
                         Policy_ *policy,
                         std::vector<Noise_ *> &noise,
@@ -242,10 +245,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
       batchID++;
     }
   }
-
-
-  DataSet *Data = nullptr;
-  std::vector<Trajectory> traj;
 
   void saveData(Task_ *task,
                 Policy_ *policy,

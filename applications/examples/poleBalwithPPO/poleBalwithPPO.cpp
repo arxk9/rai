@@ -169,9 +169,9 @@ int main(int argc, char *argv[]) {
       graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
                          minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
       graph->drawFigure(4);
-      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
-                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
-      graph->drawFigure(5);
+//      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
+//                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
+//      graph->drawFigure(5);
 
     }
   }

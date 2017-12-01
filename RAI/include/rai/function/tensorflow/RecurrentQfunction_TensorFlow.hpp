@@ -27,10 +27,6 @@ class RecurrentQfunction_TensorFlow : public virtual ParameterizedFunction_Tenso
   typedef typename QfunctionBase::Tensor3D Tensor3D;
   typedef typename QfunctionBase::Dataset Dataset;
 
-  typedef typename Pfunction_tensorflow ::HiddenState HiddenState;
-  typedef typename Pfunction_tensorflow ::HiddenStateBatch HiddenStateBatch;
-
-
   RecurrentQfunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
   }

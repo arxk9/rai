@@ -80,92 +80,21 @@ int main() {
   RAI_init();
   const int sampleN = 5;
   Acquisitor_ acquisitor;
-//  rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_(&acquisitor);
-//  {
-//    Task_ task;
-//    task.setTimeLimitPerEpisode(0.2);
-//
-//    NoiseCov covariance = NoiseCov::Identity();
-//    NormNoise noise(covariance);
-////    NoNoise noise;
-////
-//    RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
-//    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
-//
-//    std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
-//    std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
-//    acquisitor.acquireVineTrajForNTimeSteps(taskVector,noiseVector,&policy,10,0,0,&Vfunc);
-//
-//  }
+  rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_;
 
-//  ///test Memory
-//  {
-//    Task_ task;
-//    task.setTimeLimitPerEpisode(0.2);
-//
-//    NoiseCov covariance = NoiseCov::Identity();
-//    NormNoise noise(covariance);
-////    NoNoise noise;
-////
-//    RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
-//    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
-//
-//    std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
-//    std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
-//    ////
-//    TensorBatch_ Dataset;
-//    Dataset.minibatch = new TensorBatch_;
-//    ld_.setData(&Dataset);
-//
-//    for(int k = 0; k < 3; k++) {
-//      std::cout << "iter" <<std::endl;
-//      ld_.acquireTrajForNTimeSteps(taskVector, noiseVector, &policy, 8, &Vfunc);
-//
-//      std::cout << ld_.stateBat << std::endl << std::endl;
-//      std::cout << ld_.valueBat << std::endl << std::endl;
-//
-//      ld_.computeAdvantage(taskVector[0], &Vfunc, 0.96, true);
-//
-//      std::cout << Dataset.advantages << std::endl;
-//      LOG(INFO) << Dataset.maxLen << ", " << Dataset.batchNum;
-//      for (int i = 0; i < Dataset.batchNum; i++) {
-//        std::cout << "batch" << i << std::endl << Dataset.states.batch(i) << std::endl << std::endl;
-//      }
-//
-//      std::cout << "iterate" << std::endl;
-//      while (Dataset.iterateBatch(0)) {
-//        std::cout << Dataset.batchID << std::endl;
-//        std::cout << Dataset.minibatch->states << std::endl << std::endl;
-//        std::cout << Dataset.minibatch->advantages << std::endl << std::endl;
-//      }
-//    }
-//    /// Not RNN
-//    FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim> policy2("cpu", "MLP", "tanh 1e-3 3 5 8 1", 0.001);
-//    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc2("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
-//
-//    ld_.acquireTrajForNTimeSteps(taskVector, noiseVector, &policy2, 8, &Vfunc);
-//
-//    std::cout << ld_.stateBat << std::endl << std::endl;
-//    std::cout << ld_.valueBat << std::endl << std::endl;
-//
-//    ld_.computeAdvantage(taskVector[0],&Vfunc, 0.96, true);
-//
-//    std::cout << Dataset.advantages << std::endl;
-//
-////    LOG(INFO) << Dataset.maxLen << ", " << Dataset.batchNum;
-////    for(int i=0; i<Dataset.batchNum; i++){
-////      std::cout << "batch" << i << std::endl<< Dataset.states.batch(i) << std::endl<< std::endl;
-////    }
-////
-////    std::cout << "iterate" << std::endl;
-//    while(Dataset.iterateBatch(5)){
-////      std::cout << Dataset.batchID<<std::endl;
-////      std::cout << Dataset.minibatch->states<< std::endl<< std::endl;
-//      std::cout << Dataset.minibatch->advantages << std::endl;
-//
-//    }
-//
-//  }
+  Task_ task;
+  task.setTimeLimitPerEpisode(10);
+
+  NoiseCov covariance = NoiseCov::Identity();
+  NormNoise noise(covariance);
+
+  RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
+  FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
+
+  std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector = {&task};
+  std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector = {&noise};
+  acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policy, 10, 0, 0, &Vfunc);
+
   RnnVfunc vfunction1("gpu,0", "GRUNet", "tanh 1 64 1", 0.01);
   RnnVfunc vfunction2("gpu,0", "GRUNet", "tanh 1 64 1", 0.01);
 
@@ -181,71 +110,69 @@ int main() {
 
   int len = 64;
   int batsize = 4;
- int iterN = 20;
+  int iterN = 20;
   ///plot
 
   MatrixXD state_dim0, state_dim1, value_dat;
   MatrixXD state_dim02, state_dim12, value_dat2, value_dat3;
 
-
-  state_.resize(1,len,batsize);
-  value_target.resize(len,batsize);
-  value_predicted.resize(len,batsize);
+  state_.resize(1, len, batsize);
+  value_target.resize(len, batsize);
+  value_predicted.resize(len, batsize);
 
   lengths.resize(batsize);
   lengths.setConstant(len);
-Dtype loss1, loss2;
+  Dtype loss1, loss2;
   int colID = 0;
-  for(int iter = 0 ; iter < iterN ; iter ++) {
+  for (int iter = 0; iter < iterN; iter++) {
 
     for (int b = 0; b < batsize; b++) {
       for (int t = 0; t < len; t++) {
         Dtype state = 5 * rn_v.sampleNormal();
-        Dtype targV =  std::sin(0.01 * t *2* M_PI) * std::sin(state*0.25);
+        Dtype targV = std::sin(0.01 * t * 2 * M_PI) * std::sin(state * 0.25);
         state_.eTensor()(0, t, b) = state;
         value_target.eTensor()(t, b) = targV;
       }
     }
 
-    vfunction2.forward(state_,value_predicted);
+    vfunction2.forward(state_, value_predicted);
     ///train for 10 epoch
-    for (int k = 0 ; k < 10 ; k++){
-    loss1 = vfunction1.performOneSolverIter(state_,value_target,lengths);
-      loss2 = vfunction2.performOneSolverIter_trustregion(state_,value_target,value_predicted,lengths);
+    for (int k = 0; k < 10; k++) {
+      loss1 = vfunction1.performOneSolverIter(state_, value_target, lengths);
+      loss2 = vfunction2.performOneSolverIter_trustregion(state_, value_target, value_predicted, lengths);
     }
     std::cout << "Squared error iter :" << iter << " loss :" << loss1 << std::endl;
     std::cout << "Trust Region  iter :" << iter << " loss :" << loss2 << std::endl;
   }
 
-  state_.resize(1,len,batsize);
+  state_.resize(1, len, batsize);
 
+  state_dim0.resize(1, batsize * len);
+  state_dim1.resize(1, batsize * len);
+  value_dat.resize(1, batsize * len);
+  state_dim02.resize(1, batsize * len);
+  state_dim12.resize(1, batsize * len);
+  value_dat2.resize(1, batsize * len);
+  value_dat3.resize(1, batsize * len);
 
-  state_dim0.resize(1,batsize * len);
-  state_dim1.resize(1,batsize * len);
-  value_dat.resize(1,batsize * len);
-  state_dim02.resize(1,batsize * len);
-  state_dim12.resize(1,batsize * len);
-  value_dat2.resize(1,batsize * len);
-  value_dat3.resize(1,batsize * len);
-
-colID = 0;
+  colID = 0;
   for (int b = 0; b < batsize; b++) {
     for (int t = 0; t < len; t++) {
       Dtype state = 5 * rn_v.sampleNormal();
-      Dtype targV =  std::sin(0.01 * t *2* M_PI) * std::sin(state*0.25);
-      value_dat(0,colID) = targV;
-      state_dim0(0,colID) = state;
-      state_dim1(0,colID) = t;
+      Dtype targV = std::sin(0.01 * t * 2 * M_PI) * std::sin(state * 0.25);
+      value_dat(0, colID) = targV;
+      state_dim0(0, colID) = state;
+      state_dim1(0, colID) = t;
 
       state_.eTensor()(0, t, b) = state;
-      state_dim02(0,colID) = state ;
-      state_dim12(0,colID++) = t;
+      state_dim02(0, colID) = state;
+      state_dim12(0, colID++) = t;
     }
   }
   Tensor2D value_predict("value");
-  value_predict.resize(len,batsize);
+  value_predict.resize(len, batsize);
   Tensor2D value_predict2("value");
-  value_predict2.resize(len,batsize);
+  value_predict2.resize(len, batsize);
 
   vfunction1.forward(state_, value_predict);
   vfunction2.forward(state_, value_predict2);
@@ -253,18 +180,46 @@ colID = 0;
   colID = 0;
   for (int b = 0; b < batsize; b++) {
     for (int t = 0; t < len; t++) {
-      value_dat2(0,colID) = value_predict.eMat()(t,b);
-      value_dat3(0,colID++) = value_predict2.eMat()(t,b);
+      value_dat2(0, colID) = value_predict.eMat()(t, b);
+      value_dat3(0, colID++) = value_predict2.eMat()(t, b);
     }
   }
   Utils::graph->figure3D(1, figure1properties);
-  Utils::graph->append3D_Data(1, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "groundtruth");
-  Utils::graph->append3D_Data(1, state_dim02.data(), state_dim12.data(), value_dat2.data(), value_dat2.cols(), false, Utils::Graph::PlotMethods3D::points, "Output");
+  Utils::graph->append3D_Data(1,
+                              state_dim0.data(),
+                              state_dim1.data(),
+                              value_dat.data(),
+                              value_dat.cols(),
+                              false,
+                              Utils::Graph::PlotMethods3D::points,
+                              "groundtruth");
+  Utils::graph->append3D_Data(1,
+                              state_dim02.data(),
+                              state_dim12.data(),
+                              value_dat2.data(),
+                              value_dat2.cols(),
+                              false,
+                              Utils::Graph::PlotMethods3D::points,
+                              "Output");
   Utils::graph->drawFigure(1);
 
   Utils::graph->figure3D(2, figure1properties2);
-  Utils::graph->append3D_Data(2, state_dim0.data(), state_dim1.data(), value_dat.data(), value_dat.cols(), false, Utils::Graph::PlotMethods3D::points, "groundtruth");
-  Utils::graph->append3D_Data(2, state_dim02.data(), state_dim12.data(), value_dat3.data(), value_dat3.cols(), false, Utils::Graph::PlotMethods3D::points, "Output");
+  Utils::graph->append3D_Data(2,
+                              state_dim0.data(),
+                              state_dim1.data(),
+                              value_dat.data(),
+                              value_dat.cols(),
+                              false,
+                              Utils::Graph::PlotMethods3D::points,
+                              "groundtruth");
+  Utils::graph->append3D_Data(2,
+                              state_dim02.data(),
+                              state_dim12.data(),
+                              value_dat3.data(),
+                              value_dat3.cols(),
+                              false,
+                              Utils::Graph::PlotMethods3D::points,
+                              "Output");
   Utils::graph->drawFigure(2);
 
   Utils::graph->waitForEnter();
