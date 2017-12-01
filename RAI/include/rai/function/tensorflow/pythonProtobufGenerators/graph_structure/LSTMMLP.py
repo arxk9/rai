@@ -33,7 +33,7 @@ class LSTMMLP(bc.GraphStructure):
         recurrent_state_size = 0
 
         for size in rnnDim[1:]:
-            cell = rnn.LSTMCell(size, state_is_tuple=True)
+            cell = rnn.LSTMCell(size, state_is_tuple=True, initializer=tf.contrib.layers.xavier_initializer())
             cells.append(cell)
             recurrent_state_size += cell.state_size.c + cell.state_size.h
             state_size.append(cell.state_size.c)

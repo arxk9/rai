@@ -31,23 +31,30 @@ class testfunction(pc.Policy):
         Stdev_assign = tf.assign(wo, tf.log(stdev_assign_placeholder), name='assignStdev')
         Stdev_get = tf.exp(wo, name='getStdev')
 
-        tangent_in = tf.placeholder(dtype, shape=[1, None], name='tangent')
+        # Algorithm placeholders
         old_stdv = tf.placeholder(dtype, shape=[1, action_dim], name='stdv_o')
         old_action_sampled = tf.placeholder(dtype, shape=[None, None, action_dim], name='sampledAction')
         old_action_noise = tf.placeholder(dtype, shape=[None, None, action_dim], name='actionNoise')
         advantage_in = tf.placeholder(dtype, shape=[None, None], name='advantage')
-
+        value_target = tf.placeholder(dtype, shape=[None, None], name='targetValue')
+        value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
 
         # Algorithm params
         kl_coeff = tf.Variable(tf.ones(dtype=dtype, shape=[1, 1]), name='kl_coeff')
         ent_coeff = tf.Variable(0.01 * tf.ones(dtype=dtype, shape=[1, 1]), name='ent_coeff')
-        clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
+        policy_clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
         PPO_params_placeholder = tf.placeholder(dtype=dtype, shape=[1, 3], name='PPO_params_placeholder')
+        v_clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
+
+        # Assign ops.
+        param_assign_placeholder = tf.placeholder(dtype, shape=[1, 1], name='vclip_param_assign_placeholder')
+        tf.assign(v_clip_param, param_assign_placeholder, name='clip_param_assign')
+
 
         param_assign_op_list = []
         param_assign_op_list += [tf.assign(kl_coeff, tf.slice(PPO_params_placeholder, [0, 0], [1, 1]), name='kl_coeff_assign')]
         param_assign_op_list += [tf.assign(ent_coeff, tf.slice(PPO_params_placeholder, [0, 1], [1, 1]), name='ent_coeff_assign')]
-        param_assign_op_list += [tf.assign(clip_param, tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), name='clip_param_assign')]
+        param_assign_op_list += [tf.assign(policy_clip_param, tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), name='clip_param_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
@@ -79,20 +86,24 @@ class testfunction(pc.Policy):
             ent = tf.reduce_sum(wo + .5 * tf.cast(tf.log(2.0 * np.pi * np.e), dtype=dtype), axis=-1)
             meanent = tf.reduce_mean(ent)
 
-            with tf.name_scope('PPO'):
+            with tf.name_scope('RPPO'):
+                #POLICY LOSS
                 surr1 = tf.multiply(ratio, advantage)
-                clip_rate = clip_param[0]
+                clip_rate = policy_clip_param[0]
                 surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
 
-                kl_ = tf.boolean_mask(
-                    util.kl_divergence((old_action_sampled - old_action_noise), old_stdv, action, action_stdev), mask)
-                kl_mean = tf.reshape(tf.reduce_mean(kl_), shape=[1, 1, 1], name='kl_mean')
+                # kl_ = tf.boolean_mask(
+                #     util.kl_divergence((old_action_sampled - old_action_noise), old_stdv, action, action_stdev), mask)
+                # kl_mean = tf.reshape(tf.reduce_mean(kl_), shape=[1, 1, 1], name='kl_mean')
 
-                Total_loss = PPO_loss - tf.multiply(ent_coeff, meanent)
-                Total_loss2 = PPO_loss - tf.multiply(ent_coeff, meanent) + tf.multiply(kl_coeff, tf.reduce_mean(kl_))
+                #VALUE LOSS
+                v_clip_range = v_clip_param[0]
+                vf_err1 = tf.square(value - value_target)
+                vpredclipped = value_pred + tf.clip_by_value(value - value_pred , -v_clip_range, v_clip_range)
+                vf_err2 = tf.square(vpredclipped - value_target)
+                vf_loss = .5 * tf.reduce_mean(tf.maximum(vf_err1, vf_err2))
+
+                Total_loss = tf.identity(PPO_loss - tf.multiply(ent_coeff, meanent) + vf_loss, name='loss')
 
                 policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list), axis=0), name='Pg')  # flatgrad
-
-                policy_gradient2 = tf.identity(tf.expand_dims(util.flatgrad(Total_loss2, gs.l_param_list), axis=0), name='Pg2')  # flatgrad
-
