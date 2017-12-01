@@ -57,6 +57,11 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
                      Action &Stdev,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
+  virtual void PPOpg(Dataset *minibatch,
+                     Tensor2D &old_value,
+                     Action &Stdev,
+                     VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
+
   virtual void PPOpg_kladapt(Dataset *minibatch,
                              Action &Stdev,
                              VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
@@ -83,6 +88,10 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
 
   virtual void forward(State &state, Action &action) =0;
   virtual void forward(Tensor3D &states, Tensor3D &actions) =0;
+
+  virtual void forward(Tensor3D &states, Tensor2D &values) {
+    LOG(FATAL) << "Not implemented";
+  };
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
     LOG(FATAL) << "Not implemented";

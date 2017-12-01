@@ -93,9 +93,9 @@ class testfunction(pc.Policy):
                 surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
 
-                # kl_ = tf.boolean_mask(
-                #     util.kl_divergence((old_action_sampled - old_action_noise), old_stdv, action, action_stdev), mask)
-                # kl_mean = tf.reshape(tf.reduce_mean(kl_), shape=[1, 1, 1], name='kl_mean')
+                kl_ = tf.boolean_mask(
+                    util.kl_divergence((old_action_sampled - old_action_noise), old_stdv, action, action_stdev), mask)
+                kl_mean = tf.reshape(tf.reduce_mean(kl_), shape=[1, 1, 1], name='kl_mean')
 
                 #VALUE LOSS
                 v_clip_range = v_clip_param[0]

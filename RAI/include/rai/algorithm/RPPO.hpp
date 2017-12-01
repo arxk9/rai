@@ -23,7 +23,7 @@
 
 // Neural network
 //function approximations
-#include "rai/function/common/Policy.hpp"
+#include "rai/function/tensorflow/RecurrentStochasticPolicyValue_TensorFlow.hpp"
 #include "rai/function/common/ValueFunction.hpp"
 #include "rai/function/common/StochasticPolicy.hpp"
 #include "rai/common/VectorHelper.hpp"
@@ -40,7 +40,6 @@
 #include "raiCommon/enumeration.hpp"
 #include "raiCommon/math/inverseUsingCholesky.hpp"
 #include "raiCommon/math/ConjugateGradient.hpp"
-#include "math.h"
 #include "rai/RAI_core"
 #include "common/PerformanceTester.hpp"
 
@@ -69,10 +68,10 @@ class RPPO {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
   using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
+  using PolicyValue_ = FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
 
   RPPO(std::vector<Task_ *> &tasks,
-      ValueFunc_ *vfunction,
-      Policy_ *policy,
+      PolicyValue_ *policy,
       std::vector<Noise_ *> &noises,
       Acquisitor_ *acquisitor,
       Dtype lambda,
@@ -81,19 +80,17 @@ class RPPO {
       unsigned testingTrajN,
       int n_epoch = 30,
       int minibatchSize = 0,
-      bool KL_adapt = true,
       Dtype Cov = 1, Dtype Clip_param = 0.2, Dtype Ent_coeff = 0.01,
       Dtype KL_thres = 0.01, Dtype KL_coeff = 1) :
       task_(tasks),
-      vfunction_(vfunction),
       policy_(policy),
+      vfunction_(policy),
       noise_(noises),
       acquisitor_(acquisitor),
       lambda_(lambda),
       numOfBranchPerJunct_(numOfBranchPerJunction),
       numOfJunct_(numofJunctions),
       testingTrajN_(testingTrajN),
-      KL_adapt_(KL_adapt),
       n_epoch_(n_epoch),
       minibatchSize_(minibatchSize),
       cov_in(Cov),
@@ -133,7 +130,7 @@ class RPPO {
     updatePolicyVar();
   };
 
-  ~PPO() { delete Dataset_.miniBatch; };
+  ~RPPO() { delete Dataset_.miniBatch; };
 
   void runOneLoop(int numOfSteps) {
     iterNumber_++;
@@ -181,8 +178,7 @@ class RPPO {
 
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
-
-    vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
+    policy_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
 
     for (int i = 0; i < n_epoch_; i++) {
@@ -190,17 +186,6 @@ class RPPO {
       while (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
 
-        if (vfunction_->isRecurrent()){
-//          for (int k = 0; k < 50; k++)
-          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
-                                                              Dataset_.miniBatch->values,
-                                                              Dataset_.miniBatch->extraTensor2D[0],Dataset_.miniBatch->lengths);
-        }
-        else{
-          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
-                                                              Dataset_.miniBatch->values,
-                                                              Dataset_.miniBatch->extraTensor2D[0]);
-        }
 
         Utils::timer->stopTimer("Vfunction update");
 
@@ -208,8 +193,9 @@ class RPPO {
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
         Utils::timer->startTimer("Gradient computation");
-        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
-        else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
+
+        policy_->PPOpg(Dataset_.miniBatch, Dataset_.miniBatch->extraTensor2D[0], stdev_o, policy_grad);
+
         Utils::timer->stopTimer("Gradient computation");
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 //        LOG(INFO)  << "vfuncloss"<<loss << " grad norm "<<policy_grad.norm();
@@ -224,14 +210,7 @@ class RPPO {
         KLsum += KL;
         cnt++;
       }
-      if (KL_adapt_) {
-        if (KL > KL_thres_ * 1.5)
-          KL_coeff_ *= 2;
-        if (KL < KL_thres_ / 1.5)
-          KL_coeff_ *= 0.5;
 
-        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
-      }
     }
     KL = KLsum / cnt;
 
@@ -240,7 +219,6 @@ class RPPO {
 
 ///Logging
     LOG(INFO) << "Mean KL divergence per epoch = " << KL;
-    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klcoef", acquisitor_->stepsTaken(), KL_coeff_);
@@ -261,8 +239,8 @@ class RPPO {
   std::vector<Task_ *> task_;
   std::vector<Noise_ *> noise_;
   std::vector<Noise::Noise<Dtype, ActionDim> *> noiseBasePtr_;
-  ValueFunc_ *vfunction_;
   Policy_ *policy_;
+  ValueFunc_ *vfunction_;
   Acquisitor_ *acquisitor_;
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
@@ -282,7 +260,6 @@ class RPPO {
   Dtype KL_coeff_;
   Dtype KL_thres_;
   double timeLimit;
-  bool KL_adapt_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
