@@ -77,16 +77,17 @@ class TRPO_gae {
   using Acquisitor_ = ExpAcq::TrajectoryAcquisitor<Dtype, StateDim, ActionDim>;
 
   TRPO_gae(std::vector<Task_ *> &tasks,
-                ValueFunc_ *vfunction,
-                Policy_ *policy,
-                std::vector<Noise_ *> &noises,
-                Acquisitor_ *acquisitor,
-                Dtype lambda,
-                int K = 0,
-                int numofjunctions = 0,
-                unsigned testingTrajN = 1,
-                Dtype Cov = 1,
-                bool noisifyState = false) :
+           ValueFunc_ *vfunction,
+           Policy_ *policy,
+           std::vector<Noise_ *> &noises,
+           Acquisitor_ *acquisitor,
+           Dtype lambda,
+           int K = 0,
+           int numofjunctions = 0,
+           unsigned testingTrajN = 1,
+           Dtype Cov = 1,
+           Dtype minCov = 0,
+           bool noisifyState = false) :
       task_(tasks),
       vfunction_(vfunction),
       policy_(policy),
@@ -101,7 +102,8 @@ class TRPO_gae {
       klD_threshold(0.01),
       cov_in(Cov),
       ld_(acquisitor),
-      noisifyState_(noisifyState){
+      noisifyState_(noisifyState),
+      minCov_(minCov) {
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
     termCost = task_[0]->termValue();
@@ -228,6 +230,8 @@ class TRPO_gae {
   void updatePolicyVar() {
     Action temp;
     policy_->getStdev(stdev_o);
+    stdev_o = stdev_o.cwiseMax(sqrt(minCov_));
+    policy_->setStdev(stdev_o);
     temp = stdev_o;
     temp = temp.array().square(); //var
     policycov = temp.asDiagonal();
@@ -292,8 +296,9 @@ class TRPO_gae {
   Dtype termCost;
   Dtype discFactor;
   Dtype dt;
+  Dtype minCov_;
   double timeLimit;
-  bool noisifyState_=false;
+  bool noisifyState_ = false;
 
   /////////////////////////// batches
   ValueBatch advantage_, bellmanErr_;
@@ -318,6 +323,5 @@ class TRPO_gae {
 
 }
 }
-
 
 #endif //RAI_TRPO_GAE2_HPP
