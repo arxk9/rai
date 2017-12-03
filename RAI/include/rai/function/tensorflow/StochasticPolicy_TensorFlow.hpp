@@ -128,6 +128,47 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::memcpy(test.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * test.size());
   LOG(INFO) << test.transpose();
   }
+  virtual void PPOpg(Tensor3D &states,
+                     Tensor3D &actions,
+                     Tensor3D &actionNoise,
+                     Advantages &advs,
+                     Action &Stdev,
+                     Tensor1D &len,
+                     VectorXD &grad) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+
+    this->tf_->run({states,
+                    actions,
+                    actionNoise,
+                    advsT,
+                    StdevT},
+                   {"Algo/PPO/Pg"},
+                   {},
+                   vectorOfOutputs);
+    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+  }
+
+  virtual void PPOpg_kladapt(Tensor3D &states,
+                             Tensor3D &action,
+                             Tensor3D &actionNoise,
+                             Advantages &advs,
+                             Action &Stdev,
+                             Tensor1D &len,
+                             VectorXD &grad) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor1D advsT(advs, {advs.cols()}, "advantage");
+
+    this->tf_->run({states, action, actionNoise, advsT, StdevT},
+                   {"Algo/PPO/Pg2"},
+                   {},
+                   vectorOfOutputs);
+
+    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+  }
+
 
   virtual void PPOpg(Dataset *minibatch,
                      Action &Stdev,
@@ -145,28 +186,6 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                    vectorOfOutputs);
     grad = vectorOfOutputs[0];
   }
-
-  virtual void PPOpg(Tensor3D &states,
-                     Tensor3D &actions,
-                     Tensor3D &actionNoise,
-                     Tensor2D &advs,
-                     Action &Stdev,
-                     Tensor1D &len,
-                     VectorXD &grad) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advs,
-                    StdevT},
-                   {"Algo/PPO/Pg"},
-                   {},
-                   vectorOfOutputs);
-    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
-  }
-
 
   virtual void PPOpg_kladapt(Dataset *minibatch,
                              Action &Stdev,

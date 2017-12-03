@@ -183,64 +183,99 @@ class PPO {
     Dtype KL = 0, KLsum = 0;
     int cnt = 0;
 
+
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
 
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
-//    ///Visualize Data
-//    rai::Tensor<Dtype,3> testv;
-//    rai::Tensor<Dtype,2> v_plot;
-//    v_plot.resize(Dataset_.maxLen, Dataset_.batchNum);
-//    MatrixXD state_plot0, state_plot1, v_plot0,v_plot1;
-//
-//    state_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-//    state_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-//    v_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-//    v_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-//
-//    rai::Utils::Graph::FigProp3D figprop;
-//    figprop.title = "V function";
-//    figprop.xlabel = "angle";
-//    figprop.ylabel = ",";
-//    figprop.zlabel = "value";
-//    figprop.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-//
-//      vfunction_->forward(Dataset_.states, v_plot);
-//      int colID = 0;
-//      for (int i = 0; i < Dataset_.batchNum; i++) {
-//        for (int t = 0; t < Dataset_.maxLen; t++) {
-//          v_plot0(colID) = Dataset_.values.eMat()(t, i);
-//          v_plot1(colID) = v_plot.eMat()(t, i);
-//
-//          state_plot0(colID) = std::atan2(Dataset_.states.eTensor()(0, t, i), Dataset_.states.eTensor()(1, t, i));
-//
-//          state_plot1(colID) =Dataset_.states.eTensor()(2, t, i);
-//          colID++;
-//        }
-//      }
-//
-//      Utils::graph->figure3D(5, figprop);
-//      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot0.data(), v_plot0.cols(),
-//                                  false, Utils::Graph::PlotMethods3D::points, "groundtruth");
-//
-//      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot1.data(), v_plot0.cols(),
-//                                  false, Utils::Graph::PlotMethods3D::points, "learned");
-//      Utils::graph->drawFigure(5);
-//    Utils::graph->waitForEnter();
 
+
+
+
+    //////Test
+    StateBatch stateBat;
+    Tensor<Dtype,3> stateTensor("state");
+    Tensor<Dtype,3> actionTensor("sampledAction");
+    Tensor<Dtype,3> actionNoiseTensor("actionNoise");
+    Tensor<Dtype,1> trajLength("length");
+
+
+    int dataN = Dataset_.states.batches();
+    stateBat.resize(StateDim, dataN);
+
+    int colID = 0;
+    for (int traID = 0; traID < acquisitor_->traj.size(); traID++) {
+      for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++) {
+        stateBat.col(colID++) = acquisitor_->traj[traID].stateTraj[timeID];
+      }
+    }
+
+    stateTensor.resize(StateDim, 1, dataN);
+    actionTensor.resize(ActionDim, 1, dataN);
+    actionNoiseTensor.resize(ActionDim, 1, dataN);
+    stateTensor.setZero();
+    actionTensor.setZero();
+    actionNoiseTensor.setZero();
+    trajLength.resize(1);
+    trajLength[0] = dataN;
+
+    int pos = 0;
+    for (int traID = 0; traID < acquisitor_->traj.size(); traID++) {
+      for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++) {
+        actionTensor.batch(pos) = acquisitor_->traj[traID].actionTraj[timeID];
+        actionNoiseTensor.batch(pos++) = acquisitor_->traj[traID].actionNoiseTraj[timeID];
+      }
+    }
+    stateTensor.copyDataFrom(stateBat);
+    ValueBatch valueBat, termValueBat;
+    StateBatch termStateBat;
+
+      termValueBat.resize(1, acquisitor_->traj.size());
+      termStateBat.resize(StateDim, acquisitor_->traj.size());
+      valueBat.resize(dataN);
+
+      for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
+        termStateBat.col(traID) = acquisitor_->traj[traID].stateTraj.back();
+      vfunction_->forward(termStateBat, termValueBat);
+
+      for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
+        if (acquisitor_->traj[traID].termType == TerminationType::timeout) {
+          acquisitor_->traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task_[0]->discountFtr());
+        }
+
+      colID = 0;
+      for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
+        for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++)
+          valueBat(colID++) = acquisitor_->traj[traID].valueTraj[timeID];
+
+
+    advantage_.resize(Dataset_.states.batches());
+    ValueBatch valuePred(Dataset_.states.batches());
+
+    int dataID = 0;
+    for (auto &tra : acquisitor_->traj) {
+      ValueBatch advTra = tra.getGAE(vfunction_, discFactor, lambda_, termCost);
+      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
+      dataID += advTra.cols();
+    }
+
+    Eigen::Matrix<Dtype,-1,1> temp;
+    rai::Math::MathFunc::normalize(advantage_);
+
+    vfunction_->forward(stateBat, valuePred);
 
     for (int i = 0; i < n_epoch_; i++) {
 
       while (Dataset_.iterateBatch(minibatchSize_)) {
-//
-//        std::cout << "value" << (Dataset_.miniBatch->values.eMat() - Dataset_.values.eMat()).sum();
-//        std::cout << " value2" << (Dataset_.miniBatch->extraTensor2D[0].eMat() - Dataset_.extraTensor2D[0].eMat()).sum();
-//        std::cout << " states" << (Dataset_.miniBatch->states.eTensor() - Dataset_.states.eTensor()).sum();
-//        std::cout << " actions" << (Dataset_.miniBatch->actions.eTensor() - Dataset_.actions.eTensor()).sum();
-//        std::cout << " actionNoise" << (Dataset_.miniBatch->actionNoises.eTensor() - Dataset_.actionNoises.eTensor()).sum()
+
+//        std::cout << "value" << (Dataset_.miniBatch->values.eMat() - valueBat).sum();
+//        std::cout << " value2" << (Dataset_.miniBatch->extraTensor2D[0].eMat() - valuePred).sum();
+//        std::cout << " states" << (Dataset_.miniBatch->states.eTensor() - stateTensor.eTensor()).sum();
+//        std::cout << " actions" << (Dataset_.miniBatch->actions.eTensor() - actionTensor.eTensor()).sum();
+//        std::cout << " actionNoise" << (Dataset_.miniBatch->actionNoises.eTensor() - actionNoiseTensor.eTensor()).sum()
 //                  << std::endl;
-//        std::cout << " advs" << (Dataset_.miniBatch->advantages.eMat() - Dataset_.advantages.eMat()).norm();
+        std::cout << " advs" << (Dataset_.miniBatch->advantages.eMat() - advantage_).norm()/advantage_.norm() << std::endl;
 
 
         Utils::timer->startTimer("Vfunction update");
@@ -248,38 +283,56 @@ class PPO {
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
-//        LOG(INFO)  << " vfunction loss  "<< loss;
 
-        policy_->getStdev(stdev_o);
-        LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
-        Utils::timer->startTimer("Gradient computation");
-        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
-        else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
+//        policy_->getStdev(stdev_o);
+//        LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
+//        Utils::timer->startTimer("Gradient computation");
+//        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
+//        else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
+//
+//        Utils::timer->stopTimer("Gradient computation");
+//        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
+////        LOG(INFO)  << " grad norm "<<policy_grad.norm();
 
-        Utils::timer->stopTimer("Gradient computation");
-        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
-//        LOG(INFO)  << " grad norm "<<policy_grad.norm();
+//      loss = vfunction_->performOneSolverIter_trustregion(stateBat, valueBat, valuePred);
+      if (KL_adapt_) {
+        policy_->PPOpg_kladapt(stateTensor,
+                               actionTensor,
+                               actionNoiseTensor,
+                               advantage_,
+                               stdev_o,
+                               trajLength,
+                               policy_grad);
+      } else {
+        policy_->PPOpg(stateTensor,
+                       actionTensor,
+                       actionNoiseTensor,
+                       advantage_,
+                       stdev_o,
+                       trajLength,
+                       policy_grad);
+      }
 
         Utils::logger->appendData("gradnorm", updateN ++ , policy_grad.norm());
 
         Utils::timer->startTimer("Adam update");
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("Adam update");
-
-        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
-        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
+//
+//        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
+//        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
 
         KLsum += KL;
         cnt++;
       }
-      if (KL_adapt_) {
-        if (KL > KL_thres_ * 1.5)
-          KL_coeff_ *= 2;
-        if (KL < KL_thres_ / 1.5)
-          KL_coeff_ *= 0.5;
-
-        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
-      }
+//      if (KL_adapt_) {
+//        if (KL > KL_thres_ * 1.5)
+//          KL_coeff_ *= 2;
+//        if (KL < KL_thres_ / 1.5)
+//          KL_coeff_ *= 0.5;
+///
+//        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
+//      }
     }
     KL = KLsum / cnt;
 

@@ -16,7 +16,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
  public:
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, 2 * actionDim, -1> JacobianWRTparam;
-
+  using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
 
   typedef typename PolicyBase::State State;
@@ -56,10 +56,18 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   virtual void PPOpg(Tensor3D &states,
                      Tensor3D &actions,
                      Tensor3D &actionNoise,
-                     Tensor2D &advs,
+                     Advantages &advs,
                      Action &Stdev,
                      Tensor1D &len,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
+
+  virtual void PPOpg_kladapt(Tensor3D &states,
+                             Tensor3D &actions,
+                             Tensor3D &actionNoise,
+                             Advantages &advs,
+                             Action &Stdev,
+                             Tensor1D &len,
+                             VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
 
   virtual void PPOpg(Dataset *minibatch,
                      Action &Stdev,

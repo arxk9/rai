@@ -285,7 +285,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     int dataID = 0;
 
     Data->advantages.resize(Data->maxLen, Data->batchNum);
-    Data->advantages.setZero();
 
     for (auto &tra : traj) {
       ///compute advantage for each trajectory
