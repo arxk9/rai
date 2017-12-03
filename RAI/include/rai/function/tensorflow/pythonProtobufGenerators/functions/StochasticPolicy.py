@@ -87,7 +87,7 @@ class StochasticPolicy(pc.Policy):
             with tf.name_scope('TRPO'):
                 # Surrogate Loss
                 surr = tf.reduce_mean(tf.multiply(ratio, advantage), name='loss')
-                policy_gradient = tf.identity(util.flatgrad(surr, gs.l_param_list, max_grad_norm), name='Pg')  # flatgrad
+                policy_gradient = tf.identity(util.flatgrad(surr, gs.l_param_list), name='Pg')  # flatgrad
 
                 # Hessian Vector Product
                 meanfixed = tf.stop_gradient(action)
@@ -119,8 +119,8 @@ class StochasticPolicy(pc.Policy):
                 Total_loss = PPO_loss - tf.multiply(ent_coeff, mean_ent)
                 Total_loss2 = PPO_loss - tf.multiply(ent_coeff, mean_ent) + tf.multiply(kl_coeff, kl_mean)
 
-                policy_gradient = tf.identity(util.flatgrad(Total_loss, gs.l_param_list), name='Pg')  # flatgrad
-                policy_gradient2 = tf.identity(util.flatgrad(Total_loss2, gs.l_param_list), name='Pg2')  # flatgrad
+                policy_gradient = tf.identity(util.flatgrad(Total_loss, gs.l_param_list, max_grad_norm), name='Pg')  # flatgrad
+                policy_gradient2 = tf.identity(util.flatgrad(Total_loss2, gs.l_param_list, max_grad_norm), name='Pg2')  # flatgrad
                 #
                 # # From modular-rl
                 # if (kl_mean > 2 * kl_thres) is not None:
