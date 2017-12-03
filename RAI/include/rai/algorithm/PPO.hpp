@@ -263,6 +263,48 @@ class PPO {
     ValueBatch valuePred( Dataset_.batchNum);
     vfunction_->forward(stateBat, valuePred);
 
+    ///Visualize Data
+    rai::Tensor<Dtype,3> testv;
+    rai::Tensor<Dtype,2> v_plot;
+    v_plot.resize(Dataset_.maxLen, Dataset_.batchNum);
+    MatrixXD state_plot0, state_plot1, v_plot0,v_plot1;
+
+    state_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+    state_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+    v_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+    v_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+
+    rai::Utils::Graph::FigProp3D figprop;
+    figprop.title = "V function";
+    figprop.xlabel = "angle";
+    figprop.ylabel = ",";
+    figprop.zlabel = "value";
+    figprop.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+
+      vfunction_->forward(Dataset_.states, v_plot);
+      colID = 0;
+      for (int i = 0; i < Dataset_.batchNum; i++) {
+        for (int t = 0; t < Dataset_.maxLen; t++) {
+          v_plot0(colID) = Dataset_.values.eMat()(t, i);
+          v_plot1(colID) = v_plot.eMat()(t, i);
+
+          state_plot0(colID) = std::atan2(Dataset_.states.eTensor()(0, t, i), Dataset_.states.eTensor()(1, t, i));
+
+          state_plot1(colID) =Dataset_.states.eTensor()(2, t, i);
+          colID++;
+        }
+      }
+
+      Utils::graph->figure3D(5, figprop);
+      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot0.data(), v_plot0.cols(),
+                                  false, Utils::Graph::PlotMethods3D::points, "groundtruth");
+
+      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot1.data(), v_plot0.cols(),
+                                  false, Utils::Graph::PlotMethods3D::points, "learned");
+      Utils::graph->drawFigure(5);
+    Utils::graph->waitForEnter();
+
+
     std::cout << valueBat << std::endl;
     for (int i = 0; i < n_epoch_; i++) {
 
