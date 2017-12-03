@@ -229,14 +229,10 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     this->tf_->run({{"Stdev_placeholder", Stdev}}, {"getStdev"}, {}, vectorOfOutputs);
     Stdev = vectorOfOutputs[0];
   }
-
-  virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param, const Dtype &max_grad_norm) {
+  
+  virtual void setParams(const VectorXD params) {
     std::vector<MatrixXD> dummy;
-    VectorXD input;
-    input.resize(4);
-    input << kl_coeff, ent_coeff, clip_param, max_grad_norm;
-
-    this->tf_->run({{"PPO_params_placeholder", input}}, {}, {"PPO_param_assign_ops"}, dummy);
+    this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
 
   virtual void forward(State &state, Action &action) {

@@ -83,8 +83,12 @@ class PPO {
       int n_epoch = 30,
       int minibatchSize = 0,
       bool KL_adapt = true,
-      Dtype Cov = 1, Dtype maxGradNorm = 0.5, Dtype Clip_param = 0.2, Dtype Ent_coeff = 0.01,
-      Dtype KL_thres = 0.01, Dtype KL_coeff = 1) :
+      Dtype cov = 1,
+      Dtype KLThres = 0.01,
+      Dtype entCoeff = 0.01,
+      Dtype clipCoeff = 0.2,
+      Dtype maxGradNorm = 0.5,
+      Dtype KL_coeff = 1) :
       task_(tasks),
       vfunction_(vfunction),
       policy_(policy),
@@ -97,12 +101,12 @@ class PPO {
       KL_adapt_(KL_adapt),
       n_epoch_(n_epoch),
       minibatchSize_(minibatchSize),
-      cov_in(Cov),
-          maxGradNorm_(maxGradNorm),
-      KL_thres_(KL_thres),
-      KL_coeff_(KL_coeff),
-      clip_param_(Clip_param),
-      Ent_coeff_(Ent_coeff), Dataset_(){
+      covIn(cov),
+      maxGradNorm_(maxGradNorm),
+      KLThres_(KLThres),
+      KLCoeff_(KL_coeff),
+      clipCoeff_(clipCoeff),
+      entCoeff_(entCoeff), Dataset_(){
     updateN = 0;
     ///Construct Dataset
     acquisitor_->setData(&Dataset_);
@@ -121,7 +125,9 @@ class PPO {
 
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
-    policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
+    algoParams.resize(4);
+    algoParams << KLCoeff_, entCoeff_, clipCoeff_,maxGradNorm_;
+    policy_->setParams(algoParams);
 
     termCost = task_[0]->termValue();
     discFactor = task_[0]->discountFtr();
@@ -132,7 +138,7 @@ class PPO {
 
     ///update input stdev
     stdev_o.setOnes();
-    stdev_o *= std::sqrt(cov_in);
+    stdev_o *= std::sqrt(covIn);
     policy_->setStdev(stdev_o);
     updatePolicyVar();
   };
@@ -169,10 +175,6 @@ class PPO {
 
   void PPOUpdater() {
       Utils::timer->startTimer("policy Training");
-
-//    Utils::timer->startTimer("GAE");
-//    acquisitor_->computeAdvantage(task_[0], vfunction_, lambda_);
-//    Utils::timer->stopTimer("GAE");
     acquisitor_->saveData(task_[0], policy_, vfunction_, lambda_, true);
 
     Dtype loss;
@@ -201,11 +203,9 @@ class PPO {
         Utils::timer->startTimer("Gradient computation");
         if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
         else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
-
         Utils::timer->stopTimer("Gradient computation");
-        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
-//        LOG(INFO)  << " grad norm "<<policy_grad.norm();
 
+        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
         Utils::logger->appendData("gradnorm", updateN++ , policy_grad.norm());
 
         Utils::timer->startTimer("Adam update");
@@ -216,11 +216,13 @@ class PPO {
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       }
       if (KL_adapt_) {
-        if (KL > KL_thres_ * 1.5)
-          KL_coeff_ *= 2;
-        if (KL < KL_thres_ / 1.5)
-          KL_coeff_ *= 0.5;
-        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
+        if (KL > KLThres_ * 1.5)
+          KLCoeff_ *= 2;
+        if (KL < KLThres_ / 1.5)
+          KLCoeff_ *= 0.5;
+
+        algoParams[0] = KLCoeff_;
+        policy_->setParams(algoParams);
       }
     }
 
@@ -229,7 +231,7 @@ class PPO {
 
 ///Logging
     LOG(INFO) << "Final KL divergence = " << KL;
-    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
+    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KLCoeff_;
 
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL);
@@ -261,15 +263,15 @@ class PPO {
   int numOfBranchPerJunct_;
   int n_epoch_;
   int minibatchSize_;
-  Dtype cov_in;
+  Dtype covIn;
   Dtype termCost;
   Dtype discFactor;
   Dtype dt;
   Dtype maxGradNorm_;
-  Dtype clip_param_;
-  Dtype Ent_coeff_;
-  Dtype KL_coeff_;
-  Dtype KL_thres_;
+  Dtype clipCoeff_;
+  Dtype entCoeff_;
+  Dtype KLCoeff_;
+  Dtype KLThres_;
   double timeLimit;
   bool KL_adapt_;
   int updateN;
@@ -278,6 +280,8 @@ class PPO {
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
+  VectorXD algoParams;
+
   Action stdev_o;
   Covariance policycov;
 

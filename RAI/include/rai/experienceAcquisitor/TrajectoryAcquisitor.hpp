@@ -286,6 +286,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     Data->advantages.resize(Data->maxLen, Data->batchNum);
     Eigen::Matrix<Dtype, 1, -1> temp(1, dataN_);
 
+    Utils::timer->startTimer("GAE");
     for (auto &tra : traj) {
       ///compute advantage for each trajectory
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
@@ -308,6 +309,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     } else {
       Data->advantages.copyDataFrom(temp);
     }
+    Utils::timer->stopTimer("GAE");
 
   }
  private:

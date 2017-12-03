@@ -16,7 +16,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
  public:
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, 2 * actionDim, -1> JacobianWRTparam;
-  using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
+
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
 
   typedef typename PolicyBase::State State;
@@ -53,22 +53,6 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   }
 
   ///PPO
-  virtual void PPOpg(Tensor3D &states,
-                     Tensor3D &actions,
-                     Tensor3D &actionNoise,
-                     Advantages &advs,
-                     Action &Stdev,
-                     Tensor1D &len,
-                     VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
-
-  virtual void PPOpg_kladapt(Tensor3D &states,
-                             Tensor3D &actions,
-                             Tensor3D &actionNoise,
-                             Advantages &advs,
-                             Action &Stdev,
-                             Tensor1D &len,
-                             VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
-
   virtual void PPOpg(Dataset *minibatch,
                      Action &Stdev,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
@@ -97,8 +81,8 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   virtual void setStdev(const Action &Stdev) = 0;
 
   virtual void getStdev(Action &Stdev) = 0;
-
-  virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param, const Dtype &max_grad_norm) {
+  
+  virtual void setParams(const VectorXD params) {
     LOG(FATAL) << "Not implemented";
   }
 

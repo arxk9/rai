@@ -55,7 +55,7 @@ class StochasticPolicy(pc.Policy):
         param_assign_op_list += [
             tf.assign(clip_param, tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), name='clip_param_assign')]
         param_assign_op_list += [
-            tf.assign(max_grad_norm, tf.slice(PPO_params_placeholder, [0, 3], [1, 1]), name='max_grad_norm_assign')]
+            tf.assign(max_grad_norm, tf.slice(PPO_params_placeholder, [0, 3], [1, 1]), name='max_norm_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
@@ -108,8 +108,8 @@ class StochasticPolicy(pc.Policy):
             with tf.name_scope('PPO'):
                 # PPO's pessimistic surrogate (L^CLIP)
                 surr1 = tf.multiply(ratio, advantage)  # negative, smaller the better
-                clip_rate = clip_param[0]
-                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), advantage)
+                clip_range = clip_param[0]
+                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_range, 1.0 + clip_range), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))
 
                 # KL divergence

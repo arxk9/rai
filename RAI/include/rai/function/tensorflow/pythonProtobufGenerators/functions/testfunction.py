@@ -41,21 +41,18 @@ class testfunction(pc.Policy):
 
         # Algorithm params
         v_coeff = tf.Variable(0.5 * tf.ones(dtype=dtype, shape=[1, 1]), name='v_coeff')
-        kl_coeff = tf.Variable(tf.ones(dtype=dtype, shape=[1, 1]), name='kl_coeff')
         ent_coeff = tf.Variable(0.01 * tf.ones(dtype=dtype, shape=[1, 1]), name='ent_coeff')
-        policy_clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
-        PPO_params_placeholder = tf.placeholder(dtype=dtype, shape=[1, 3], name='PPO_params_placeholder')
-        v_clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
+        clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
+        max_grad_norm = tf.Variable(0.5 * tf.ones(dtype=dtype, shape=[1, 1]), name='max_grad_norm')
 
         # Assign ops.
-        param_assign_placeholder = tf.placeholder(dtype, shape=[1, 1], name='vclip_param_assign_placeholder')
-        tf.assign(v_clip_param, param_assign_placeholder, name='clip_param_assign')
-
+        params_placeholder = tf.placeholder(dtype=dtype, shape=[1, 4], name='PPO_params_placeholder')
 
         param_assign_op_list = []
-        param_assign_op_list += [tf.assign(kl_coeff, tf.slice(PPO_params_placeholder, [0, 0], [1, 1]), name='kl_coeff_assign')]
-        param_assign_op_list += [tf.assign(ent_coeff, tf.slice(PPO_params_placeholder, [0, 1], [1, 1]), name='ent_coeff_assign')]
-        param_assign_op_list += [tf.assign(policy_clip_param, tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), name='clip_param_assign')]
+        param_assign_op_list += [tf.assign(v_coeff, tf.slice(params_placeholder, [0, 1], [1, 1]), name='v_coeff_assign')]
+        param_assign_op_list += [tf.assign(ent_coeff, tf.slice(params_placeholder, [0, 2], [1, 1]), name='ent_coeff_assign')]
+        param_assign_op_list += [tf.assign(clip_param, tf.slice(params_placeholder, [0, 3], [1, 1]), name='clip_param_assign')]
+        param_assign_op_list += [tf.assign(max_grad_norm, tf.slice(params_placeholder, [0, 4], [1, 1]), name='max_norm_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
@@ -90,8 +87,8 @@ class testfunction(pc.Policy):
             with tf.name_scope('RPPO'):
                 #POLICY LOSS
                 surr1 = tf.multiply(ratio, advantage)
-                clip_rate = policy_clip_param[0]
-                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_rate, 1.0 + clip_rate), advantage)
+                clip_range = clip_param[0]
+                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_range, 1.0 + clip_range), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
 
                 kl_ = tf.boolean_mask(
@@ -99,13 +96,15 @@ class testfunction(pc.Policy):
                 kl_mean = tf.reshape(tf.reduce_mean(kl_), shape=[1, 1, 1], name='kl_mean')
 
                 #VALUE LOSS
-                v_clip_range = v_clip_param[0]
+
                 v_rate = v_coeff[0]
                 vf_err1 = tf.square(value - value_target)
-                vpredclipped = value_pred + tf.clip_by_value(value - value_pred , -v_clip_range, v_clip_range)
+                vpredclipped = value_pred + tf.clip_by_value(value - value_pred, -clip_range, clip_range)
                 vf_err2 = tf.square(vpredclipped - value_target)
-                vf_loss = .5 * tf.reduce_mean(tf.maximum(vf_err1, vf_err2))
+                vf_err1_masked = tf.boolean_mask(vf_err1, mask)
+                vf_err2_masked = tf.boolean_mask(vf_err2, mask)
+
+                vf_loss = .5 * tf.reduce_mean(tf.maximum(vf_err1_masked, vf_err2_masked))
 
                 Total_loss = tf.identity(PPO_loss - tf.multiply(ent_coeff, meanent) + v_rate * vf_loss, name='loss')
-
                 policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list), axis=0), name='Pg')  # flatgrad

@@ -114,14 +114,11 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
     Stdev = vectorOfOutputs[0];
   }
 
-  virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param) {
+  virtual void setParams(const VectorXD params) {
     std::vector<MatrixXD> dummy;
-    VectorXD input;
-    input.resize(3);
-    input << kl_coeff, ent_coeff, clip_param;
-    this->tf_->run({{"PPO_params_placeholder", input}}, {}, {"PPO_param_assign_ops"}, dummy);
+    this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
-
+  
   virtual void forward(State &state, Action &action) {
     std::vector<MatrixXD> vectorOfOutputs;
     MatrixXD h_, length;
@@ -189,6 +186,7 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
   }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) { return 0; }
+
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
     std::vector<MatrixXD> dummy;
     VectorXD inputrate(1);
