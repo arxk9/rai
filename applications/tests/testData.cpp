@@ -124,6 +124,8 @@ int main() {
     for (int i = 0; i < 10; i++) {
       std::cout << "iter" << i << std::endl;
       acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policy, 6000, 0, 0, &vfunction);
+      std::cout << acquisitor.traj[0].getAverageValue() << std::endl;
+
       acquisitor.saveData(taskVector[0], &policy, &vfunction);
 
       Dtype disc = taskVector[0]->discountFtr();
@@ -234,6 +236,11 @@ int main() {
         dataID += advs.cols();
       }
 
+      Eigen::Matrix<Dtype, -1, -1> testdat;
+      vfunction.test(ld_.states, ld_.values,ld_.extraTensor2D[0],testdat);
+
+      std::cout << (ld_.extraTensor2D[0].eMat()).norm() << std::endl;
+      std::cout << (testdat - ld_.extraTensor2D[0].eMat()).norm() << std::endl
 
       ///test epoch
       for (int k = 0; k < 10; k++) {
@@ -246,10 +253,13 @@ int main() {
                     << std::endl;
           std::cout << " advs" << (ld_.miniBatch->advantages.eMat() - advantages2.eMat()).norm()/advantages2.eMat().norm() << std::endl;
 
+          vfunction.performOneSolverIter_trustregion(ld_.states, ld_.values,ld_.extraTensor2D[0]);
+
           policy.PPOpg(ld_.miniBatch, stdev_o, policy_grad);
           policy.PPOpg(stateTensor, actionTensor, actionNoiseTensor, advantages2, stdev_o, ld_.lengths, policy_grad2);
           std::cout << " grad" << (policy_grad - policy_grad2).norm()/policy_grad2.norm()  << std::endl;
 
+          policy.trainUsingGrad(policy_grad);
         }
       }
     }

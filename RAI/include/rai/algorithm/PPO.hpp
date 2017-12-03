@@ -184,84 +184,7 @@ class PPO {
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
 
-//    Tensor<Dtype, 2> valuePred("predictedValue");
-//    valuePred.resize(Dataset_.maxLen, Dataset_.batchNum);
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
-
-//    Tensor<Dtype,2> advantages2("advantage");
-//    advantages2.resize(1,  Dataset_.batchNum);
-//
-//    int dataID = 0;
-//    for (int trajID = 0; trajID < acquisitor_->traj.size(); trajID++) {
-//
-//      Eigen::Matrix<Dtype, 1, -1> valueMat;
-//      Eigen::Matrix<Dtype, 1, -1> bellmanErr;
-//      Eigen::Matrix<Dtype, 1, -1> advs;
-//      Eigen::Matrix<Dtype, StateDim, -1> stateTrajMat;
-//      Eigen::Matrix<Dtype, ActionDim, -1> actionTrajMat;
-//
-//      valueMat.resize(acquisitor_->traj[trajID].size());
-//      bellmanErr.resize(acquisitor_->traj[trajID].size() - 1);
-//      stateTrajMat.resize(StateDim, acquisitor_->traj[trajID].size());
-//      actionTrajMat.resize(ActionDim, acquisitor_->traj[trajID].size());
-//      for (int col = 0; col < acquisitor_->traj[trajID].size(); col++) {
-//        stateTrajMat.col(col) = acquisitor_->traj[trajID].stateTraj[col];
-//        actionTrajMat.col(col) = acquisitor_->traj[trajID].actionTraj[col];
-//      }
-//      vfunction_->forward(stateTrajMat, valueMat);
-//
-//      if (acquisitor_->traj[trajID].termType == TerminationType::terminalState)
-//        valueMat[acquisitor_->traj[trajID].size() - 1] = task_[0]->termValue();
-//
-//      for (int w = 0; w < acquisitor_->traj[trajID].size() - 1; w++)
-//        bellmanErr[w] =
-//            valueMat[w + 1] * task_[0]->discountFtr() + acquisitor_->traj[trajID].costTraj[w] - valueMat[w];
-//
-//      advs.resize(1, acquisitor_->traj[trajID].size() - 1);
-//      advs[acquisitor_->traj[trajID].size() - 2] = bellmanErr[acquisitor_->traj[trajID].size() - 2];
-//      Dtype fctr = task_[0]->discountFtr() * 0.97;
-//
-//      for (int timeID = acquisitor_->traj[trajID].size() - 3; timeID > -1; timeID--)
-//        advs[timeID] = fctr * advs[timeID + 1] + bellmanErr[timeID];
-//
-//      rai::Math::MathFunc::normalize(advs);
-//
-//      advantages2.block(0, dataID, 1, advs.cols()) = advs;
-//      dataID += advs.cols();
-//    }
-
-    Eigen::Matrix<Dtype, StateDim, -1> stateBat, termStateBat;
-    Eigen::Matrix<Dtype, 1, -1> valueBat,termValueBat;
-
-    stateBat.resize(StateDim, Dataset_.batchNum);
-    valueBat.resize(1, Dataset_.batchNum);
-
-    int colID = 0;
-    for (int traID = 0; traID < acquisitor_->traj.size(); traID++) {
-      for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++) {
-        stateBat.col(colID++) = acquisitor_->traj[traID].stateTraj[timeID];
-      }
-    }
-    termValueBat.resize(1, acquisitor_->traj.size());
-    termStateBat.resize(StateDim, acquisitor_->traj.size());
-    valueBat.resize(1, Dataset_.batchNum);
-
-    for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
-      termStateBat.col(traID) = acquisitor_->traj[traID].stateTraj.back();
-    vfunction_->forward(termStateBat, termValueBat);
-
-    for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
-      if (acquisitor_->traj[traID].termType == TerminationType::timeout) {
-        acquisitor_->traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task_[0]->discountFtr());
-      }
-
-    colID = 0;
-    for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
-      for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++)
-        valueBat(colID++) = acquisitor_->traj[traID].valueTraj[timeID];
-
-    ValueBatch valuePred( Dataset_.batchNum);
-    vfunction_->forward(stateBat, valuePred);
 
     ///Visualize Data
     rai::Tensor<Dtype,3> testv;
@@ -282,7 +205,7 @@ class PPO {
     figprop.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
 
       vfunction_->forward(Dataset_.states, v_plot);
-      colID = 0;
+      int colID = 0;
       for (int i = 0; i < Dataset_.batchNum; i++) {
         for (int t = 0; t < Dataset_.maxLen; t++) {
           v_plot0(colID) = Dataset_.values.eMat()(t, i);
@@ -302,20 +225,16 @@ class PPO {
       Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot1.data(), v_plot0.cols(),
                                   false, Utils::Graph::PlotMethods3D::points, "learned");
       Utils::graph->drawFigure(5);
-    Utils::graph->waitForEnter();
+//    Utils::graph->waitForEnter();
 
 
-    std::cout << valueBat << std::endl;
     for (int i = 0; i < n_epoch_; i++) {
 
       while (Dataset_.iterateBatch(minibatchSize_)) {
         Utils::timer->startTimer("Vfunction update");
-//        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
-//                                                              Dataset_.miniBatch->values,
-//                                                              Dataset_.miniBatch->extraTensor2D[0]);
-
-        loss = vfunction_->performOneSolverIter_trustregion(stateBat, valueBat, valuePred);
-
+        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+                                                              Dataset_.miniBatch->values,
+                                                              Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
 
 //        LOG(INFO)  << " vfunction loss  "<< loss;

@@ -20,6 +20,8 @@ class Vfunction(bc.SpecializedFunction):
         value_target = tf.placeholder(dtype, shape=[None, 1], name='targetValue')
         value_pred = tf.placeholder(dtype, shape=[None, 1], name='predictedValue')
 
+        tf.identity(value_pred, name='test')
+
         # Assign ops.
         param_assign_placeholder = tf.placeholder(dtype, shape=[1, 1], name='param_assign_placeholder')
         tf.assign(clip_param, param_assign_placeholder, name='clip_param_assign')
@@ -36,6 +38,7 @@ class Vfunction(bc.SpecializedFunction):
 
         with tf.name_scope('trainUsingTRValue'):
             # Clipping-based trust region loss (https://github.com/openai/baselines/blob/master/baselines/pposgd/pposgd_simple.py)
+
             vfloss1 = tf.square(value - value_target)
             clip_rate = clip_param[0]
 
@@ -43,6 +46,8 @@ class Vfunction(bc.SpecializedFunction):
             vfloss2 = tf.square(vpredclipped - value_target)
 
             TR_loss = .5 * tf.reduce_mean(tf.maximum(vfloss1, vfloss2), name='loss')
+            # TR_loss = .5 * tf.reduce_mean(vfloss1, name='loss')
+
             learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
             train = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(TR_loss, name='solver',
                                                                                  colocate_gradients_with_ops=True)

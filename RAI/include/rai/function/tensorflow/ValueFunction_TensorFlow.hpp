@@ -95,6 +95,20 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
 //    return loss[0](0);
 //  }
 
+  virtual Dtype test(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Eigen::Matrix<Dtype,-1,-1> &testout) {
+    std::vector<MatrixXD> test;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+
+    this->tf_->run({states,
+                    values,
+                    old_values,
+                    lr},
+                   {"test"},
+                   {"trainUsingTRValue/solver"}, test);
+    testout = test[0];
+    return test[0](0);
+  }
+
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
     std::vector<MatrixXD> loss;
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
