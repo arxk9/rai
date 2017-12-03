@@ -40,6 +40,7 @@ class testfunction(pc.Policy):
         value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
 
         # Algorithm params
+        v_coeff = tf.Variable(0.5 * tf.ones(dtype=dtype, shape=[1, 1]), name='v_coeff')
         kl_coeff = tf.Variable(tf.ones(dtype=dtype, shape=[1, 1]), name='kl_coeff')
         ent_coeff = tf.Variable(0.01 * tf.ones(dtype=dtype, shape=[1, 1]), name='ent_coeff')
         policy_clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
@@ -99,11 +100,12 @@ class testfunction(pc.Policy):
 
                 #VALUE LOSS
                 v_clip_range = v_clip_param[0]
+                v_rate = v_coeff[0]
                 vf_err1 = tf.square(value - value_target)
                 vpredclipped = value_pred + tf.clip_by_value(value - value_pred , -v_clip_range, v_clip_range)
                 vf_err2 = tf.square(vpredclipped - value_target)
                 vf_loss = .5 * tf.reduce_mean(tf.maximum(vf_err1, vf_err2))
 
-                Total_loss = tf.identity(PPO_loss - tf.multiply(ent_coeff, meanent) + vf_loss, name='loss')
+                Total_loss = tf.identity(PPO_loss - tf.multiply(ent_coeff, meanent) + v_rate * vf_loss, name='loss')
 
                 policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list), axis=0), name='Pg')  # flatgrad

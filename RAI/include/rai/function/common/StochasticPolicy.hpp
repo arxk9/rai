@@ -82,7 +82,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
 
   virtual void getStdev(Action &Stdev) = 0;
 
-  virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param) {
+  virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param, const Dtype &max_grad_norm) {
     LOG(FATAL) << "Not implemented";
   }
 

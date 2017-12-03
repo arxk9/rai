@@ -9,8 +9,8 @@
 #include <Eigen/Dense>
 
 // task
-#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
-//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -36,8 +36,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-using Task = rai::Task::PO_PoleBalancing<Dtype>;
-//using Task = rai::Task::PoleBalancing<Dtype>;
+//using Task = rai::Task::PO_PoleBalancing<Dtype>;
+using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Define Noise Model //////////////////////
-  NoiseCovariance covariance = NoiseCovariance::Identity() * 2;
+  NoiseCovariance covariance = NoiseCovariance::Identity() ;
   std::vector<Noise> noiseVec(nThread, Noise(covariance));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Define Function approximations //////////
 
 
-  PolicyValue_TensorFlow policy("gpu,0", "testNet", "tanh 1e-3 2 64 / 32 32 1", 0.001);
+  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 3 128 / 32 32 1", 0.001);
 
 
   ////////////////////////// Acquisitor
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 100);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 0);
 
   algorithm.setVisualizationLevel(0);
 

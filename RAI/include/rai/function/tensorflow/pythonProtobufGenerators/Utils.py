@@ -14,8 +14,11 @@ class Utils:
     def numel(self, x):
         return np.prod(self.var_shape(x))
 
-    def flatgrad(self, loss, var_list):
+
+    def flatgrad(self, loss, var_list, maxnorm=None):
         grads = tf.gradients(loss, var_list)
+        if maxnorm is not None:
+            grads, _ = tf.clip_by_global_norm(grads, maxnorm)
         return tf.reshape(tf.concat([tf.reshape(grad, [self.numel(v)]) for (v, grad) in zip(var_list, grads)], axis=0),
                           [1, -1])
 

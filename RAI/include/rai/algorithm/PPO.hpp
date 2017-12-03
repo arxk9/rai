@@ -82,7 +82,7 @@ class PPO {
       int n_epoch = 30,
       int minibatchSize = 0,
       bool KL_adapt = true,
-      Dtype Cov = 1, Dtype Clip_param = 0.2, Dtype Ent_coeff = 0.01,
+      Dtype Cov = 1, Dtype maxGradNorm = 0.5, Dtype Clip_param = 0.2, Dtype Ent_coeff = 0.01,
       Dtype KL_thres = 0.01, Dtype KL_coeff = 1) :
       task_(tasks),
       vfunction_(vfunction),
@@ -97,6 +97,7 @@ class PPO {
       n_epoch_(n_epoch),
       minibatchSize_(minibatchSize),
       cov_in(Cov),
+          maxGradNorm_(maxGradNorm),
       KL_thres_(KL_thres),
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
@@ -117,7 +118,7 @@ class PPO {
 
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
-    policy_->setPPOparams(KL_coeff_, Ent_coeff, Clip_param);
+    policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
 
     termCost = task_[0]->termValue();
     discFactor = task_[0]->discountFtr();
@@ -230,7 +231,7 @@ class PPO {
         if (KL < KL_thres_ / 1.5)
           KL_coeff_ *= 0.5;
 
-        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
+        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
       }
     }
     KL = KLsum / cnt;
@@ -335,6 +336,7 @@ class PPO {
   Dtype termCost;
   Dtype discFactor;
   Dtype dt;
+  Dtype maxGradNorm_;
   Dtype clip_param_;
   Dtype Ent_coeff_;
   Dtype KL_coeff_;
