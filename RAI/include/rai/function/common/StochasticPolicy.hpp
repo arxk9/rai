@@ -53,6 +53,14 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   }
 
   ///PPO
+  virtual void PPOpg(Tensor3D &states,
+                     Tensor3D &actions,
+                     Tensor3D &actionNoise,
+                     Tensor2D &advs,
+                     Action &Stdev,
+                     Tensor1D &len,
+                     VectorXD &grad) { LOG(FATAL) << "Not implemented"; }
+
   virtual void PPOpg(Dataset *minibatch,
                      Action &Stdev,
                      VectorXD &grad) { LOG(FATAL) << "Not implemented"; }

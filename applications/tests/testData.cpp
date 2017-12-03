@@ -19,7 +19,7 @@
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <functional>
-#include <rai/function/tensorflow/RecurrentDeterministicPolicy_Tensorflow.hpp>
+//#include <rai/function/tensorflow/RecurrentDeterministicPolicy_Tensorflow.hpp>
 
 #include <rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp>
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -49,7 +49,7 @@ using Dtype = float;
 
 using PolicyBase = rai::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 using RnnQfunc = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
-using RnnDPolicy = rai::FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+//using RnnDPolicy = rai::FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using RnnPolicy = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
 using Task_ = rai::Task::PoleBalancing<Dtype>;
@@ -111,18 +111,21 @@ int main() {
 
     Eigen::Matrix<Dtype, StateDim, -1> stateBat, stateTest, termStateBat;
     Eigen::Matrix<Dtype, 1, -1> termValueBat, valueBat, value_old;
-    Tensor3D stateTensor, actionTensor, actionNoiseTensor;
-    Tensor1D trajLength;
+    Tensor3D stateTensor("state");
+    Tensor3D actionTensor("sampledAction");
+    Tensor3D actionNoiseTensor("actionNoise");
+    Tensor1D trajLength("length");
 
     ld_.miniBatch = new rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>;
     acquisitor.setData(&ld_);
-    Tensor<Dtype,2> valuePred("predictedValue");
+    Tensor<Dtype, 2> valuePred("predictedValue");
     ld_.append(valuePred);
 
     for (int i = 0; i < 10; i++) {
       std::cout << "iter" << i << std::endl;
       acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policy, 6000, 0, 0, &vfunction);
       acquisitor.saveData(taskVector[0], &policy, &vfunction);
+
       Dtype disc = taskVector[0]->discountFtr();
       int dataN = 0;
       for (auto &tra : acquisitor.traj) dataN += tra.size() - 1;
@@ -157,49 +160,99 @@ int main() {
       termStateBat.resize(StateDim, acquisitor.traj.size());
       valueBat.resize(dataN);
 
-        for (int traID = 0; traID < acquisitor.traj.size(); traID++)
-          termStateBat.col(traID) = acquisitor.traj[traID].stateTraj.back();
+      for (int traID = 0; traID < acquisitor.traj.size(); traID++)
+        termStateBat.col(traID) = acquisitor.traj[traID].stateTraj.back();
 
       vfunction.forward(termStateBat, termValueBat);
 
-        for (int traID = 0; traID < acquisitor.traj.size(); traID++){
-          if (acquisitor.traj[traID].termType == TerminationType::timeout) {
-            acquisitor.traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), disc);
-          }
+      for (int traID = 0; traID < acquisitor.traj.size(); traID++) {
+        if (acquisitor.traj[traID].termType == TerminationType::timeout) {
+          acquisitor.traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), disc);
         }
-        colID = 0;
-        for (int traID = 0; traID < acquisitor.traj.size(); traID++) {
-          for (int timeID = 0; timeID < acquisitor.traj[traID].size() - 1; timeID++)
-            valueBat(colID++) = acquisitor.traj[traID].valueTraj[timeID];
-        }
+      }
+      colID = 0;
+      for (int traID = 0; traID < acquisitor.traj.size(); traID++) {
+        for (int timeID = 0; timeID < acquisitor.traj[traID].size() - 1; timeID++)
+          valueBat(colID++) = acquisitor.traj[traID].valueTraj[timeID];
+      }
 
       std::cout << "states err" << (ld_.states.eTensor() - stateTensor.eTensor()).sum() << std::endl;
       std::cout << "actions err" << (ld_.actions.eTensor() - actionTensor.eTensor()).sum() << std::endl;
       std::cout << "actionNoise err" << (ld_.actionNoises.eTensor() - actionNoiseTensor.eTensor()).sum()
                 << std::endl;
-      ld_.extraTensor2D[0].resize(ld_.maxLen,ld_.batchNum);
+      ld_.extraTensor2D[0].resize(ld_.maxLen, ld_.batchNum);
 
       vfunction.forward(ld_.states, ld_.extraTensor2D[0]);
       value_old.resize(stateBat.cols());
       vfunction.forward(stateBat, value_old);
 
+      Action stdev_o;
+      policy.getStdev(stdev_o);
+      Eigen::Matrix<Dtype, -1, 1> policy_grad = Eigen::Matrix<Dtype, -1, 1>::Zero(policy.getLPSize());
+      Eigen::Matrix<Dtype, -1, 1> policy_grad2 = Eigen::Matrix<Dtype, -1, 1>::Zero(policy.getLPSize());
+      ///advantage
+      acquisitor.computeAdvantage(taskVector[0], &vfunction, 0.97, true);
+      Tensor2D advantages2("advantage");
+      advantages2.resize(1, dataN);
+
+      int dataID = 0;
+      for (int trajID = 0; trajID < acquisitor.traj.size(); trajID++) {
+
+        Eigen::Matrix<Dtype, 1, -1> valueMat;
+        Eigen::Matrix<Dtype, 1, -1> bellmanErr;
+        Eigen::Matrix<Dtype, 1, -1> advs;
+        Eigen::Matrix<Dtype, StateDim, -1> stateTrajMat;
+        Eigen::Matrix<Dtype, ActionDim, -1> actionTrajMat;
+
+        valueMat.resize(acquisitor.traj[trajID].size());
+        bellmanErr.resize(acquisitor.traj[trajID].size() - 1);
+        stateTrajMat.resize(StateDim, acquisitor.traj[trajID].size());
+        actionTrajMat.resize(ActionDim, acquisitor.traj[trajID].size());
+        for (int col = 0; col < acquisitor.traj[trajID].size(); col++) {
+          stateTrajMat.col(col) = acquisitor.traj[trajID].stateTraj[col];
+          actionTrajMat.col(col) = acquisitor.traj[trajID].actionTraj[col];
+        }
+        vfunction.forward(stateTrajMat, valueMat);
+
+        if (acquisitor.traj[trajID].termType == TerminationType::terminalState)
+          valueMat[acquisitor.traj[trajID].size() - 1] = taskVector[0]->termValue();
+
+        for (int w = 0; w < acquisitor.traj[trajID].size() - 1; w++)
+          bellmanErr[w] =
+              valueMat[w + 1] * taskVector[0]->discountFtr() + acquisitor.traj[trajID].costTraj[w] - valueMat[w];
+
+        advs.resize(1, acquisitor.traj[trajID].size() - 1);
+        advs[acquisitor.traj[trajID].size() - 2] = bellmanErr[acquisitor.traj[trajID].size() - 2];
+        Dtype fctr = taskVector[0]->discountFtr() * 0.97;
+
+        for (int timeID = acquisitor.traj[trajID].size() - 3; timeID > -1; timeID--)
+          advs[timeID] = fctr * advs[timeID + 1] + bellmanErr[timeID];
+
+        rai::Math::MathFunc::normalize(advs);
+
+        advantages2.block(0, dataID, 1, advs.cols()) = advs;
+        dataID += advs.cols();
+      }
+
 
       ///test epoch
       for (int k = 0; k < 10; k++) {
         while (ld_.iterateBatch(0)) {
-          std::cout << "value err" <<  (ld_.miniBatch->values.eMat() - valueBat).sum()
+          std::cout << "value" << (ld_.miniBatch->values.eMat() - valueBat).sum();
+          std::cout << " value2" << (ld_.miniBatch->extraTensor2D[0].eMat() - value_old).sum();
+          std::cout << " states" << (ld_.miniBatch->states.eTensor() - stateTensor.eTensor()).sum();
+          std::cout << " actions" << (ld_.miniBatch->actions.eTensor() - actionTensor.eTensor()).sum();
+          std::cout << " actionNoise" << (ld_.miniBatch->actionNoises.eTensor() - actionNoiseTensor.eTensor()).sum()
                     << std::endl;
-          std::cout << "value err2" <<  (ld_.miniBatch->extraTensor2D[0].eMat() - value_old).sum()
-                    << std::endl;
-          std::cout << "states err" <<  (ld_.miniBatch->states.eTensor() - stateTensor.eTensor()).sum()
-                    << std::endl;
-          std::cout << "actions err" <<  (ld_.miniBatch->actions.eTensor() - actionTensor.eTensor()).sum()
-                    << std::endl;
-          std::cout << "actionNoise err" << (ld_.miniBatch->actionNoises.eTensor() - actionNoiseTensor.eTensor()).sum() << std::endl;
+          std::cout << " advs" << (ld_.miniBatch->advantages.eMat() - advantages2.eMat()).norm()/advantages2.eMat().norm() << std::endl;
+
+          policy.PPOpg(ld_.miniBatch, stdev_o, policy_grad);
+          policy.PPOpg(stateTensor, actionTensor, actionNoiseTensor, advantages2, stdev_o, ld_.lengths, policy_grad2);
+          std::cout << " grad" << (policy_grad - policy_grad2).norm()/policy_grad2.norm()  << std::endl;
+
         }
       }
     }
   }
-
 
 };

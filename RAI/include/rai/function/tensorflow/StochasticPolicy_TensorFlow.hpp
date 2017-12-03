@@ -146,6 +146,28 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     grad = vectorOfOutputs[0];
   }
 
+  virtual void PPOpg(Tensor3D &states,
+                     Tensor3D &actions,
+                     Tensor3D &actionNoise,
+                     Tensor2D &advs,
+                     Action &Stdev,
+                     Tensor1D &len,
+                     VectorXD &grad) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+
+    this->tf_->run({states,
+                    actions,
+                    actionNoise,
+                    advs,
+                    StdevT},
+                   {"Algo/PPO/Pg"},
+                   {},
+                   vectorOfOutputs);
+    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+  }
+
+
   virtual void PPOpg_kladapt(Dataset *minibatch,
                              Action &Stdev,
                              VectorXD &grad) {
