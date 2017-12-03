@@ -189,13 +189,12 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     acquireVineTrajForNTimeSteps(task, noise, policy, numOfSteps, 0, 0, vfunction, vis_lv);
   }
 
-
   void saveData(Task_ *task,
                 Policy_ *policy,
                 ValueFunc_ *vfunction = nullptr, Dtype lambda = 0.9, bool normalizeAdv = true) {
 
     LOG_IF(FATAL, !Data) << "You should call setData() first";
-    int dataN = 0;
+    dataN_ = 0;
     int batchN = 0;
     int maxlen = 0;
 
@@ -204,7 +203,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
       if (Data->miniBatch) Data->miniBatch->isRecurrent = true;
     }
 
-    for (auto &tra : traj) dataN += tra.size() - 1;
+    for (auto &tra : traj) dataN_ += tra.size() - 1;
 
     if (policy->isRecurrent()) {
       /////Zero padding tensor//////////////////
@@ -228,7 +227,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
 
     } else {
       maxlen = 1;
-      batchN = dataN;
+      batchN = dataN_;
       Data->resize(maxlen, batchN);
       Data->setZero();
 
@@ -270,7 +269,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
           for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
             Data->values.eMat()(timeID, traID) = traj[traID].valueTraj[timeID];
       } else {
-        Data->values.resize(1, dataN);
+        Data->values.resize(1, dataN_);
 
         for (int traID = 0; traID < traj.size(); traID++)
           for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
@@ -283,28 +282,36 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
   void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
     int batchID = 0;
     int dataID = 0;
-
+    Dtype sum = 0;
     Data->advantages.resize(Data->maxLen, Data->batchNum);
+    Eigen::Matrix<Dtype, 1, -1> temp(1, dataN_);
 
     for (auto &tra : traj) {
       ///compute advantage for each trajectory
       ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
-      if (normalize) {
-        rai::Math::MathFunc::normalize(advTra);
-      }
-      if (Data->isRecurrent) {
-        //RNN
-        Data->advantages.block(0, batchID, advTra.cols(), 1) = advTra.transpose();
-      } else {
-        //BatchN = DataN
-        Data->advantages.block(0, dataID, 1, advTra.cols()) = advTra;
-      }
+      temp.block(0, dataID, 1, advTra.cols()) = advTra;
       dataID += advTra.cols();
-      batchID++;
     }
+    if (normalize) {
+      rai::Math::MathFunc::normalize(temp);
+    }
+
+    if (Data->isRecurrent) {
+      dataID = 0;
+      Data->advantages.setZero();
+      for (auto &tra : traj) {
+        ///compute advantage for each trajectory
+        Data->advantages.block(0, batchID, tra.size() - 1, 1) = temp.block(0,dataID, 1,tra.size() - 1).transpose();
+        dataID += tra.size() - 1;
+        batchID++;
+      }
+    } else {
+      Data->advantages.copyDataFrom(temp);
+    }
+
   }
  private:
-
+  int dataN_;
   void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
     for (int trajID = 0; trajID < initial.cols(); trajID++) {
       State state;

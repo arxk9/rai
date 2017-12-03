@@ -180,103 +180,15 @@ class PPO {
 
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
-    Dtype KL = 0, KLsum = 0;
-    int cnt = 0;
-
+    Dtype KL = 0;
 
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
-
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
-
-
-
-
-
-    //////Test
-    StateBatch stateBat;
-    Tensor<Dtype,3> stateTensor("state");
-    Tensor<Dtype,3> actionTensor("sampledAction");
-    Tensor<Dtype,3> actionNoiseTensor("actionNoise");
-    Tensor<Dtype,1> trajLength("length");
-
-
-    int dataN = Dataset_.states.batches();
-    stateBat.resize(StateDim, dataN);
-
-    int colID = 0;
-    for (int traID = 0; traID < acquisitor_->traj.size(); traID++) {
-      for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++) {
-        stateBat.col(colID++) = acquisitor_->traj[traID].stateTraj[timeID];
-      }
-    }
-
-    stateTensor.resize(StateDim, 1, dataN);
-    actionTensor.resize(ActionDim, 1, dataN);
-    actionNoiseTensor.resize(ActionDim, 1, dataN);
-    stateTensor.setZero();
-    actionTensor.setZero();
-    actionNoiseTensor.setZero();
-    trajLength.resize(1);
-    trajLength[0] = dataN;
-
-    int pos = 0;
-    for (int traID = 0; traID < acquisitor_->traj.size(); traID++) {
-      for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++) {
-        actionTensor.batch(pos) = acquisitor_->traj[traID].actionTraj[timeID];
-        actionNoiseTensor.batch(pos++) = acquisitor_->traj[traID].actionNoiseTraj[timeID];
-      }
-    }
-    stateTensor.copyDataFrom(stateBat);
-    ValueBatch valueBat, termValueBat;
-    StateBatch termStateBat;
-
-      termValueBat.resize(1, acquisitor_->traj.size());
-      termStateBat.resize(StateDim, acquisitor_->traj.size());
-      valueBat.resize(dataN);
-
-      for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
-        termStateBat.col(traID) = acquisitor_->traj[traID].stateTraj.back();
-      vfunction_->forward(termStateBat, termValueBat);
-
-      for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
-        if (acquisitor_->traj[traID].termType == TerminationType::timeout) {
-          acquisitor_->traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task_[0]->discountFtr());
-        }
-
-      colID = 0;
-      for (int traID = 0; traID < acquisitor_->traj.size(); traID++)
-        for (int timeID = 0; timeID < acquisitor_->traj[traID].size() - 1; timeID++)
-          valueBat(colID++) = acquisitor_->traj[traID].valueTraj[timeID];
-
-
-    advantage_.resize(Dataset_.states.batches());
-    ValueBatch valuePred(Dataset_.states.batches());
-
-    int dataID = 0;
-    for (auto &tra : acquisitor_->traj) {
-      ValueBatch advTra = tra.getGAE(vfunction_, discFactor, lambda_, termCost);
-      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
-      dataID += advTra.cols();
-    }
-
-    Eigen::Matrix<Dtype,-1,1> temp;
-    rai::Math::MathFunc::normalize(advantage_);
-
-    vfunction_->forward(stateBat, valuePred);
 
     for (int i = 0; i < n_epoch_; i++) {
 
       while (Dataset_.iterateBatch(minibatchSize_)) {
-
-//        std::cout << "value" << (Dataset_.miniBatch->values.eMat() - valueBat).sum();
-//        std::cout << " value2" << (Dataset_.miniBatch->extraTensor2D[0].eMat() - valuePred).sum();
-//        std::cout << " states" << (Dataset_.miniBatch->states.eTensor() - stateTensor.eTensor()).sum();
-//        std::cout << " actions" << (Dataset_.miniBatch->actions.eTensor() - actionTensor.eTensor()).sum();
-//        std::cout << " actionNoise" << (Dataset_.miniBatch->actionNoises.eTensor() - actionNoiseTensor.eTensor()).sum()
-//                  << std::endl;
-        std::cout << " advs" << (Dataset_.miniBatch->advantages.eMat() - advantage_).norm()/advantage_.norm() << std::endl;
-
 
         Utils::timer->startTimer("Vfunction update");
         loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
@@ -284,67 +196,43 @@ class PPO {
                                                               Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
 
-//        policy_->getStdev(stdev_o);
-//        LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
-//        Utils::timer->startTimer("Gradient computation");
-//        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
-//        else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
-//
-//        Utils::timer->stopTimer("Gradient computation");
-//        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
-////        LOG(INFO)  << " grad norm "<<policy_grad.norm();
+        policy_->getStdev(stdev_o);
+        LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
+        Utils::timer->startTimer("Gradient computation");
+        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
+        else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
 
-//      loss = vfunction_->performOneSolverIter_trustregion(stateBat, valueBat, valuePred);
-      if (KL_adapt_) {
-        policy_->PPOpg_kladapt(stateTensor,
-                               actionTensor,
-                               actionNoiseTensor,
-                               advantage_,
-                               stdev_o,
-                               trajLength,
-                               policy_grad);
-      } else {
-        policy_->PPOpg(stateTensor,
-                       actionTensor,
-                       actionNoiseTensor,
-                       advantage_,
-                       stdev_o,
-                       trajLength,
-                       policy_grad);
-      }
+        Utils::timer->stopTimer("Gradient computation");
+        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
+//        LOG(INFO)  << " grad norm "<<policy_grad.norm();
 
-        Utils::logger->appendData("gradnorm", updateN ++ , policy_grad.norm());
+        Utils::logger->appendData("gradnorm", updateN++ , policy_grad.norm());
 
         Utils::timer->startTimer("Adam update");
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("Adam update");
-//
-//        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
-//        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
 
-        KLsum += KL;
-        cnt++;
+        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
+        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       }
-//      if (KL_adapt_) {
-//        if (KL > KL_thres_ * 1.5)
-//          KL_coeff_ *= 2;
-//        if (KL < KL_thres_ / 1.5)
-//          KL_coeff_ *= 0.5;
-///
-//        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
-//      }
+      if (KL_adapt_) {
+        if (KL > KL_thres_ * 1.5)
+          KL_coeff_ *= 2;
+        if (KL < KL_thres_ / 1.5)
+          KL_coeff_ *= 0.5;
+        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_,maxGradNorm_);
+      }
     }
-    KL = KLsum / cnt;
 
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
 
 ///Logging
-    LOG(INFO) << "Mean KL divergence per epoch = " << KL;
+    LOG(INFO) << "Final KL divergence = " << KL;
     if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
-    Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KLsum / n_epoch_);
+    Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL);
   }
 
   void updatePolicyVar() {
