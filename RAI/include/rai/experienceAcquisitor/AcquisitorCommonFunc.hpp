@@ -201,10 +201,6 @@ class CommonFunc {
       policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
-      if(policy->isRecurrent()){
-
-      }
-
       colId = 0;
       for (int taskID = 0; taskID < ThreadN; taskID++) {
         if (!active[taskID]) continue;
@@ -232,7 +228,6 @@ class CommonFunc {
                                                                action_t[taskID],
                                                                action_noise[taskID],
                                                                cost[taskID]);
-
         stepCount++;
 
         episodetime[taskID] += taskset[taskID]->dt();

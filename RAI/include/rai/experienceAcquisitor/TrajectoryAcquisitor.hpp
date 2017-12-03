@@ -188,67 +188,11 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
                                 int vis_lv = 0) {
     acquireVineTrajForNTimeSteps(task, noise, policy, numOfSteps, 0, 0, vfunction, vis_lv);
   }
-  void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
-    int batchID = 0;
-    int dataID = 0;
-    if (!Data->useAdvantage) {
-      Data->useAdvantage = true;
-      if (Data->miniBatch) Data->miniBatch->useAdvantage = true;
-    }
 
-    Data->advantages.resize(Data->maxLen, Data->batchNum);
-    Data->advantages.setZero();
-
-    Eigen::Matrix<Dtype,StateDim, -1> stateMat;
-    Eigen::Matrix<Dtype,1, -1> ValueMat;
-    Eigen::Matrix<Dtype,1, -1> BellmanErr;
-    Eigen::Matrix<Dtype,1, -1> Advs;
-
-    for (auto &tra : traj) {
-      ///compute advantage for each trajectory
-//      ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
-      stateMat.resize(StateDim,tra.size());
-      ValueMat.resize(tra.size());
-      BellmanErr.resize(tra.size() - 1);
-      Advs.resize(1, tra.size() - 1);
-
-      for (int colID = 0; colID < tra.size(); colID++) {
-        stateMat.col(colID) = tra.stateTraj[colID];
-      }
-
-      vfunction->forward(stateMat,ValueMat);
-
-      if (tra.termType == TerminationType::terminalState)
-        ValueMat[tra.size() - 1] = task->termValue();
-      for (int i = 0; i < tra.size() - 1; i++)
-        BellmanErr[i] = ValueMat[i + 1] * task->discountFtr() + tra.costTraj[i] - ValueMat[i];
-
-      Advs[tra.size() - 2] = BellmanErr[tra.size() - 2];
-      Dtype fctr = task->discountFtr() * lambda;
-      for (int timeID = tra.size() - 3; timeID > -1; timeID--)
-        Advs[timeID] = fctr * Advs[timeID + 1] + BellmanErr[timeID];
-
-      ///save
-      if (normalize) {
-        rai::Math::MathFunc::normalize(Advs);
-      }
-
-      if (Data->isRecurrent) {
-        //RNN
-        Data->advantages.block(0, batchID, Advs.cols(), 1) = Advs.transpose();
-      } else {
-        //BatchN = DataN
-        Data->advantages.block(0, dataID, 1, Advs.cols()) = Advs;
-      }
-
-      dataID += Advs.cols();
-      batchID++;
-    }
-  }
 
   void saveData(Task_ *task,
                 Policy_ *policy,
-                ValueFunc_ *vfunction = nullptr) {
+                ValueFunc_ *vfunction = nullptr, Dtype lambda = 0.9, bool normalizeAdv = true) {
 
     LOG_IF(FATAL, !Data) << "You should call setData() first";
     int dataN = 0;
@@ -333,8 +277,33 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
             Data->values.eMat()(0, colID++) = traj[traID].valueTraj[timeID];
       }
     }
+    computeAdvantage(task, vfunction, lambda, normalizeAdv);
   }
 
+  void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
+    int batchID = 0;
+    int dataID = 0;
+
+    Data->advantages.resize(Data->maxLen, Data->batchNum);
+    Data->advantages.setZero();
+
+    for (auto &tra : traj) {
+      ///compute advantage for each trajectory
+      ValueBatch advTra = tra.getGAE(vfunction, task->discountFtr(), lambda, task->termValue());
+      if (normalize) {
+        rai::Math::MathFunc::normalize(advTra);
+      }
+      if (Data->isRecurrent) {
+        //RNN
+        Data->advantages.block(0, batchID, advTra.cols(), 1) = advTra.transpose();
+      } else {
+        //BatchN = DataN
+        Data->advantages.block(0, dataID, 1, advTra.cols()) = advTra;
+      }
+      dataID += advTra.cols();
+      batchID++;
+    }
+  }
  private:
 
   void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {

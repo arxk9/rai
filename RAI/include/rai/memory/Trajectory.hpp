@@ -10,7 +10,7 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 #include "raiCommon/enumeration.hpp"
-//#include "rai/function/common/ValueFunction.hpp"
+#include "rai/function/common/ValueFunction.hpp"
 
 
 namespace rai {
@@ -25,10 +25,8 @@ class Trajectory {
   typedef Eigen::Matrix<Dtype, actionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
-  typedef Eigen::Matrix<Dtype, -1, 1> HiddenState;
-
   typedef Eigen::Matrix<Dtype, 1, -1> CostBatch;
-//  using Vfunction_ = FuncApprox::ValueFunction<Dtype, stateDim>;
+  using Vfunction_ = FuncApprox::ValueFunction<Dtype, stateDim>;
 
   Trajectory() {}
   ~Trajectory() {}
@@ -45,10 +43,6 @@ class Trajectory {
     costTraj.push_back(cost);
     matrixUpdated = false;
     gaeUpdated = false;
-  }
-
-  void pushBackHiddenState(HiddenState &hiddenState){
-    hiddenStateTraj.push_back(hiddenState);
   }
 
   void terminateTrajectoryAndUpdateValueTraj(TerminationType termTypeArg,
@@ -146,6 +140,32 @@ class Trajectory {
     return sum / valueTraj.size();
   }
 
+  CostBatch& getGAE(Vfunction_ *vfunction,
+                    Dtype gamma,
+                    Dtype lambda,
+                    Dtype terminalCost) {
+    if (gaeUpdated) return advantage;
+    updateBellmanErr(vfunction, gamma, terminalCost);
+    advantage.resize(1, size() - 1);
+    advantage[size() - 2] = bellmanErr[size() - 2];
+    Dtype fctr = gamma * lambda;
+    for (int timeID = size() - 3; timeID > -1; timeID--)
+      advantage[timeID] = fctr * advantage[timeID + 1] + bellmanErr[timeID];
+    gaeUpdated = true;
+    return advantage;
+  }
+
+  void updateBellmanErr(Vfunction_ *baseline, Dtype discFtr, Dtype termCost) {
+    updateMatrix();
+    valueMat.resize(size());
+    bellmanErr.resize(size() - 1);
+    baseline->forward(stateTrajMat, valueMat);
+    if (termType == TerminationType::terminalState)
+      valueMat[size() - 1] = termCost;
+    for (int i = 0; i < size() - 1; i++)
+      bellmanErr[i] = valueMat[i + 1] * discFtr + costTraj[i] - valueMat[i];
+  }
+
   void printOutTraj(){
     updateMatrix();
     std::cout << "--------------------------------------------------------" << std::endl;
@@ -191,11 +211,10 @@ class Trajectory {
   std::vector<State> stateTraj;
   std::vector<Action> actionTraj;
   std::vector<Action> actionNoiseTraj;
-  std::vector<HiddenState> hiddenStateTraj;
-
   std::vector<Dtype> costTraj, accumCostTraj;
   std::vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;
+  CostBatch valueMat, bellmanErr, advantage;
   Dtype terminalValue_ = Dtype(0);
   Dtype discountFct_ = Dtype(0);
 

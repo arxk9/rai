@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
   rai::Utils::Graph::FigProp3D
       figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
   rai::Utils::Graph::FigPropPieChart propChart;
+  rai::Utils::Graph::FigProp2D figurePropertiesgrad("N. Steps Taken", "gradnorm", "Number of Steps Taken vs gradnorm");
 
   ////////////////////////// Choose the computation mode //////////////
   StateBatch state_plot(3, 2601);
@@ -134,7 +135,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
-  for (int iterationNumber = 1; iterationNumber <= 250; iterationNumber++) {
+  for (int iterationNumber = 1; iterationNumber <= 100; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
@@ -169,9 +170,14 @@ int main(int argc, char *argv[]) {
       graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
                          minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
       graph->drawFigure(4);
-//      graph->drawHeatMap(5, figurePropertiesSVA, minimal_X_extended.data(),
-//                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
-//      graph->drawFigure(5);
+      graph->figure(5, figurePropertiesgrad);
+      graph->appendData(5, logger->getData("gradnorm", 0),
+                        logger->getData("gradnorm", 1),
+                        logger->getDataSize("gradnorm"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "gradnorm",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(5);
 
     }
   }

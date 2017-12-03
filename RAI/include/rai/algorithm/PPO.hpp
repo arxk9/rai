@@ -103,10 +103,12 @@ class PPO {
       KL_coeff_(KL_coeff),
       clip_param_(Clip_param),
       Ent_coeff_(Ent_coeff), Dataset_(){
-
+    updateN = 0;
     ///Construct Dataset
     acquisitor_->setData(&Dataset_);
     Dataset_.miniBatch = new Dataset;
+    Dataset_.useAdvantage = true;
+    Dataset_.miniBatch->useAdvantage = true;
 
     ///Additional valueTensor for Trustregion update
     //// Tensor
@@ -115,7 +117,7 @@ class PPO {
 
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
-    Utils::logger->addVariableToLog(2, "klcoef", "");
+    Utils::logger->addVariableToLog(2, "gradnorm", "");
 
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
@@ -156,7 +158,6 @@ class PPO {
                                               numOfBranchPerJunct_,
                                               vfunction_,
                                               vis_lv_);
-    acquisitor_->saveData(task_[0], policy_, vfunction_);
 
     LOG(INFO) << "PPO Updater";
     PPOUpdater();
@@ -169,9 +170,10 @@ class PPO {
   void PPOUpdater() {
       Utils::timer->startTimer("policy Training");
 
-    Utils::timer->startTimer("GAE");
-    acquisitor_->computeAdvantage(task_[0], vfunction_, lambda_);
-    Utils::timer->stopTimer("GAE");
+//    Utils::timer->startTimer("GAE");
+//    acquisitor_->computeAdvantage(task_[0], vfunction_, lambda_);
+//    Utils::timer->stopTimer("GAE");
+    acquisitor_->saveData(task_[0], policy_, vfunction_, lambda_, true);
 
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
@@ -186,57 +188,66 @@ class PPO {
 
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
-    ///Visualize Data
-    rai::Tensor<Dtype,3> testv;
-    rai::Tensor<Dtype,2> v_plot;
-    v_plot.resize(Dataset_.maxLen, Dataset_.batchNum);
-    MatrixXD state_plot0, state_plot1, v_plot0,v_plot1;
-
-    state_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-    state_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-    v_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-    v_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
-
-    rai::Utils::Graph::FigProp3D figprop;
-    figprop.title = "V function";
-    figprop.xlabel = "angle";
-    figprop.ylabel = ",";
-    figprop.zlabel = "value";
-    figprop.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-
-      vfunction_->forward(Dataset_.states, v_plot);
-      int colID = 0;
-      for (int i = 0; i < Dataset_.batchNum; i++) {
-        for (int t = 0; t < Dataset_.maxLen; t++) {
-          v_plot0(colID) = Dataset_.values.eMat()(t, i);
-          v_plot1(colID) = v_plot.eMat()(t, i);
-
-          state_plot0(colID) = std::atan2(Dataset_.states.eTensor()(0, t, i), Dataset_.states.eTensor()(1, t, i));
-
-          state_plot1(colID) =Dataset_.states.eTensor()(2, t, i);
-          colID++;
-        }
-      }
-
-      Utils::graph->figure3D(5, figprop);
-      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot0.data(), v_plot0.cols(),
-                                  false, Utils::Graph::PlotMethods3D::points, "groundtruth");
-
-      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot1.data(), v_plot0.cols(),
-                                  false, Utils::Graph::PlotMethods3D::points, "learned");
-      Utils::graph->drawFigure(5);
+//    ///Visualize Data
+//    rai::Tensor<Dtype,3> testv;
+//    rai::Tensor<Dtype,2> v_plot;
+//    v_plot.resize(Dataset_.maxLen, Dataset_.batchNum);
+//    MatrixXD state_plot0, state_plot1, v_plot0,v_plot1;
+//
+//    state_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+//    state_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+//    v_plot0.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+//    v_plot1.resize(1, Dataset_.maxLen * Dataset_.batchNum);
+//
+//    rai::Utils::Graph::FigProp3D figprop;
+//    figprop.title = "V function";
+//    figprop.xlabel = "angle";
+//    figprop.ylabel = ",";
+//    figprop.zlabel = "value";
+//    figprop.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+//
+//      vfunction_->forward(Dataset_.states, v_plot);
+//      int colID = 0;
+//      for (int i = 0; i < Dataset_.batchNum; i++) {
+//        for (int t = 0; t < Dataset_.maxLen; t++) {
+//          v_plot0(colID) = Dataset_.values.eMat()(t, i);
+//          v_plot1(colID) = v_plot.eMat()(t, i);
+//
+//          state_plot0(colID) = std::atan2(Dataset_.states.eTensor()(0, t, i), Dataset_.states.eTensor()(1, t, i));
+//
+//          state_plot1(colID) =Dataset_.states.eTensor()(2, t, i);
+//          colID++;
+//        }
+//      }
+//
+//      Utils::graph->figure3D(5, figprop);
+//      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot0.data(), v_plot0.cols(),
+//                                  false, Utils::Graph::PlotMethods3D::points, "groundtruth");
+//
+//      Utils::graph->append3D_Data(5, state_plot0.data(), state_plot1.data(), v_plot1.data(), v_plot0.cols(),
+//                                  false, Utils::Graph::PlotMethods3D::points, "learned");
+//      Utils::graph->drawFigure(5);
 //    Utils::graph->waitForEnter();
 
 
     for (int i = 0; i < n_epoch_; i++) {
 
       while (Dataset_.iterateBatch(minibatchSize_)) {
+//
+//        std::cout << "value" << (Dataset_.miniBatch->values.eMat() - Dataset_.values.eMat()).sum();
+//        std::cout << " value2" << (Dataset_.miniBatch->extraTensor2D[0].eMat() - Dataset_.extraTensor2D[0].eMat()).sum();
+//        std::cout << " states" << (Dataset_.miniBatch->states.eTensor() - Dataset_.states.eTensor()).sum();
+//        std::cout << " actions" << (Dataset_.miniBatch->actions.eTensor() - Dataset_.actions.eTensor()).sum();
+//        std::cout << " actionNoise" << (Dataset_.miniBatch->actionNoises.eTensor() - Dataset_.actionNoises.eTensor()).sum()
+//                  << std::endl;
+//        std::cout << " advs" << (Dataset_.miniBatch->advantages.eMat() - Dataset_.advantages.eMat()).norm();
+
+
         Utils::timer->startTimer("Vfunction update");
         loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
-
 //        LOG(INFO)  << " vfunction loss  "<< loss;
 
         policy_->getStdev(stdev_o);
@@ -248,6 +259,8 @@ class PPO {
         Utils::timer->stopTimer("Gradient computation");
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
 //        LOG(INFO)  << " grad norm "<<policy_grad.norm();
+
+        Utils::logger->appendData("gradnorm", updateN ++ , policy_grad.norm());
 
         Utils::timer->startTimer("Adam update");
         policy_->trainUsingGrad(policy_grad);
@@ -278,7 +291,6 @@ class PPO {
     if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
 
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
-    Utils::logger->appendData("klcoef", acquisitor_->stepsTaken(), KL_coeff_);
     Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KLsum / n_epoch_);
   }
 
@@ -319,7 +331,7 @@ class PPO {
   Dtype KL_thres_;
   double timeLimit;
   bool KL_adapt_;
-
+  int updateN;
   /////////////////////////// batches
   ValueBatch advantage_ , bellmanErr_;
 
