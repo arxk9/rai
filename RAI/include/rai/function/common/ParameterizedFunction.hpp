@@ -36,6 +36,7 @@ class ParameterizedFunction {
   typedef rai::Tensor<Dtype, 1> Tensor1D;
   typedef rai::Tensor<Dtype, 2> Tensor2D;
   typedef rai::Tensor<Dtype, 3> Tensor3D;
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
 
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> Parameter;
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> ParameterGradient;
@@ -157,6 +158,7 @@ class ParameterizedFunction {
   virtual void reset(int n) {}
   virtual void terminate(int n) {}
   virtual int getHiddenStatesize() { return 0; }
+  virtual typename EigenMat::ColXpr getHiddenState(int Id){LOG(FATAL) << "NOT IMPLEMENTED"; }
   virtual void getHiddenStates(Tensor2D &h_out){LOG(FATAL) << "NOT IMPLEMENTED"; }
 
   LibraryID libraryID_ = LibraryID::notSpecified;

@@ -2,6 +2,7 @@ import BaseClasses as bc
 import tensorflow as tf
 import tensorflow.contrib.rnn as rnn
 from tensorflow.contrib.layers import fully_connected
+from tensorflow.contrib.layers import layer_norm
 
 
 # multiple gated recurrent unit layers (https://arxiv.org/pdf/1406.1078v3.pdf)
@@ -31,7 +32,6 @@ class testNet(bc.GraphStructure):
         cells = []
         state_size = []
         recurrent_state_size = 0
-
         for size in rnnDim[1:]:
             cell = rnn.GRUCell(size, kernel_initializer=tf.contrib.layers.xavier_initializer())
             cells.append(cell)
@@ -46,17 +46,19 @@ class testNet(bc.GraphStructure):
 
         # Full-length output for training
         gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.input, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
-        # FCN
         rnn_out_flat = tf.reshape(gruOutput,shape=[-1, rnnDim[-1]], name='fcIn')
 
+        # FCN
         # Policy
         layer_n = 0
-        top = rnn_out_flat
+        top = layer_norm(rnn_out_flat)
+
         for dim in mlpDim[:-1]:
             with tf.name_scope('policy_hidden_layer'+repr(layer_n)):
                 top = fully_connected(activation_fn=nonlin, inputs=top, num_outputs=dim, weights_initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
                 layer_n += 1
 
+        top = layer_norm(top)
         with tf.name_scope('policy_output_layer'):
             wo1 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-2], mlpDim[-1]], minval=-float(weight), maxval=float(weight)))
             bo1 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-1]], minval=-float(weight), maxval=float(weight)))
@@ -66,19 +68,20 @@ class testNet(bc.GraphStructure):
 
         # Value
         layer_n = 0
-        top = rnn_out_flat
+        top = layer_norm(rnn_out_flat)
+
         for dim in mlpDim[:-1]:
             with tf.name_scope('value_hidden_layer'+repr(layer_n)):
                 top = fully_connected(activation_fn=nonlin, inputs=top, num_outputs=dim, weights_initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
                 layer_n += 1
 
+        top = layer_norm(top)
         with tf.name_scope('value_output_layer'):
             wo2 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-2], 1], minval=-float(weight), maxval=float(weight)))
             bo2 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[1], minval=-float(weight), maxval=float(weight)))
             top = tf.matmul(top, wo2) + bo2
 
         self.valueOut = tf.reshape(top, [-1, tf.shape(self.input)[1]])
-
 
         hiddenState = tf.concat([state for state in final_state], axis=1, name='h_state')
 

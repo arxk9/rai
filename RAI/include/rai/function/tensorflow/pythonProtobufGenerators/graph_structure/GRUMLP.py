@@ -2,6 +2,7 @@ import BaseClasses as bc
 import tensorflow as tf
 import tensorflow.contrib.rnn as rnn
 from tensorflow.contrib.layers import fully_connected
+from tensorflow.contrib.layers import layer_norm
 
 
 # multiple gated recurrent unit layers (https://arxiv.org/pdf/1406.1078v3.pdf)

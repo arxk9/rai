@@ -28,7 +28,8 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   using PolicyBase = StochasticPolicy<Dtype, stateDim, actionDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, actionDim>;
-
+  
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
   using RecurrentState = Eigen::VectorXd;
@@ -228,6 +229,9 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
 
   virtual void getHiddenStates(Tensor2D &h_out){
     h_out = h;
+  }
+  virtual typename EigenMat::ColXpr getHiddenState(int Id){
+    return h.col(Id);
   }
 
   int hiddenStateDim() { return hdim; }

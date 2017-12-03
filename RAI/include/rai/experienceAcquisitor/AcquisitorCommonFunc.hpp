@@ -201,6 +201,15 @@ class CommonFunc {
       policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
+//      if(policy->isRecurrent())
+//      {
+//        Eigen::Matrix<Dtype,-1,1> hiddenState_t;
+//        for (int taskID = 0; taskID < ThreadN; taskID++){
+//          hiddenState_t = policy->getHiddenState(taskID);
+//          trajectorySet[trajectoryID[taskID]].pushBackHiddenState(hiddenState_t);
+//        }
+//      }
+
       colId = 0;
       for (int taskID = 0; taskID < ThreadN; taskID++) {
         if (!active[taskID]) continue;

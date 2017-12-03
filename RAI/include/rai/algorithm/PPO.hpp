@@ -191,6 +191,11 @@ class PPO {
       while (Dataset_.iterateBatch(minibatchSize_)) {
 
         Utils::timer->startTimer("Vfunction update");
+        if(vfunction_->isRecurrent())
+          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+                                                              Dataset_.miniBatch->values,
+                                                              Dataset_.miniBatch->extraTensor2D[0],Dataset_.miniBatch->lengths);
+          else
         loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0]);
