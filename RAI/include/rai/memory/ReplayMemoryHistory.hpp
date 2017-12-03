@@ -14,6 +14,7 @@
 #include "glog/logging.h"
 #include "raiCommon/enumeration.hpp"
 #include <rai/RAI_Tensor.hpp>
+#include <rai/algorithm/common/LearningData.hpp>
 #include "rai/memory/Trajectory.hpp"
 
 namespace rai {
@@ -28,7 +29,8 @@ class ReplayMemoryHistory {
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ScalarBatch;
   typedef Eigen::Matrix<Dtype, stateDimension, 1> State;
   typedef Eigen::Matrix<Dtype, actionDimension, 1> Action;
-  typedef rai::Algorithm::history<Dtype, stateDimension, actionDimension> History;
+  typedef rai::Algorithm::LearningData<Dtype, stateDimension, actionDimension> Dataset;
+  typedef rai::Memory::Trajectory<Dtype, stateDimension, actionDimension> Trajectory;
 
  public:
 
@@ -79,10 +81,7 @@ class ReplayMemoryHistory {
       costTensor_->conservativeResize(maxlen_, capacity_);
     }
 
-    int lengthCheck = 0;
     for (int i = 0; i < states.batches(); i++) {
-      ///check trajectory lengths to downsize tensor
-      if (lengths[i] > lengthCheck) lengthCheck = lengths[i];
       ///partially fill batch
       std::memcpy(stateTensor_->data() + batchIdx_ * stateDimension * maxlen_,
                   states.batch(i).data(), sizeof(Dtype) * stateDimension * lengths[i]);
@@ -92,6 +91,7 @@ class ReplayMemoryHistory {
                   actionNoises.batch(i).data(), sizeof(Dtype) * actionDimension * lengths[i]);
       costTensor_->block(0, batchIdx_, states.cols(), 1) = costs.col(i);
       stdevs_->col(batchIdx_) = stdev;
+
       len_->at(batchIdx_) = lengths[i];
       termtypes_->at(batchIdx_) = termTypes[i];
 
@@ -99,6 +99,12 @@ class ReplayMemoryHistory {
       size_++;
       size_ = std::min(size_, capacity_);
     }
+
+    ///check trajectory lengths to downsize tensors
+    int lengthCheck = 0;
+    for (int i = 0; i < len_->size(); i++)
+      if (len_->at(i) > lengthCheck) lengthCheck =len_->at(i) ;
+
     if (lengthCheck < maxlen_) {
       maxlen_ = lengthCheck;
       stateTensor_->conservativeResize(stateDimension, maxlen_, capacity_);
@@ -128,10 +134,7 @@ class ReplayMemoryHistory {
       costTensor_->conservativeResize(maxlen_, capacity_);
     }
 
-    int lengthCheck = 0;
     for (int i = 0; i < states.batches(); i++) {
-      ///check trajectory lengths to downsize tensor
-      if (lengths[i] > lengthCheck) lengthCheck = lengths[i];
       ///partially fill batch
       std::memcpy(stateTensor_->data() + batchIdx_ * stateDimension * maxlen_,
                   states.batch(i).data(), sizeof(Dtype) * stateDimension * lengths[i]);
@@ -145,6 +148,12 @@ class ReplayMemoryHistory {
       size_++;
       size_ = std::min(size_, capacity_);
     }
+
+    ///check trajectory lengths to downsize tensors
+    int lengthCheck = 0;
+    for (int i = 0; i < len_->size(); i++)
+      if (len_->at(i) > lengthCheck) lengthCheck =len_->at(i) ;
+
     if (lengthCheck < maxlen_) {
       maxlen_ = lengthCheck;
       stateTensor_->conservativeResize(stateDimension, maxlen_, capacity_);
@@ -152,7 +161,55 @@ class ReplayMemoryHistory {
       costTensor_->conservativeResize(maxlen_, capacity_);
     }
   }
-  inline void sampleRandomHistory(History &historyOut, const int batchSize) {
+
+  inline void SaveHistory(std::vector<Trajectory> &trajectorySet) {
+    int margin = size_ - batchIdx_;
+    std::lock_guard<std::mutex> lockModel(memoryMutex_);
+    int dataN_=0;
+    int maxlen = 0;
+
+    for (auto &tra : trajectorySet) {
+      dataN_ += tra.size() - 1;
+      if (maxlen < tra.stateTraj.size() - 1) maxlen = int(tra.stateTraj.size()) - 1;
+    }
+
+    if (maxlen > maxlen_) {
+      maxlen_ = maxlen;
+      stateTensor_->conservativeResize(stateDimension, maxlen_, capacity_);
+      actionTensor_->conservativeResize(actionDimension, maxlen_, capacity_);
+      costTensor_->conservativeResize(maxlen_, capacity_);
+    }
+
+    for (int i = 0; i < trajectorySet.size(); i++) {
+      ///partially fill batch
+      int len = trajectorySet[i].size() - 1;
+      stateTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].stateTraj,1);
+      actionTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionTraj,1);
+      actionNoiseTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionNoiseTraj,1);
+      for (int timeID = 0; timeID < len; timeID++) {
+          costTensor_->eMat()(timeID, i) = trajectorySet[i].costTraj[timeID];
+      }
+      len_->at(batchIdx_) = len;
+      termtypes_->at(batchIdx_) = Dtype(trajectorySet[i].termType);
+
+      batchIdx_ = (batchIdx_ + 1) % capacity_;
+      size_++;
+      size_ = std::min(size_, capacity_);
+    }
+    ///check trajectory lengths to downsize tensors
+    int lengthCheck = 0;
+    for (int i = 0; i < len_->size(); i++)
+      if (len_->at(i) > lengthCheck) lengthCheck =len_->at(i) ;
+
+    if (lengthCheck < maxlen_) {
+      maxlen_ = lengthCheck;
+      stateTensor_->conservativeResize(stateDimension, maxlen_, capacity_);
+      actionTensor_->conservativeResize(actionDimension, maxlen_, capacity_);
+      costTensor_->conservativeResize(maxlen_, capacity_);
+    }
+  }
+
+  inline void sampleRandomHistory(Dataset &DataOut, const int batchSize) {
 
     unsigned memoryIdx[batchSize];
     ///// randomly sampling memory indeces
@@ -167,19 +224,19 @@ class ReplayMemoryHistory {
     }
 
     /// resize
-    historyOut.resize(maxlen_,batchSize);
+    DataOut.resize(maxlen_, batchSize);
 
     /// saving memory to Batch
     for (unsigned i = 0; i < batchSize; i++) {
-      historyOut.states.batch(i) = stateTensor_->batch(memoryIdx[i]);
-      historyOut.actions.batch(i) = actionTensor_->batch(memoryIdx[i]);
-      historyOut.costs.col(i) = costTensor_->col(memoryIdx[i]);
-      historyOut.lengths[i] = len_->at(i);
-      historyOut.termtypes[i] = termtypes_->at(i);
+      DataOut.states.batch(i) = stateTensor_->batch(memoryIdx[i]);
+      DataOut.actions.batch(i) = actionTensor_->batch(memoryIdx[i]);
+      DataOut.costs.col(i) = costTensor_->col(memoryIdx[i]);
+      DataOut.lengths[i] = len_->at(i);
+      DataOut.termtypes[i] = termtypes_->at(i);
 
-      if(distInfo_){
-        historyOut.actionNoises.batch(i) = actionNoiseTensor_->batch(memoryIdx[i]);
-        historyOut.stdevs.col(i) = stdevs_->col(i);
+      if (distInfo_) {
+        DataOut.actionNoises.batch(i) = actionNoiseTensor_->batch(memoryIdx[i]);
+//        historyOut.stdevs.col(i) = stdevs_->col(i);
       }
     }
   }
@@ -212,7 +269,6 @@ class ReplayMemoryHistory {
     termtypes_ = new Tensor1D({capacity_}, 0);
   }
 
-
   unsigned getCapacity() {
     return capacity_;
   }
@@ -236,7 +292,7 @@ class ReplayMemoryHistory {
   unsigned batchIdx_;
   unsigned capacity_;
   static std::mutex memoryMutex_;
-  RandomNumberGenerator <Dtype> rn_;
+  RandomNumberGenerator<Dtype> rn_;
 };
 }
 }

@@ -56,7 +56,7 @@ class RDPG {
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
-//  typedef rai::Algorithm::history<Dtype, StateDim, ActionDim> TensorBatch_;
+  typedef rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> Dataset;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::Noise<Dtype, ActionDim>;
@@ -91,12 +91,9 @@ class RDPG {
       tau_(tau),
       testingTrajN_(testingTrajN),
       task_(task),
-      ld_(acquisitor){
+      Dataset_(){
 
     ///Construct Dataset
-    ld_.setData(&Dataset_);
-    Dataset_.minibatch = new TensorBatch_;
-
     timeLimit = task_[0]->timeLimit();
 
     for (int i = 0; i < task_.size(); i++)
@@ -106,15 +103,16 @@ class RDPG {
     qfunction_->copyAPFrom(qfunction_target_);
   };
   FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> *testQ_;
-  ~RDPG() {delete Dataset_.minibatch; };
+  ~RDPG(){};
 
   void initiallyFillTheMemory() {
     LOG(INFO) << "FillingMemory" ;
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
-    ld_.acquireNEpisodes(task_, noiseBasePtr_, policy_, memory->getCapacity());
+    acquisitor_->acquireNEpisodes(task_, noiseBasePtr_, policy_, memory->getCapacity());
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
+
     timer->startTimer("SavingHistory");
-    memory->SaveHistory(Dataset_.states, Dataset_.actions, Dataset_.costs, Dataset_.lengths, Dataset_.termtypes);
+    memory->SaveHistory(acquisitor_->traj);
     timer->stopTimer("SavingHistory");
     LOG(INFO) << "Done" ;
   }
@@ -160,11 +158,10 @@ class RDPG {
 
   void learnForOneEpisode() {
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
-    ld_.acquireNEpisodes(task_, noiseBasePtr_, policy_, 1);
+    acquisitor_->acquireNEpisodes(task_, noiseBasePtr_, policy_, 1);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
-
     timer->startTimer("SavingHistory");
-    memory->SaveHistory(Dataset_.states, Dataset_.actions, Dataset_.costs, Dataset_.lengths, Dataset_.termtypes);
+    memory->SaveHistory(acquisitor_->traj);
     timer->stopTimer("SavingHistory");
 
     Utils::timer->startTimer("Qfunction and Policy update");
@@ -179,15 +176,10 @@ class RDPG {
     Tensor<Dtype, 3> value_;
     Tensor<Dtype, 3> value_target("targetQValue");
 
-//    std::cout << Dataset_.states << std::endl<< std::endl;
-//    std::cout << Dataset_.actions << std::endl<< std::endl;
-
     timer->startTimer("SamplingHistory");
     memory->sampleRandomHistory(Dataset_, batSize_);
     timer->stopTimer("SamplingHistory");
 
-//    std::cout << Dataset_.states << std::endl<< std::endl;
-//    std::cout << Dataset_.actions << std::endl<< std::endl;
     value_.resize(1, Dataset_.maxLen, batSize_);
     value_target.resize(1, Dataset_.maxLen, batSize_);
     value_target.setZero();
@@ -258,8 +250,7 @@ class RDPG {
   Acquisitor_ *acquisitor_;
   ReplayMemory_ *memory;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
-  LearningData<Dtype, StateDim, ActionDim> ld_;
-  history<Dtype, StateDim, ActionDim> Dataset_;
+  Dataset Dataset_;
 
   /////////////////////////// Algorithmic parameter ///////////////////
   double timeLimit;

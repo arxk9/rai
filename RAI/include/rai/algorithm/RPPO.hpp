@@ -116,9 +116,6 @@ class RPPO {
     algoParams << vCoeff_, entCoeff_, clipCoeff_, maxGradNorm_;
     policy_->setParams(algoParams);
 
-    termCost = task_[0]->termValue();
-    discFactor = task_[0]->discountFtr();
-    dt = task_[0]->dt();
     timeLimit = task_[0]->timeLimit();
     for (int i = 0; i < task_.size(); i++)
       noiseBasePtr_.push_back(noise_[i]);
@@ -161,7 +158,7 @@ class RPPO {
 
   void PPOUpdater() {
     Utils::timer->startTimer("policy Training");
-    acquisitor_->saveData(task_[0], policy_, vfunction_, lambda_, true);
+    acquisitor_->saveDataWithAdvantage(task_[0], policy_, vfunction_, lambda_, true);
 
     Dtype loss;
     LOG(INFO) << "Optimizing policy";
@@ -231,9 +228,6 @@ class RPPO {
   int n_epoch_;
   int minibatchSize_;
   Dtype covIn_;
-  Dtype termCost;
-  Dtype discFactor;
-  Dtype dt;
   Dtype maxGradNorm_;
   Dtype clipCoeff_;
   Dtype entCoeff_;

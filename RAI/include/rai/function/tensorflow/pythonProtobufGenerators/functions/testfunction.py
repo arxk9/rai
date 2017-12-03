@@ -49,10 +49,10 @@ class testfunction(pc.Policy):
         params_placeholder = tf.placeholder(dtype=dtype, shape=[1, 4], name='PPO_params_placeholder')
 
         param_assign_op_list = []
-        param_assign_op_list += [tf.assign(v_coeff, tf.slice(params_placeholder, [0, 1], [1, 1]), name='v_coeff_assign')]
-        param_assign_op_list += [tf.assign(ent_coeff, tf.slice(params_placeholder, [0, 2], [1, 1]), name='ent_coeff_assign')]
-        param_assign_op_list += [tf.assign(clip_param, tf.slice(params_placeholder, [0, 3], [1, 1]), name='clip_param_assign')]
-        param_assign_op_list += [tf.assign(max_grad_norm, tf.slice(params_placeholder, [0, 4], [1, 1]), name='max_norm_assign')]
+        param_assign_op_list += [tf.assign(v_coeff, tf.slice(params_placeholder, [0, 0], [1, 1]), name='v_coeff_assign')]
+        param_assign_op_list += [tf.assign(ent_coeff, tf.slice(params_placeholder, [0, 1], [1, 1]), name='ent_coeff_assign')]
+        param_assign_op_list += [tf.assign(clip_param, tf.slice(params_placeholder, [0, 2], [1, 1]), name='clip_param_assign')]
+        param_assign_op_list += [tf.assign(max_grad_norm, tf.slice(params_placeholder, [0, 3], [1, 1]), name='max_norm_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
@@ -107,4 +107,4 @@ class testfunction(pc.Policy):
                 vf_loss = .5 * tf.reduce_mean(tf.maximum(vf_err1_masked, vf_err2_masked))
 
                 Total_loss = tf.identity(PPO_loss - tf.multiply(ent_coeff, meanent) + v_rate * vf_loss, name='loss')
-                policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list), axis=0), name='Pg')  # flatgrad
+                policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list,max_grad_norm), axis=0), name='Pg')  # flatgrad

@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.9);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(5);
+    task.setTimeLimitPerEpisode(10);
     taskVector.push_back(&task);
   }
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 0);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 50);
 
   algorithm.setVisualizationLevel(0);
 
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(20000);
+    algorithm.runOneLoop(30000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

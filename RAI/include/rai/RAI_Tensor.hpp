@@ -200,9 +200,21 @@ class TensorBase {
 //    return vecTens[x].flat<Dtype>().data();
 //  };
 
-  Dtype &operator[](int i) {
+  Dtype& operator[](int i) {
     return namedTensor_.second.flat<Dtype>().data()[i];
-  };
+  }
+
+  Dtype& at(int i){
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  }
+
+  const Dtype& operator[](int i) const {
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  }
+
+  const Dtype& at(int i) const {
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  }
 
   ///////////////////////////////
   /////////// generic ///////////

@@ -39,6 +39,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
+  typedef typename PolicyBase::Dataset Dataset;
 
   RecurrentDeterministicPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -115,7 +116,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     return 0;
   }
 
-  virtual Dtype performOneSolverIter(history *minibatch, Tensor3D &actions) {
+  virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions) {
     std::vector<MatrixXD> vectorOfOutputs;
     actions = "targetAction";
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
@@ -130,7 +131,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     return vectorOfOutputs[0](0);
   };
 
-  Dtype backwardUsingCritic(Qfunction_tensorflow *qFunction, history *minibatch) {
+  Dtype backwardUsingCritic(Qfunction_tensorflow *qFunction, Dataset *minibatch) {
     std::vector<MatrixXD> dummy;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingCritic/learningRate");

@@ -119,7 +119,7 @@ class StochasticPolicy(pc.Policy):
                 Total_loss = PPO_loss - tf.multiply(ent_coeff, mean_ent)
                 Total_loss2 = PPO_loss - tf.multiply(ent_coeff, mean_ent) + tf.multiply(kl_coeff, kl_mean)
 
-                policy_gradient = tf.identity(util.flatgrad(Total_loss, gs.l_param_list,), name='Pg')  # flatgrad
+                policy_gradient = tf.identity(util.flatgrad(Total_loss, gs.l_param_list,max_grad_norm), name='Pg')  # flatgrad
                 policy_gradient2 = tf.identity(util.flatgrad(Total_loss2, gs.l_param_list, max_grad_norm), name='Pg2')  # flatgrad
                 #
                 # # From modular-rl
