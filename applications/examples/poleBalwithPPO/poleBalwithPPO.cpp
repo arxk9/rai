@@ -20,7 +20,6 @@
 
 // algorithm
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>
-
 #include "rai/algorithm/PPO.hpp"
 
 using namespace std;
@@ -44,7 +43,6 @@ using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
-//using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
 
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;

@@ -111,8 +111,6 @@ class PPO {
     ///Construct Dataset
     acquisitor_->setData(&Dataset_);
     Dataset_.miniBatch = new Dataset;
-    Dataset_.useAdvantage = true;
-    Dataset_.miniBatch->useAdvantage = true;
 
     ///Additional valueTensor for Trustregion update
     //// Tensor
@@ -175,7 +173,7 @@ class PPO {
 
   void PPOUpdater() {
       Utils::timer->startTimer("policy Training");
-    acquisitor_->saveData(task_[0], policy_, vfunction_, lambda_, true);
+    acquisitor_->saveDataWithAdvantage(task_[0], policy_, vfunction_, lambda_, true);
 
     Dtype loss;
     LOG(INFO) << "Optimizing policy";

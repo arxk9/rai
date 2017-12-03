@@ -124,9 +124,8 @@ int main() {
     for (int i = 0; i < 10; i++) {
       std::cout << "iter" << i << std::endl;
       acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policy, 6000, 0, 0, &vfunction);
-      std::cout << acquisitor.traj[0].getAverageValue() << std::endl;
 
-      acquisitor.saveData(taskVector[0], &policy, &vfunction);
+      acquisitor.saveDataWithAdvantage(taskVector[0], &policy, &vfunction, 0.97);
 
       Dtype disc = taskVector[0]->discountFtr();
       int dataN = 0;
@@ -193,10 +192,10 @@ int main() {
       Eigen::Matrix<Dtype, -1, 1> policy_grad = Eigen::Matrix<Dtype, -1, 1>::Zero(policy.getLPSize());
       Eigen::Matrix<Dtype, -1, 1> policy_grad2 = Eigen::Matrix<Dtype, -1, 1>::Zero(policy.getLPSize());
       ///advantage
-      acquisitor.computeAdvantage(taskVector[0], &vfunction, 0.97, true);
       Tensor2D advantages2("advantage");
+      Eigen::Matrix<Dtype, 1,-1> temp;
       advantages2.resize(1, dataN);
-
+      temp.resize(1,dataN);
       int dataID = 0;
       for (int trajID = 0; trajID < acquisitor.traj.size(); trajID++) {
 
@@ -230,17 +229,14 @@ int main() {
         for (int timeID = acquisitor.traj[trajID].size() - 3; timeID > -1; timeID--)
           advs[timeID] = fctr * advs[timeID + 1] + bellmanErr[timeID];
 
-        rai::Math::MathFunc::normalize(advs);
-
-        advantages2.block(0, dataID, 1, advs.cols()) = advs;
+        temp.block(0, dataID, 1, advs.cols()) = advs;
         dataID += advs.cols();
       }
+      rai::Math::MathFunc::normalize(temp);
+      advantages2.copyDataFrom(temp);
 
       Eigen::Matrix<Dtype, -1, -1> testdat;
       vfunction.test(ld_.states, ld_.values,ld_.extraTensor2D[0],testdat);
-
-      std::cout << (ld_.extraTensor2D[0].eMat()).norm() << std::endl;
-      std::cout << (testdat - ld_.extraTensor2D[0].eMat()).norm() << std::endl
 
       ///test epoch
       for (int k = 0; k < 10; k++) {
@@ -255,11 +251,6 @@ int main() {
 
           vfunction.performOneSolverIter_trustregion(ld_.states, ld_.values,ld_.extraTensor2D[0]);
 
-          policy.PPOpg(ld_.miniBatch, stdev_o, policy_grad);
-          policy.PPOpg(stateTensor, actionTensor, actionNoiseTensor, advantages2, stdev_o, ld_.lengths, policy_grad2);
-          std::cout << " grad" << (policy_grad - policy_grad2).norm()/policy_grad2.norm()  << std::endl;
-
-          policy.trainUsingGrad(policy_grad);
         }
       }
     }

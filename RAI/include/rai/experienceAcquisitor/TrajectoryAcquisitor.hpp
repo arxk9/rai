@@ -189,11 +189,14 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     acquireVineTrajForNTimeSteps(task, noise, policy, numOfSteps, 0, 0, vfunction, vis_lv);
   }
 
+
   void saveData(Task_ *task,
                 Policy_ *policy,
-                ValueFunc_ *vfunction = nullptr, Dtype lambda = 0.9, bool normalizeAdv = true) {
+                ValueFunc_ *vfunction = nullptr) {
 
     LOG_IF(FATAL, !Data) << "You should call setData() first";
+    LOG_IF(FATAL, traj.size() == 0) << "No Data to save. call acquire~~() first";
+
     dataN_ = 0;
     int batchN = 0;
     int maxlen = 0;
@@ -276,7 +279,26 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
             Data->values.eMat()(0, colID++) = traj[traID].valueTraj[timeID];
       }
     }
+  }
+
+  void saveDataWithAdvantage(Task_ *task,
+                Policy_ *policy,
+                ValueFunc_ *vfunction, Dtype lambda = 0.97, bool normalizeAdv = true) {
+    if(!Data->useAdvantage) Data->useAdvantage = true;
+    if(!Data->miniBatch->useAdvantage) Data->miniBatch->useAdvantage = true;
+    saveData(task, policy, vfunction);
     computeAdvantage(task, vfunction, lambda, normalizeAdv);
+  }
+
+ private:
+  int dataN_;
+  void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
+    for (int trajID = 0; trajID < initial.cols(); trajID++) {
+      State state;
+      task[0]->setToInitialState();
+      task[0]->getState(state);
+      initial.col(trajID) = state;
+    }
   }
 
   void computeAdvantage(Task_ *task, ValueFunc_ *vfunction, Dtype lambda, bool normalize = true) {
@@ -311,16 +333,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     }
     Utils::timer->stopTimer("GAE");
 
-  }
- private:
-  int dataN_;
-  void sampleBatchOfInitial(StateBatch &initial, std::vector<Task_ *> &task) {
-    for (int trajID = 0; trajID < initial.cols(); trajID++) {
-      State state;
-      task[0]->setToInitialState();
-      task[0]->getState(state);
-      initial.col(trajID) = state;
-    }
   }
 };
 
