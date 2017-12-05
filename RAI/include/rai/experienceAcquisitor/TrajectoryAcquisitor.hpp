@@ -229,9 +229,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
       }
 
     } else {
-      maxlen = 1;
-      batchN = dataN_;
-      Data->resize(maxlen, batchN);
+      Data->resize(1, dataN_);
       Data->setZero();
 
       int pos = 0;

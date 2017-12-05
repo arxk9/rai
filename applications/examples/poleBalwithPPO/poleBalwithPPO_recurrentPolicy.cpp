@@ -20,6 +20,7 @@
 
 #include "rai/function/tensorflow/RecurrentValueFunction_TensorFlow.hpp"
 #include "rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp"
+#include "rai/function/tensorflow/StochasticPolicy_TensorFlow.hpp"
 
 // algorithm
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>
@@ -45,6 +46,8 @@ using ActionBatch = Task::ActionBatch;
 using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
+using Stochpol = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+
 using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
 //using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
@@ -66,9 +69,9 @@ int main(int argc, char *argv[]) {
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
-    task.setDiscountFactor(0.9);
+    task.setDiscountFactor(0.99);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(5);
+    task.setTimeLimitPerEpisode(10);
     taskVector.push_back(&task);
   }
 
@@ -84,15 +87,16 @@ int main(int argc, char *argv[]) {
 //  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 2 64 / 32 1", 0.001);
 //  Vfunction_TensorFlow Vfunction("gpu,0", "LSTMMLP", "tanh 1e-3 2 32 / 32 32 1", 0.01);
 //  Vfunction_TensorFlow Vfunction("gpu,0", "GRUNet", "tanh 2 64 1", 0.01);
-  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "tanh 1e-3 3 64 / 32 32 1", 0.001);
-  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 3 64 / 32 32 1", 0.001);
+  Vfunction_TensorFlow Vfunction("gpu,0", "GRUMLP", "tanh 1e-3 3 64 / 32 32 1", 0.00025);
+  Policy_TensorFlow policy("gpu,0", "GRUMLP", "tanh 1e-3 3 64 / 32 32 1", 0.00025);
+//  Stochpol policy("gpu,0", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 20, 100, true);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 4, 25, true);
 
   algorithm.setVisualizationLevel(0);
 

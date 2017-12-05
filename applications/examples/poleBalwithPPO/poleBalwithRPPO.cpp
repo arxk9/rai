@@ -62,14 +62,14 @@ int main(int argc, char *argv[]) {
   omp_set_num_threads(nThread);
 
   ////////////////////////// Define task ////////////////////////////
-  std::vector<Task> taskVec(nThread, Task(Task::random, Task::easy));
+  std::vector<Task> taskVec(nThread, Task(Task::fixed, Task::easy));
   std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
 
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.9);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(10);
+    task.setTimeLimitPerEpisode(5);
     taskVector.push_back(&task);
   }
 
@@ -81,14 +81,14 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 2 256 / 32 32 1", 0.001);
+  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 2 256 / 32 32 1", 0.0001);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 10, 5, 125);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 10, 4, 4);
 
   algorithm.setVisualizationLevel(0);
 
@@ -147,14 +147,21 @@ int main(int argc, char *argv[]) {
   }
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 20;
-  for (int iterationNumber = 0; iterationNumber < 1000; iterationNumber++) {
+  int iteration = 1000;
+  Dtype lr = policy.getLearningRate();
+  for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
+    LOG(INFO) << iterationNumber << "th Iteration";
+
+//    lr = (1-(Dtype)iterationNumber/iteration) * lr;
+//    policy.setLearningRate(lr);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    LOG(INFO) << iterationNumber << "th Iteration";
-    algorithm.runOneLoop(50000);
+    LOG(INFO) << "Learning rate:"<<lr;
+
+    algorithm.runOneLoop(20000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

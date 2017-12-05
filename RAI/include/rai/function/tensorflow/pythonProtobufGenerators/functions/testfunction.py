@@ -60,7 +60,8 @@ class testfunction(pc.Policy):
             gradient_from_critic = tf.placeholder(dtype, shape=[1, None], name='Inputgradient')
             train_using_critic_learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'),
                                                           shape=[])
-            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate)
+            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate, epsilon=1e-5)
+            # train_using_grad_optimizer = tf.train.RMSPropOptimizer(learning_rate=train_using_critic_learning_rate)
 
             split_parameter_gradients = tf.split(gradient_from_critic,
                                                  [reduce(mul, param.get_shape().as_list(), 1) for param in

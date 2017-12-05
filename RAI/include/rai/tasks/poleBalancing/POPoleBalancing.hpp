@@ -71,9 +71,9 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
     double thdot = generalizedCoordinates_(1);
     double u = clip(action_t(0), -maxTorque_, maxTorque_);
     lastAction_ = action_t(0);
-//    cost = normAngle(th) * normAngle(th) + .1 * thdot * thdot + .001 * (u * u);
+    cost = normAngle(th) * normAngle(th) + .1 * thdot * thdot + .001 * (u * u);
 //    cost = normAngle(th) * normAngle(th) ;
-    cost = normAngle(th) * normAngle(th) + .1 * thdot * thdot;
+//    cost = normAngle(th) * normAngle(th) + .1 * thdot * thdot;
 
     cost *= 0.01;
     double newthdot = thdot + (-3.0 * gravity_ / (2.0 * lp_) * sin(th + M_PI)
@@ -135,7 +135,7 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
 
   void setVersion(TaskVersion taskVersion) {
     if (taskVersion == easy) {
-      maxTorque_ = 2.0;
+      maxTorque_ = 4.0;
     } else {
       maxTorque_ = 0.5;
     }

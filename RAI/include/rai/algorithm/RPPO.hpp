@@ -79,7 +79,7 @@ class RPPO {
        int numofJunctions,
        unsigned testingTrajN,
        int n_epoch = 30,
-       int minibatchSize = 0,
+       int n_minibatch = 0,
        Dtype cov = 1, Dtype vCoeff = 0.5, Dtype entCoeff = 0.01, Dtype clipCoeff = 0.2, Dtype maxGradNorm = 0.5) :
       task_(tasks),
       policy_(policy),
@@ -91,7 +91,7 @@ class RPPO {
       numOfJunct_(numofJunctions),
       testingTrajN_(testingTrajN),
       n_epoch_(n_epoch),
-      minibatchSize_(minibatchSize),
+      n_minibatch_(n_minibatch),
       covIn_(cov),
       maxGradNorm_(maxGradNorm),
       clipCoeff_(clipCoeff),
@@ -139,7 +139,7 @@ class RPPO {
                             acquisitor_->stepsTaken(),
                             vis_lv_,
                             std::to_string(iterNumber_));
-    LOG(INFO) << "Simulation";
+//    LOG(INFO) << "Simulation";
     acquisitor_->acquireVineTrajForNTimeSteps(task_,
                                               noiseBasePtr_,
                                               policy_,
@@ -148,7 +148,7 @@ class RPPO {
                                               numOfBranchPerJunct_,
                                               vfunction_,
                                               vis_lv_);
-    LOG(INFO) << "PPO Updater";
+//    LOG(INFO) << "PPO Updater";
     PPOUpdater();
   }
 
@@ -161,7 +161,7 @@ class RPPO {
     acquisitor_->saveDataWithAdvantage(task_[0], policy_, vfunction_, lambda_, true);
 
     Dtype loss;
-    LOG(INFO) << "Optimizing policy";
+//    LOG(INFO) << "Optimizing policy";
 
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
@@ -170,10 +170,11 @@ class RPPO {
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
     policy_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
-
+    int train_batchsize = Dataset_.batchNum / n_minibatch_;
+    LOG(INFO) << "batchsize:" << train_batchsize;
     for (int i = 0; i < n_epoch_; i++) {
 
-      while (Dataset_.iterateBatch(minibatchSize_)) {
+      while (Dataset_.iterateBatch(train_batchsize)) {
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
@@ -183,9 +184,9 @@ class RPPO {
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
         Utils::logger->appendData("gradnorm", updateN++, policy_grad.norm());
 
-        Utils::timer->startTimer("Adam update");
+        Utils::timer->startTimer("SGD");
         policy_->trainUsingGrad(policy_grad);
-        Utils::timer->stopTimer("Adam update");
+        Utils::timer->stopTimer("SGD");
 
         KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
@@ -226,7 +227,7 @@ class RPPO {
   int numOfJunct_;
   int numOfBranchPerJunct_;
   int n_epoch_;
-  int minibatchSize_;
+  int n_minibatch_;
   Dtype covIn_;
   Dtype maxGradNorm_;
   Dtype clipCoeff_;

@@ -87,4 +87,5 @@ class testNet(bc.GraphStructure):
 
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         self.a_param_list = self.l_param_list
+        print(self.a_param_list)
         self.net = None

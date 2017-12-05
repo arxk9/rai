@@ -22,6 +22,7 @@
 //#include <rai/function/tensorflow/RecurrentDeterministicPolicy_Tensorflow.hpp>
 #include <rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp>
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
+#include "rai/function/tensorflow/RecurrentStochasticPolicyValue_TensorFlow.hpp"
 
 #include "rai/RAI_core"
 #include "rai/RAI_Tensor.hpp"
@@ -45,6 +46,7 @@ using Dtype = double;
 
 using PolicyBase = rai::FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 using RnnVfunc = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
+
 //using RnnQfunc = rai::FuncApprox::RecurrentQfunction_TensorFlow<Dtype, StateDim, ActionDim>;
 //using RnnDPolicy = rai::FuncApprox::RecurrentDeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using RnnPolicy = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;

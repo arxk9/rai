@@ -20,6 +20,7 @@
 #include <boost/random/normal_distribution.hpp>
 #include <functional>
 //#include <rai/function/tensorflow/RecurrentDeterministicPolicy_Tensorflow.hpp>
+#include "rai/function/tensorflow/RecurrentStochasticPolicyValue_TensorFlow.hpp"
 
 #include <rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp>
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -55,6 +56,7 @@ using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, 
 using Task_ = rai::Task::PoleBalancing<Dtype>;
 using StochPol = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Value = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
+using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
 
 using MatrixXD = Eigen::Matrix<Dtype, -1, -1>;
 using VectorXD = Eigen::Matrix<Dtype, -1, 1>;
@@ -80,34 +82,43 @@ using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 #define nThread 10
 
 int main() {
+  bool testIterateBatch = false;
+  bool testPolicyValue = true;
   RAI_init();
   const int sampleN = 5;
+
+  ////Acquisitor
   Acquisitor_ acquisitor;
   rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_;
-  {
-    std::vector<Task_> taskVec(nThread, Task_(Task_::fixed, Task_::easy));
-    std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
+  ld_.miniBatch = new rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>;
+  acquisitor.setData(&ld_);
 
-    for (auto &task : taskVec) {
-      task.setControlUpdate_dt(0.05);
-      task.setDiscountFactor(0.995);
-      task.setRealTimeFactor(3);
-      task.setTimeLimitPerEpisode(25.0);
-      taskVector.push_back(&task);
-    }
+  ////Task
+  std::vector<Task_> taskVec(nThread, Task_(Task_::fixed, Task_::easy));
+  std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
 
-    NoiseCov covariance = NoiseCov::Identity();
-    std::vector<NormNoise> noiseVec(nThread, NormNoise(covariance));
-    std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector;
-    for (auto &noise : noiseVec)
-      noiseVector.push_back(&noise);
+  for (auto &task : taskVec) {
+    task.setControlUpdate_dt(0.05);
+    task.setDiscountFactor(0.995);
+    task.setRealTimeFactor(3);
+    task.setTimeLimitPerEpisode(25.0);
+    taskVector.push_back(&task);
+  }
 
-    StochPol policy("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
-    Value vfunction("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
+  NoiseCov covariance = NoiseCov::Identity();
+  std::vector<NormNoise> noiseVec(nThread, NormNoise(covariance));
+  std::vector<rai::Noise::Noise<Dtype, ActionDim> *> noiseVector;
+  for (auto &noise : noiseVec)
+    noiseVector.push_back(&noise);
 
-//    RnnPolicy policy("cpu", "GRUMLP", "tanh 1e-3 3 5 / 8 1", 0.001);
-//    FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim> Vfunc("cpu", "MLP", "tanh 1e-3 3 32 1", 0.001);
+  StochPol policy("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
+  Value vfunction("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
+  PolicyValue_TensorFlow policyvalue("gpu,0", "testNet", "relu 1e-3 2 256 / 32 32 1", 0.0001);
+ if (testPolicyValue){
 
+
+ }
+  if (testIterateBatch) {
 
     Eigen::Matrix<Dtype, StateDim, -1> stateBat, stateTest, termStateBat;
     Eigen::Matrix<Dtype, 1, -1> termValueBat, valueBat, value_old;
@@ -116,8 +127,7 @@ int main() {
     Tensor3D actionNoiseTensor("actionNoise");
     Tensor1D trajLength("length");
 
-    ld_.miniBatch = new rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>;
-    acquisitor.setData(&ld_);
+
     Tensor<Dtype, 2> valuePred("predictedValue");
     ld_.append(valuePred);
 
@@ -193,9 +203,9 @@ int main() {
       Eigen::Matrix<Dtype, -1, 1> policy_grad2 = Eigen::Matrix<Dtype, -1, 1>::Zero(policy.getLPSize());
       ///advantage
       Tensor2D advantages2("advantage");
-      Eigen::Matrix<Dtype, 1,-1> temp;
+      Eigen::Matrix<Dtype, 1, -1> temp;
       advantages2.resize(1, dataN);
-      temp.resize(1,dataN);
+      temp.resize(1, dataN);
       int dataID = 0;
       for (int trajID = 0; trajID < acquisitor.traj.size(); trajID++) {
 
@@ -236,7 +246,7 @@ int main() {
       advantages2.copyDataFrom(temp);
 
       Eigen::Matrix<Dtype, -1, -1> testdat;
-      vfunction.test(ld_.states, ld_.values,ld_.extraTensor2D[0],testdat);
+      vfunction.test(ld_.states, ld_.values, ld_.extraTensor2D[0], testdat);
 
       ///test epoch
       for (int k = 0; k < 10; k++) {
@@ -247,9 +257,11 @@ int main() {
           std::cout << " actions" << (ld_.miniBatch->actions.eTensor() - actionTensor.eTensor()).sum();
           std::cout << " actionNoise" << (ld_.miniBatch->actionNoises.eTensor() - actionNoiseTensor.eTensor()).sum()
                     << std::endl;
-          std::cout << " advs" << (ld_.miniBatch->advantages.eMat() - advantages2.eMat()).norm()/advantages2.eMat().norm() << std::endl;
+          std::cout << " advs"
+                    << (ld_.miniBatch->advantages.eMat() - advantages2.eMat()).norm() / advantages2.eMat().norm()
+                    << std::endl;
 
-          vfunction.performOneSolverIter_trustregion(ld_.states, ld_.values,ld_.extraTensor2D[0]);
+          vfunction.performOneSolverIter_trustregion(ld_.states, ld_.values, ld_.extraTensor2D[0]);
 
         }
       }
