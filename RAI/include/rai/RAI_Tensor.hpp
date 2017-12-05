@@ -618,7 +618,7 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
 
   template<int rows>
   void partiallyFillBatch(int batchId, std::vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN = 0) {
-    LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
+    LOG_IF(FATAL, dim_[0] != eMatVec[0].rows()) << "Column size mismatch " <<  dim_[0] << "vs." <<eMatVec[0].rows() ;
     for (int colId = 0; colId < eMatVec.size() - ignoreLastN; colId++)
       batch(batchId).col(colId) = eMatVec[colId];
   }

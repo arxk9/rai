@@ -101,7 +101,7 @@ int main() {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
     task.setRealTimeFactor(3);
-    task.setTimeLimitPerEpisode(25.0);
+    task.setTimeLimitPerEpisode(1);
     taskVector.push_back(&task);
   }
 
@@ -113,11 +113,34 @@ int main() {
 
   StochPol policy("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
   Value vfunction("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
-  PolicyValue_TensorFlow policyvalue("gpu,0", "testNet", "relu 1e-3 2 256 / 32 32 1", 0.0001);
+  PolicyValue_TensorFlow policyvalue("gpu,0", "testNet", "relu 1e-3 3 5 / 32 1", 0.0001);
  if (testPolicyValue){
+   acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policyvalue, 30, 0, 0, &policyvalue);
+   acquisitor.saveDataWithAdvantage(taskVector[0], &policyvalue, &policyvalue, 0.97);
 
+   rai::Tensor<Dtype,3> Hstates;
+   int Hdim = policyvalue.hiddenStateDim();
+
+//   std::cout << ld_.hiddenStates;
+   ///Check hiddenstates
+   Hstates.resize(Hdim, ld_.maxLen, ld_.batchNum);
+   Hstates.setZero();
+
+   for(int traID = 0; traID<acquisitor.traj.size(); traID ++ ){
+     for(int timeID=0; timeID<acquisitor.traj[traID].size()-1; timeID ++ ) {
+       Hstates.batch(traID).col(timeID) = acquisitor.traj[traID].hiddenStateTraj[timeID];
+     }
+   }
+
+   std::cout << (ld_.hiddenStates.eTensor() - Hstates.eTensor()).sum()<< std::endl;
+   ld_.iterateBatch(0);
+   std::cout << (ld_.miniBatch->hiddenStates.eTensor() - Hstates.eTensor()).sum()<< std::endl;
+
+   std::cout << ld_.maxLen << ", "<<  ld_.batchNum<<std::endl;
+   ld_.divideSequences(1,10, true);
 
  }
+
   if (testIterateBatch) {
 
     Eigen::Matrix<Dtype, StateDim, -1> stateBat, stateTest, termStateBat;
@@ -133,7 +156,7 @@ int main() {
 
     for (int i = 0; i < 10; i++) {
       std::cout << "iter" << i << std::endl;
-      acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policy, 6000, 0, 0, &vfunction);
+      acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policy, 20000, 0, 0, &vfunction);
 
       acquisitor.saveDataWithAdvantage(taskVector[0], &policy, &vfunction, 0.97);
 

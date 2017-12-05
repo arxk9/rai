@@ -201,7 +201,10 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     int batchN = 0;
     int maxlen = 0;
 
-    if (policy->isRecurrent() && !Data->isRecurrent) {
+    if (policy->isRecurrent()) {
+      Data->hDim = policy->hiddenStateDim();
+      if (Data->miniBatch) Data->miniBatch->hDim = policy->hiddenStateDim();
+
       Data->isRecurrent = true;
       if (Data->miniBatch) Data->miniBatch->isRecurrent = true;
     }
@@ -221,6 +224,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
         Data->states.partiallyFillBatch(i, traj[i].stateTraj, 1);
         Data->actions.partiallyFillBatch(i, traj[i].actionTraj, 1);
         Data->actionNoises.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
+        if(Data->isRecurrent) Data->hiddenStates.partiallyFillBatch(i, traj[i].hiddenStateTraj, 1);
 //        for (int timeID = 0; timeID < traj[i].size() - 1; timeID++) {
 //          Data->costs.eMat()(timeID, i) = traj[i].costTraj[timeID];
 //        }

@@ -151,6 +151,14 @@ class CommonFunc {
       taskset[i]->setToParticularState(state_t[i]);
       trajectoryID[i] = trajcnt++;
       active[i] = true;
+
+      if (policy->isRecurrent()) {
+        ///start with zero hiddenstate
+        Eigen::Matrix<Dtype, -1, 1> hiddenState_t(policy->getHiddenStatesize(), 1);
+        hiddenState_t.setZero();
+        trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
+      }
+
     }
 
     while (true) {
@@ -160,17 +168,16 @@ class CommonFunc {
         bool isTimeout = episodetime[i] + taskset[i]->dt() * 0.5 >= timeLimit;
         bool isTerminal = taskset[i]->isTerminalState();
 
-
         while (isTerminal || isTimeout) {
 
           if (isTerminal) {
             trajectorySet[trajectoryID[i]].terminateTrajectoryAndUpdateValueTraj(
-              TerminationType::terminalState, state_t[i], action_t[i],
-              taskset[0]->termValue(), taskset[i]->discountFtr());
+                TerminationType::terminalState, state_t[i], action_t[i],
+                taskset[0]->termValue(), taskset[i]->discountFtr());
           } else if (isTimeout) {
             trajectorySet[trajectoryID[i]].terminateTrajectoryAndUpdateValueTraj(
-              TerminationType::timeout, state_t[i], action_t[i],
-              Dtype(0.0), taskset[i]->discountFtr());
+                TerminationType::timeout, state_t[i], action_t[i],
+                Dtype(0.0), taskset[i]->discountFtr());
           }
 
           if (trajcnt == numOfTraj) {
@@ -184,6 +191,14 @@ class CommonFunc {
             episodetime[i] = 0;
             isTimeout = false;
             isTerminal = taskset[i]->isTerminalState();
+
+            if (policy->isRecurrent()) {
+              ///start with zero hiddenstate
+              Eigen::Matrix<Dtype, -1, 1> hiddenState_t(policy->getHiddenStatesize(), 1);
+              hiddenState_t.setZero();
+              trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
+            }
+
           }
         }
       }
@@ -201,14 +216,16 @@ class CommonFunc {
       policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
-//      if(policy->isRecurrent())
-//      {
-//        Eigen::Matrix<Dtype,-1,1> hiddenState_t;
-//        for (int taskID = 0; taskID < ThreadN; taskID++){
-//          hiddenState_t = policy->getHiddenState(taskID);
-//          trajectorySet[trajectoryID[taskID]].pushBackHiddenState(hiddenState_t);
-//        }
-//      }
+      ///save Hidden States
+      if (policy->isRecurrent()) {
+        Eigen::Matrix<Dtype, -1, 1> hiddenState_t;
+        colId = 0;
+        for (int taskID = 0; taskID < ThreadN; taskID++) {
+          if (!active[taskID]) continue;
+          hiddenState_t = policy->getHiddenState(colId++);
+          trajectorySet[trajectoryID[taskID]].pushBackHiddenState(hiddenState_t);
+        }
+      }
 
       colId = 0;
       for (int taskID = 0; taskID < ThreadN; taskID++) {

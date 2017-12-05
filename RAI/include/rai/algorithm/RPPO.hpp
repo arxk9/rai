@@ -80,6 +80,8 @@ class RPPO {
        unsigned testingTrajN,
        int n_epoch = 30,
        int n_minibatch = 0,
+       int segLen = 0,
+       int stride = 1,
        Dtype cov = 1, Dtype vCoeff = 0.5, Dtype entCoeff = 0.01, Dtype clipCoeff = 0.2, Dtype maxGradNorm = 0.5) :
       task_(tasks),
       policy_(policy),
@@ -92,6 +94,8 @@ class RPPO {
       testingTrajN_(testingTrajN),
       n_epoch_(n_epoch),
       n_minibatch_(n_minibatch),
+      segLen_(segLen),
+      stride_(stride),
       covIn_(cov),
       maxGradNorm_(maxGradNorm),
       clipCoeff_(clipCoeff),
@@ -170,6 +174,9 @@ class RPPO {
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
     policy_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
+
+    if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_,true);
+
     int train_batchsize = Dataset_.batchNum / n_minibatch_;
     LOG(INFO) << "batchsize:" << train_batchsize;
     for (int i = 0; i < n_epoch_; i++) {
@@ -228,6 +235,8 @@ class RPPO {
   int numOfBranchPerJunct_;
   int n_epoch_;
   int n_minibatch_;
+  int stride_;
+  int segLen_;
   Dtype covIn_;
   Dtype maxGradNorm_;
   Dtype clipCoeff_;

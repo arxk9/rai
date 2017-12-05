@@ -71,7 +71,8 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                      VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(), minibatch->states.batches()}, 0, "h_init");
+    Tensor2D hiddenState({hiddenStateDim(), minibatch->states.batches()}, "h_init");
+    hiddenState = minibatch->hiddenStates.col(0);
 
     this->tf_->run({minibatch->states,
                     minibatch->actions,
@@ -91,7 +92,8 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                          Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(),  minibatch->states.batches()},0, "h_init");
+    Tensor2D hiddenState({hiddenStateDim(),  minibatch->states.batches()}, "h_init");
+    hiddenState = minibatch->hiddenStates.col(0);
 
     this->tf_->run({minibatch->states,
                     minibatch->actions,

@@ -35,7 +35,7 @@ class Trajectory {
 
   //////////////////////////// core methods /////////////////////////////////
   void pushBackHiddenState(HiddenState &hiddenState){
-    HiddenStateTraj.push_back(hiddenState);
+    hiddenStateTraj.push_back(hiddenState);
   }
 
   void pushBackTrajectory(State &state,
@@ -94,7 +94,7 @@ class Trajectory {
     actionTraj.clear();
     stateTraj.clear();
     actionNoiseTraj.clear();
-    HiddenStateTraj.clear();
+    hiddenStateTraj.clear();
     costTraj.clear();
     accumCostTraj.clear();
     valueTraj.clear();
@@ -217,7 +217,7 @@ class Trajectory {
   std::vector<State> stateTraj;
   std::vector<Action> actionTraj;
   std::vector<Action> actionNoiseTraj;
-  std::vector<HiddenState> HiddenStateTraj;
+  std::vector<HiddenState> hiddenStateTraj;
 
   std::vector<Dtype> costTraj, accumCostTraj;
   std::vector<Dtype> valueTraj;
