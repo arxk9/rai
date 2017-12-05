@@ -81,14 +81,14 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 2 256 / 32 32 1", 0.0001);
+  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 2 64 / 32 32 1", 0.0025);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 10, 4, 4, 10, 1);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 10, 5, 5, 100, 1);
 
   algorithm.setVisualizationLevel(0);
 
@@ -149,11 +149,13 @@ int main(int argc, char *argv[]) {
   constexpr int loggingInterval = 20;
   int iteration = 1000;
   Dtype lr = policy.getLearningRate();
+  Dtype lr_lowerbound =  0.1 * lr;
+
   for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
 
-//    lr = (1-(Dtype)iterationNumber/iteration) * lr;
-//    policy.setLearningRate(lr);
+    lr = (1-(Dtype)iterationNumber/iteration) * (lr-lr_lowerbound) + lr_lowerbound; ///linear decay
+    policy.setLearningRate(lr);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);

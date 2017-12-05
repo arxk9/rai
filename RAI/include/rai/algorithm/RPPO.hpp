@@ -208,7 +208,7 @@ class RPPO {
     Utils::timer->stopTimer("policy Training");
 
 ///Logging
-    LOG(INFO) << "Final KL divergence = " << KL;
+    LOG(INFO) << "KL divergence = " << KL;
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL);
   }
