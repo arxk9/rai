@@ -137,15 +137,22 @@ class LearningData {
       for (int j = 0; j < segNum[i]; j++) {
         position = stride * j;
         if (position > lengths_t[i] - segLen) position = std::max(0, (int)lengths_t[i] - segLen); //to make last segment full
-
         states.batch(segID) = states_t.batch(i).block(0, position, StateDim, segLen);
         actions.batch(segID) = actions_t.batch(i).block(0, position, ActionDim, segLen);
         actionNoises.batch(segID) = actionNoises_t.batch(i).block(0, position, ActionDim, segLen);
+
         if (useValue) values.col(segID) = values_t.block(position,i,segLen,1);
         if (useAdvantage) advantages.col(segID) = advantages_t.block(position, i, segLen, 1);
 
         lengths[segID] = std::min(segLen, (int)lengths_t[i]);
         termtypes[segID] = termtypes_t[i];
+
+        for (int k = 0; k < extraTensor1D.size(); k++)
+          extraTensor1D[k][segID] = extraTensor1D_t[k][i];
+        for (int k = 0; k < extraTensor2D.size(); k++)
+          extraTensor2D[k].col(segID) = extraTensor2D_t[k].block(position,i,segLen,1);
+        for (int k = 0; k < extraTensor3D.size(); k++)
+          extraTensor3D[k].batch(segID) = extraTensor3D_t[k].batch(i).block(0,position,extraTensor3D_t[k].dim(0),segLen);
 
         if (keepHiddenState) {
           /// We only use first column.
@@ -180,6 +187,15 @@ class LearningData {
     if (isRecurrent) lengths.resize(batches);
     if (isRecurrent) hiddenStates.resize(hDim, maxlen, batches);
     termtypes.resize(batches);
+
+
+    for (int k = 0; k < extraTensor1D.size(); k++)
+      extraTensor1D[k].resize(batches);
+    for (int k = 0; k < extraTensor2D.size(); k++)
+      extraTensor2D[k].resize(maxlen,batches);
+    for (int k = 0; k < extraTensor3D.size(); k++)
+      extraTensor3D[k].resize(extraTensor3D[k].dim(0), maxlen, batches);
+
   }
 
   void setZero() {

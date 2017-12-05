@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.9);
     task.setRealTimeFactor(2);
-    task.setTimeLimitPerEpisode(5);
+    task.setTimeLimitPerEpisode(25);
     taskVector.push_back(&task);
   }
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 10, 4, 4);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 10, 4, 4, 10, 1);
 
   algorithm.setVisualizationLevel(0);
 

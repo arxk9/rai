@@ -162,7 +162,10 @@ class RPPO {
 
   void PPOUpdater() {
     Utils::timer->startTimer("policy Training");
+
+    Utils::timer->startTimer("Data Processing");
     acquisitor_->saveDataWithAdvantage(task_[0], policy_, vfunction_, lambda_, true);
+    Utils::timer->stopTimer("Data Processing");
 
     Dtype loss;
 //    LOG(INFO) << "Optimizing policy";
@@ -172,10 +175,11 @@ class RPPO {
     Dtype KL = 0;
 
     /// Append predicted value to Dataset_ for trust region update
-    Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
     policy_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
+    Utils::timer->startTimer("Data Processing");
     if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_,true);
+    Utils::timer->stopTimer("Data Processing");
 
     int train_batchsize = Dataset_.batchNum / n_minibatch_;
     LOG(INFO) << "batchsize:" << train_batchsize;
