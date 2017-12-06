@@ -82,7 +82,8 @@ class RPPO {
        int n_minibatch = 0,
        int segLen = 0,
        int stride = 1,
-       Dtype cov = 1, Dtype vCoeff = 0.5, Dtype entCoeff = 0.01, Dtype clipCoeff = 0.2, Dtype maxGradNorm = 0.5) :
+       Dtype maxGradNorm = 0.5,
+       Dtype cov = 1, Dtype vCoeff = 0.5, Dtype entCoeff = 0.01, Dtype clipCoeff = 0.2) :
       task_(tasks),
       policy_(policy),
       vfunction_(policy),
@@ -113,6 +114,7 @@ class RPPO {
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
     Utils::logger->addVariableToLog(2, "gradnorm", "");
+    updateN = 0;
 
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);

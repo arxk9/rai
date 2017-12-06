@@ -33,16 +33,20 @@ class testNet(bc.GraphStructure):
         state_size = []
         recurrent_state_size = 0
         for size in rnnDim[1:]:
-            cell = rnn.GRUCell(size, kernel_initializer=tf.contrib.layers.xavier_initializer())
+            cell = rnn.LayerNormBasicLSTMCell(size)
             cells.append(cell)
-            recurrent_state_size += cell.state_size
-            state_size.append(cell.state_size)
+            recurrent_state_size += cell.state_size.c + cell.state_size.h
+            state_size.append(cell.state_size.c)
+            state_size.append(cell.state_size.h)
 
         cell = rnn.MultiRNNCell(cells, state_is_tuple=True)
         hiddenStateDim = tf.identity(tf.constant(value=[recurrent_state_size], dtype=tf.int32), name='h_dim')
+        init_states = tf.split(tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init'), num_or_size_splits=state_size, axis = 1)
 
-        init_state = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
-        init_state_tuple = tuple(tf.split(init_state, num_or_size_splits=state_size, axis=1))
+        init_state_list = []
+        for i in range(len(cells)):
+            init_state_list.append(rnn.LSTMStateTuple(init_states[2*i], init_states[2*i+1]))
+        init_state_tuple = tuple(init_state_list)
 
         # Full-length output for training
         gruOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=self.input, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
@@ -51,14 +55,14 @@ class testNet(bc.GraphStructure):
         # FCN
         # Policy
         layer_n = 0
-        top = layer_norm(rnn_out_flat)
+        top = rnn_out_flat
+        # top = layer_norm(rnn_out_flat)
 
         for dim in mlpDim[:-1]:
             with tf.name_scope('policy_hidden_layer'+repr(layer_n)):
                 top = fully_connected(activation_fn=nonlin, inputs=top, num_outputs=dim, weights_initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
                 layer_n += 1
 
-        top = layer_norm(top)
         with tf.name_scope('policy_output_layer'):
             wo1 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-2], mlpDim[-1]], minval=-float(weight), maxval=float(weight)))
             bo1 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-1]], minval=-float(weight), maxval=float(weight)))
@@ -68,14 +72,14 @@ class testNet(bc.GraphStructure):
 
         # Value
         layer_n = 0
-        top = layer_norm(rnn_out_flat)
+        top = rnn_out_flat
+        # top = layer_norm(rnn_out_flat)
 
         for dim in mlpDim[:-1]:
             with tf.name_scope('value_hidden_layer'+repr(layer_n)):
                 top = fully_connected(activation_fn=nonlin, inputs=top, num_outputs=dim, weights_initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
                 layer_n += 1
 
-        top = layer_norm(top)
         with tf.name_scope('value_output_layer'):
             wo2 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[mlpDim[-2], 1], minval=-float(weight), maxval=float(weight)))
             bo2 = tf.Variable(tf.random_uniform(dtype=dtype, shape=[1], minval=-float(weight), maxval=float(weight)))
@@ -83,7 +87,12 @@ class testNet(bc.GraphStructure):
 
         self.valueOut = tf.reshape(top, [-1, tf.shape(self.input)[1]])
 
-        hiddenState = tf.concat([state for state in final_state], axis=1, name='h_state')
+        final_state_list = []
+        for state_tuple in final_state:
+            final_state_list.append(state_tuple.c)
+            final_state_list.append(state_tuple.h)
+
+        hiddenState = tf.concat([state for state in final_state_list], axis=1, name='h_state')
 
         self.l_param_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         self.a_param_list = self.l_param_list

@@ -9,8 +9,8 @@
 #include <Eigen/Dense>
 
 // task
-#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
-//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -36,8 +36,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-using Task = rai::Task::PO_PoleBalancing<Dtype>;
-//using Task = rai::Task::PoleBalancing<Dtype>;
+//using Task = rai::Task::PO_PoleBalancing<Dtype>;
+using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -81,14 +81,14 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 2 64 / 32 32 1", 0.0025);
+  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 3 128 / 64 32 1", 0.0005);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.97, 0, 0, 10, 5, 5, 100, 1);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 10, 4, 50, 1, 0.25);
 
   algorithm.setVisualizationLevel(0);
 
@@ -102,6 +102,11 @@ int main(int argc, char *argv[]) {
   figurePropertieskl.title = "Number of Steps Taken vs KlD";
   figurePropertieskl.xlabel = "N. Steps Taken";
   figurePropertieskl.ylabel = "KlD";
+
+  rai::Utils::Graph::FigProp2D figurePropertiesgnorm;
+  figurePropertieskl.title = "Number of Steps Taken vs gradNorm";
+  figurePropertieskl.xlabel = "N. Steps Taken";
+  figurePropertieskl.ylabel = "gradNorm";
 
   rai::Utils::Graph::FigProp3D figurePropertiesSVC;
   figurePropertiesSVC.title = "V function";
@@ -147,7 +152,7 @@ int main(int argc, char *argv[]) {
   }
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 20;
-  int iteration = 1000;
+  int iteration = 500;
   Dtype lr = policy.getLearningRate();
   Dtype lr_lowerbound =  0.1 * lr;
 
@@ -168,6 +173,7 @@ int main(int argc, char *argv[]) {
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
+
       graph->figure(1, figurePropertiesEVP);
       graph->appendData(1, logger->getData("PerformanceTester/performance", 0),
                         logger->getData("PerformanceTester/performance", 1),
@@ -186,6 +192,15 @@ int main(int argc, char *argv[]) {
                         "klD",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(2, rai::Utils::Graph::OutputFormat::pdf);
+
+      graph->figure(3, figurePropertiesgnorm);
+      graph->appendData(3, logger->getData("gradnorm", 0),
+                        logger->getData("gradnorm", 1),
+                        logger->getDataSize("gradnorm"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "gradnorm",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(3, rai::Utils::Graph::OutputFormat::pdf);
 
 //      policy.forward(state_plot, value_plot);
 //

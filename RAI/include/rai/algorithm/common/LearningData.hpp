@@ -30,6 +30,7 @@ class LearningData {
 
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
+  using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
 
  public:
   LearningData()
@@ -162,10 +163,6 @@ class LearningData {
         segID++;
       }
     }
-//    std::cout << states_t << std::endl;
-//    std::cout << states.batch(0) << std::endl;
-//    std::cout << states.batch(1) << std::endl;
-//    std::cout << states.batch(2) << std::endl;
 
   }
 
@@ -214,7 +211,6 @@ class LearningData {
     for (auto &ten2D: extraTensor2D) ten2D.setZero();
     for (auto &ten1D: extraTensor1D) ten1D.setZero();
   }
-
  private:
   void fillminiBatch(int batchSize = 0) {
 
