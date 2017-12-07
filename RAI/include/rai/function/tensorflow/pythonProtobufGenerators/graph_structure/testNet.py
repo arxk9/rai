@@ -33,7 +33,8 @@ class testNet(bc.GraphStructure):
         state_size = []
         recurrent_state_size = 0
         for size in rnnDim[1:]:
-            cell = rnn.LayerNormBasicLSTMCell(size)
+            cell = rnn.LSTMCell(size, state_is_tuple=True,use_peepholes= True , initializer=tf.contrib.layers.xavier_initializer())
+            # cell = rnn.LayerNormBasicLSTMCell(size)
             cells.append(cell)
             recurrent_state_size += cell.state_size.c + cell.state_size.h
             state_size.append(cell.state_size.c)

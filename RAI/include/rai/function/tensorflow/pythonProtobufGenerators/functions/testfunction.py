@@ -85,22 +85,24 @@ class testfunction(pc.Policy):
             ent = tf.reduce_sum(wo + .5 * tf.cast(tf.log(2.0 * np.pi * np.e), dtype=dtype), axis=-1)
             meanent = tf.reduce_mean(ent)
 
+
             with tf.name_scope('RPPO'):
+
+                clip_range = clip_param[0]
+                v_rate = v_coeff[0]
+
                 #POLICY LOSS
                 surr1 = tf.multiply(ratio, advantage)
-                clip_range = clip_param[0]
                 surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_range, 1.0 + clip_range), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
 
                 kl_ = tf.boolean_mask(
                     util.kl_divergence((old_action_sampled - old_action_noise), old_stdv, action, action_stdev), mask)
-                kl_mean = tf.reshape(tf.reduce_mean(kl_), shape=[1, 1, 1], name='kl_mean')
+                kl_mean = tf.reshape(tf.reduce_mean(kl_), shape=[], name='kl_mean')
 
                 #VALUE LOSS
-
-                v_rate = v_coeff[0]
-                vf_err1 = tf.square(value - value_target)
                 vpredclipped = value_pred + tf.clip_by_value(value - value_pred, -clip_range, clip_range)
+                vf_err1 = tf.square(value - value_target)
                 vf_err2 = tf.square(vpredclipped - value_target)
                 vf_err1_masked = tf.boolean_mask(vf_err1, mask)
                 vf_err2_masked = tf.boolean_mask(vf_err2, mask)
@@ -109,3 +111,5 @@ class testfunction(pc.Policy):
 
                 Total_loss = tf.identity(PPO_loss - tf.multiply(ent_coeff, meanent) + v_rate * vf_loss, name='loss')
                 policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list,max_grad_norm), axis=0), name='Pg')  # flatgrad
+
+                testTensor = tf.identity(surr1, name='test')

@@ -82,6 +82,7 @@ class RPPO {
        int n_minibatch = 0,
        int segLen = 0,
        int stride = 1,
+       bool statefull = true,
        Dtype maxGradNorm = 0.5,
        Dtype cov = 1, Dtype vCoeff = 0.5, Dtype entCoeff = 0.01, Dtype clipCoeff = 0.2) :
       task_(tasks),
@@ -97,17 +98,15 @@ class RPPO {
       n_minibatch_(n_minibatch),
       segLen_(segLen),
       stride_(stride),
+      stateFull_(statefull),
       covIn_(cov),
       maxGradNorm_(maxGradNorm),
       clipCoeff_(clipCoeff),
       entCoeff_(entCoeff), vCoeff_(vCoeff), Dataset_() {
 
     ///Construct Dataset
-    acquisitor_->setData(&Dataset_);
     Dataset_.miniBatch = new Dataset;
-
     ///Additional valueTensor for Trustregion update
-    //// Tensor
     Tensor<Dtype, 2> valuePred("predictedValue");
     Dataset_.append(valuePred);
 
@@ -166,7 +165,7 @@ class RPPO {
     Utils::timer->startTimer("policy Training");
 
     Utils::timer->startTimer("Data Processing");
-    acquisitor_->saveDataWithAdvantage(task_[0], policy_, vfunction_, lambda_, true);
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], true, vfunction_, lambda_,true);
     Utils::timer->stopTimer("Data Processing");
 
     Dtype loss;
@@ -180,7 +179,7 @@ class RPPO {
     policy_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
     Utils::timer->startTimer("Data Processing");
-    if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_,true);
+    if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_,stateFull_);
     Utils::timer->stopTimer("Data Processing");
 
     int train_batchsize = Dataset_.batchNum / n_minibatch_;
@@ -251,6 +250,7 @@ class RPPO {
   Dtype KLThres_;
   double timeLimit;
   int updateN;
+  bool stateFull_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;

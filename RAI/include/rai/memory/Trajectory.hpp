@@ -155,8 +155,9 @@ class Trajectory {
     advantage.resize(1, size() - 1);
     advantage[size() - 2] = bellmanErr[size() - 2];
     Dtype fctr = gamma * lambda;
-    for (int timeID = size() - 3; timeID > -1; timeID--)
+    for (int timeID = size() - 3; timeID > -1; timeID--) {
       advantage[timeID] = fctr * advantage[timeID + 1] + bellmanErr[timeID];
+    }
     gaeUpdated = true;
     return advantage;
   }

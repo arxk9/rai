@@ -105,6 +105,28 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                    vectorOfOutputs);
     return vectorOfOutputs[0].flat<Dtype>().data()[0];
   }
+  virtual void test(Dataset *minibatch,
+                    Action &Stdev) {
+    std::vector<tensorflow::Tensor> dummy;
+
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    Tensor2D hiddenState({hiddenStateDim(),  minibatch->states.batches()}, "h_init");
+    hiddenState = minibatch->hiddenStates.col(0);
+    MatrixXD test;
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->lengths,
+                    minibatch->advantages,
+                    hiddenState, StdevT},
+                   {"Algo/RPPO/test"},
+                   {},
+                   dummy);
+    test.resize(1, dummy[0].dim_size(0) + dummy[0].dim_size(1));
+
+    std::memcpy(test.data(), dummy[0].template flat<Dtype>().data(), sizeof(Dtype) * test.size());
+    std::cout << "test" <<std::endl<< test << std::endl;
+  }
 
   virtual void setStdev(const Action &Stdev) {
     std::vector<MatrixXD> dummy;
@@ -171,7 +193,6 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D len({states.batches()},  states.dim(1), "length");
-
     if (h.cols() != states.batches()) {
       h.resize(hdim, states.batches());
       h.setZero();
@@ -207,7 +228,6 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
     //n:index
     if (n >= h.cols())
       h.conservativeResize(hdim, n + 1);
-
     h.col(n).setZero();
   }
 

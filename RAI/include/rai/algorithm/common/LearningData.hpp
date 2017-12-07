@@ -73,25 +73,28 @@ class LearningData {
     extraTensor3D.push_back(newData);
     if (miniBatch) miniBatch->extraTensor3D.push_back(newData);
   }
-  void appendTrajs(std::vector<Trajectory_> &traj, Task_ *task, bool isRecurrent_ = false, ValueFunc_ *vf) {
+  void appendTrajs(std::vector<Trajectory_> &traj, Task_ *task, bool isRecurrent_ = false, ValueFunc_ *vf = nullptr) {
     LOG_IF(FATAL, traj.size() == 0) << "No Data to save. call acquire~~() first";
     Trajectory_ test;
     test.hiddenStateTraj;
     test.discountFct_;
     dataN = 0;
     maxLen = 0;
+    if (vf) {
+      if (!useValue) {
+        useValue = true;
+        if (miniBatch) miniBatch->useValue = true;
+      }
+    }
     if (isRecurrent_) {
       LOG_IF(FATAL, traj[0].hiddenStateTraj.size() == 0) << "hiddenStateTraj is empty";
-
       hDim = traj[0].hiddenStateTraj[0].rows();
       if (miniBatch) miniBatch->hDim = hDim;
-
       isRecurrent = true;
       if (miniBatch) miniBatch->isRecurrent = true;
     }
 
     for (auto &tra : traj) dataN += tra.size() - 1;
-
     if (isRecurrent_) {
       /////Zero padding tensor//////////////////
       for (auto &tra : traj)
@@ -108,7 +111,6 @@ class LearningData {
         for (int timeID = 0; timeID < traj[i].size() - 1; timeID++) {
           costs.eMat()(timeID, i) = traj[i].costTraj[timeID];
         }
-
         hiddenStates.partiallyFillBatch(i, traj[i].hiddenStateTraj, 1);
         lengths[i] = traj[i].stateTraj.size() - 1;
         termtypes[i] = Dtype(traj[i].termType);
@@ -132,10 +134,6 @@ class LearningData {
 
     // update terimnal value
     if (vf) {
-      if (!useValue) {
-        useValue = true;
-        if (miniBatch) miniBatch->useValue = true;
-      }
       Eigen::Matrix<Dtype, 1, -1> termValueBat;
       Eigen::Matrix<Dtype, StateDim, -1> termStateBat;
 
@@ -153,13 +151,10 @@ class LearningData {
 
       int colID = 0;
       if (isRecurrent_) {
-        values.resize(maxLen, batchNum);
         for (int traID = 0; traID < traj.size(); traID++)
           for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
             values.eMat()(timeID, traID) = traj[traID].valueTraj[timeID];
       } else {
-        values.resize(1, dataN);
-
         for (int traID = 0; traID < traj.size(); traID++)
           for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
             values.eMat()(0, colID++) = traj[traID].valueTraj[timeID];
@@ -167,8 +162,9 @@ class LearningData {
 
     }
   }
-  void appendTrajsWithAdvantage(std::vector<Trajectory_> &traj, Task_ *task, bool isRecurrent_ = false,
+  void appendTrajsWithAdvantage(std::vector<Trajectory_> &traj, Task_ *task, bool isRecurrent_,
                                  ValueFunc_ *vf, Dtype lambda = 0.97, bool normalizeAdv = true){
+    LOG_IF(FATAL, !vf) << "value function is necessary for this method";
     appendTrajs(traj, task, isRecurrent_, vf);
     computeAdvantage(traj, task, vf, lambda, normalizeAdv);
   }
@@ -272,8 +268,11 @@ class LearningData {
     int batchID = 0;
     int dataID = 0;
     Dtype sum = 0;
-    advantages.resize(maxLen, batchNum);
     Eigen::Matrix<Dtype, 1, -1> temp(1, dataN);
+
+    useAdvantage = true;
+    if(miniBatch) miniBatch->useAdvantage = true;
+    advantages.resize(maxLen, batchNum);
 
     Utils::timer->startTimer("GAE");
     for (auto &tra : traj) {
@@ -282,15 +281,13 @@ class LearningData {
       temp.block(0, dataID, 1, advTra.cols()) = advTra;
       dataID += advTra.cols();
     }
-    if (normalize) {
-      rai::Math::MathFunc::normalize(temp);
-    }
+
+    if (normalize) rai::Math::MathFunc::normalize(temp);
 
     if (isRecurrent) {
       dataID = 0;
       advantages.setZero();
       for (auto &tra : traj) {
-        ///compute advantage for each trajectory
         advantages.block(0, batchID, tra.size() - 1, 1) = temp.block(0, dataID, 1, tra.size() - 1).transpose();
         dataID += tra.size() - 1;
         batchID++;

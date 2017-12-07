@@ -32,7 +32,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
   using DataSet = rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>;
 
  public:
-  DataSet *Data = nullptr;
   std::vector<Trajectory> traj;
 
   virtual Dtype acquire(std::vector<Task_ *> &taskset,
@@ -44,9 +43,7 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
                         bool countStep,
                         ReplayMemory_ *memory = nullptr) = 0;
 
-  void setData(DataSet *datain) {
-    Data = datain;
-  }
+
   void acquireNEpisodes(std::vector<Task_ *> &task,
                         std::vector<Noise_ *> &noise,
                         Policy_ *policy,

@@ -82,8 +82,10 @@ using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 #define nThread 10
 
 int main() {
+  bool testData = true;
+  bool testPolicyValue = false;
   bool testIterateBatch = false;
-  bool testPolicyValue = true;
+
   RAI_init();
   const int sampleN = 5;
 
@@ -91,8 +93,6 @@ int main() {
   Acquisitor_ acquisitor;
   rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> ld_;
   ld_.miniBatch = new rai::Algorithm::LearningData<Dtype, StateDim, ActionDim>;
-  acquisitor.setData(&ld_);
-
   ////Task
   std::vector<Task_> taskVec(nThread, Task_(Task_::fixed, Task_::easy));
   std::vector<rai::Task::Task<Dtype, StateDim, ActionDim, 0> *> taskVector;
@@ -102,6 +102,7 @@ int main() {
     task.setDiscountFactor(0.995);
     task.setRealTimeFactor(3);
     task.setTimeLimitPerEpisode(1);
+    task.setValueAtTerminalState(1);
     taskVector.push_back(&task);
   }
 
@@ -115,9 +116,70 @@ int main() {
   Value vfunction("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
   PolicyValue_TensorFlow policyvalue("gpu,0", "testNet", "relu 1e-3 3 5 / 32 1", 0.0001);
 
+ if(testData){
+   int testbatchN = 5;
+   RandomNumberGenerator<Dtype> rn_;
+   std::vector<rai::Memory::Trajectory<Dtype ,StateDim, ActionDim>> trajs(testbatchN);
+
+   int hdim = 10;
+   State state;
+   Action action;
+   Action actionNoise;
+   Eigen::Matrix<Dtype, -1,1> hstate;
+   hstate.resize(hdim,1);
+
+   ///make random traj
+   int maxlen = 0;
+   int len;
+   for(int i=0; i<testbatchN; i++){
+     len = rn_.intRand(10,15);
+     for(int t = 0 ; t<len ; t++){
+       state.setConstant(t);
+       action.setRandom();
+       actionNoise.setRandom();
+       hstate.setRandom();
+       Dtype cost = rn_.sampleUniform01();
+       trajs[i].pushBackTrajectory(state,action,actionNoise,cost);
+       trajs[i].pushBackHiddenState(hstate);
+     }
+     state.setConstant(len);
+     action.setZero();
+     actionNoise.setZero();
+     hstate.setConstant(1);
+     trajs[i].pushBackHiddenState(hstate);
+     if(len == 15){
+       trajs[i].terminateTrajectoryAndUpdateValueTraj(
+           TerminationType::timeout, state, action,
+          Dtype(0.0), taskVector[0]->discountFtr());
+     }
+     else
+       trajs[i].terminateTrajectoryAndUpdateValueTraj(
+         TerminationType::terminalState, state, action,
+         taskVector[0]->termValue(), taskVector[0]->discountFtr());
+   }
+
+   ld_.appendTrajsWithAdvantage(trajs,taskVector[0], true, &policyvalue,0.97, true);
+   std::cout << "lengths" << std::endl<< ld_.lengths << std::endl;
+   std::cout << "states" << std::endl<< ld_.states << std::endl;
+   std::cout << "values" << std::endl<< ld_.values << std::endl;
+   std::cout << "costs" << std::endl<< ld_.costs << std::endl;
+   std::cout << "advs" << std::endl<< ld_.advantages << std::endl;
+   std::cout << "hiddenstates" << std::endl<< ld_.hiddenStates << std::endl;
+
+   Action stdev_o;
+   policyvalue.getStdev(stdev_o);
+   policyvalue.test(&ld_,stdev_o);
+
+   ld_.divideSequences(5,3,true);
+//   std::cout << "lengths" << std::endl<< ld_.lengths << std::endl;
+   std::cout << "states" << std::endl<< ld_.states << std::endl;
+   std::cout << "hiddenstates" << std::endl<< ld_.hiddenStates << std::endl;
+   std::cout << "advs" << std::endl<< ld_.advantages << std::endl;
+
+  }
  if (testPolicyValue){
    acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policyvalue, 30, 0, 0, &policyvalue);
-   acquisitor.saveDataWithAdvantage(taskVector[0], &policyvalue, &policyvalue, 0.97);
+   ld_.appendTrajsWithAdvantage(acquisitor.traj,taskVector[0],policyvalue.isRecurrent(),&policyvalue,0.97);
 
    rai::Tensor<Dtype,3> Hstates;
    int Hdim = policyvalue.hiddenStateDim();
@@ -159,7 +221,7 @@ int main() {
       std::cout << "iter" << i << std::endl;
       acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policy, 20000, 0, 0, &vfunction);
 
-      acquisitor.saveDataWithAdvantage(taskVector[0], &policy, &vfunction, 0.97);
+      ld_.appendTrajsWithAdvantage(acquisitor.traj,taskVector[0],policyvalue.isRecurrent(),&policyvalue,0.97);
 
       Dtype disc = taskVector[0]->discountFtr();
       int dataN = 0;

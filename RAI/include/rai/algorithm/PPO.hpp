@@ -109,11 +109,8 @@ class PPO {
       entCoeff_(entCoeff), Dataset_(){
     updateN = 0;
     ///Construct Dataset
-    acquisitor_->setData(&Dataset_);
     Dataset_.miniBatch = new Dataset;
-
     ///Additional valueTensor for Trustregion update
-    //// Tensor
     Tensor<Dtype, 2> valuePred("predictedValue");
     Dataset_.append(valuePred);
 
@@ -172,15 +169,18 @@ class PPO {
  private:
 
   void PPOUpdater() {
-      Utils::timer->startTimer("policy Training");
-    acquisitor_->saveDataWithAdvantage(task_[0], policy_, vfunction_, lambda_, true);
+     Utils::timer->startTimer("policy Training");
 
-    Dtype loss;
+    Utils::timer->startTimer("data processing");
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj,task_[0], policy_->isRecurrent(), vfunction_, lambda_, true);
+    Utils::timer->stopTimer("data processing");
+
     LOG(INFO) << "Optimizing policy";
 
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0;
+    Dtype loss;
 
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
@@ -204,6 +204,7 @@ class PPO {
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
         Utils::timer->startTimer("Gradient computation");
+
         if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
         else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
         Utils::timer->stopTimer("Gradient computation");
