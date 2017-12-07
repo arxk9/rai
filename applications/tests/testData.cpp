@@ -114,6 +114,7 @@ int main() {
   StochPol policy("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
   Value vfunction("cpu", "MLP", "tanh 1e-3 3 32 32 1", 0.001);
   PolicyValue_TensorFlow policyvalue("gpu,0", "testNet", "relu 1e-3 3 5 / 32 1", 0.0001);
+
  if (testPolicyValue){
    acquisitor.acquireVineTrajForNTimeSteps(taskVector, noiseVector, &policyvalue, 30, 0, 0, &policyvalue);
    acquisitor.saveDataWithAdvantage(taskVector[0], &policyvalue, &policyvalue, 0.97);

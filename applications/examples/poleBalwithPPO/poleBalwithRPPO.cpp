@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 10, 4, 50, 1, 0.25);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 100, 1, 0.25);
 
   algorithm.setVisualizationLevel(0);
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
   }
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 20;
-  int iteration = 500;
+  int iteration = 1000;
   Dtype lr = policy.getLearningRate();
   Dtype lr_lowerbound =  0.1 * lr;
 

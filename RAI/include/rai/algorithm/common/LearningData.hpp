@@ -37,6 +37,7 @@ class LearningData {
       : maxLen(0),
         batchNum(0),
         batchID(0),
+        dataN(0),
         miniBatch(nullptr),
         extraTensor1D(0),
         extraTensor2D(0),
@@ -72,6 +73,105 @@ class LearningData {
     extraTensor3D.push_back(newData);
     if (miniBatch) miniBatch->extraTensor3D.push_back(newData);
   }
+  void appendTrajs(std::vector<Trajectory_> &traj, Task_ *task, bool isRecurrent_ = false, ValueFunc_ *vf) {
+    LOG_IF(FATAL, traj.size() == 0) << "No Data to save. call acquire~~() first";
+    Trajectory_ test;
+    test.hiddenStateTraj;
+    test.discountFct_;
+    dataN = 0;
+    maxLen = 0;
+    if (isRecurrent_) {
+      LOG_IF(FATAL, traj[0].hiddenStateTraj.size() == 0) << "hiddenStateTraj is empty";
+
+      hDim = traj[0].hiddenStateTraj[0].rows();
+      if (miniBatch) miniBatch->hDim = hDim;
+
+      isRecurrent = true;
+      if (miniBatch) miniBatch->isRecurrent = true;
+    }
+
+    for (auto &tra : traj) dataN += tra.size() - 1;
+
+    if (isRecurrent_) {
+      /////Zero padding tensor//////////////////
+      for (auto &tra : traj)
+        if (maxLen < tra.stateTraj.size() - 1) maxLen = int(tra.stateTraj.size()) - 1;
+
+      batchNum = int(traj.size());
+      resize(maxLen, batchNum);
+      setZero();
+
+      for (int i = 0; i < batchNum; i++) {
+        states.partiallyFillBatch(i, traj[i].stateTraj, 1);
+        actions.partiallyFillBatch(i, traj[i].actionTraj, 1);
+        actionNoises.partiallyFillBatch(i, traj[i].actionNoiseTraj, 1);
+        for (int timeID = 0; timeID < traj[i].size() - 1; timeID++) {
+          costs.eMat()(timeID, i) = traj[i].costTraj[timeID];
+        }
+
+        hiddenStates.partiallyFillBatch(i, traj[i].hiddenStateTraj, 1);
+        lengths[i] = traj[i].stateTraj.size() - 1;
+        termtypes[i] = Dtype(traj[i].termType);
+      }
+
+    } else {
+      resize(1, dataN);
+      setZero();
+
+      int pos = 0;
+      for (int traID = 0; traID < traj.size(); traID++) {
+        for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++) {
+          states.batch(pos) = traj[traID].stateTraj[timeID];
+          actions.batch(pos) = traj[traID].actionTraj[timeID];
+          actionNoises.batch(pos) = traj[traID].actionNoiseTraj[timeID];
+          costs[pos] = traj[traID].costTraj[timeID];
+          pos++;
+        }
+      }
+    }
+
+    // update terimnal value
+    if (vf) {
+      if (!useValue) {
+        useValue = true;
+        if (miniBatch) miniBatch->useValue = true;
+      }
+      Eigen::Matrix<Dtype, 1, -1> termValueBat;
+      Eigen::Matrix<Dtype, StateDim, -1> termStateBat;
+
+      termValueBat.resize(1, traj.size());
+      termStateBat.resize(StateDim, traj.size());
+
+      ///update value traj
+      for (int traID = 0; traID < traj.size(); traID++)
+        termStateBat.col(traID) = traj[traID].stateTraj.back();
+      vf->forward(termStateBat, termValueBat);
+      for (int traID = 0; traID < traj.size(); traID++)
+        if (traj[traID].termType == TerminationType::timeout) {
+          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task->discountFtr());
+        }
+
+      int colID = 0;
+      if (isRecurrent_) {
+        values.resize(maxLen, batchNum);
+        for (int traID = 0; traID < traj.size(); traID++)
+          for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
+            values.eMat()(timeID, traID) = traj[traID].valueTraj[timeID];
+      } else {
+        values.resize(1, dataN);
+
+        for (int traID = 0; traID < traj.size(); traID++)
+          for (int timeID = 0; timeID < traj[traID].size() - 1; timeID++)
+            values.eMat()(0, colID++) = traj[traID].valueTraj[timeID];
+      }
+
+    }
+  }
+  void appendTrajsWithAdvantage(std::vector<Trajectory_> &traj, Task_ *task, bool isRecurrent_ = false,
+                                 ValueFunc_ *vf, Dtype lambda = 0.97, bool normalizeAdv = true){
+    appendTrajs(traj, task, isRecurrent_, vf);
+    computeAdvantage(traj, task, vf, lambda, normalizeAdv);
+  }
 
   bool iterateBatch(int batchSize) {
     int cur_batch_size = batchSize;
@@ -102,7 +202,6 @@ class LearningData {
     Tensor3D actionNoises_t(actionNoises);
     Tensor3D hiddenStates_t(hiddenStates);
 //  Tensor2D costs;
-//  Tensor2D stdevs;
 
     Tensor2D values_t(values);
     Tensor2D advantages_t(advantages);
@@ -110,6 +209,7 @@ class LearningData {
     Tensor1D termtypes_t(termtypes);
 
     int batchNum_t = batchNum;
+
     //vectors for additional data
     std::vector<rai::Tensor<Dtype, 3>> extraTensor3D_t;
     std::vector<rai::Tensor<Dtype, 2>> extraTensor2D_t;
@@ -137,23 +237,25 @@ class LearningData {
 
       for (int j = 0; j < segNum[i]; j++) {
         position = stride * j;
-        if (position > lengths_t[i] - segLen) position = std::max(0, (int)lengths_t[i] - segLen); //to make last segment full
+        if (position > lengths_t[i] - segLen)
+          position = std::max(0, (int) lengths_t[i] - segLen); //to make last segment full
         states.batch(segID) = states_t.batch(i).block(0, position, StateDim, segLen);
         actions.batch(segID) = actions_t.batch(i).block(0, position, ActionDim, segLen);
         actionNoises.batch(segID) = actionNoises_t.batch(i).block(0, position, ActionDim, segLen);
 
-        if (useValue) values.col(segID) = values_t.block(position,i,segLen,1);
+        if (useValue) values.col(segID) = values_t.block(position, i, segLen, 1);
         if (useAdvantage) advantages.col(segID) = advantages_t.block(position, i, segLen, 1);
 
-        lengths[segID] = std::min(segLen, (int)lengths_t[i]);
+        lengths[segID] = std::min(segLen, (int) lengths_t[i]);
         termtypes[segID] = termtypes_t[i];
 
         for (int k = 0; k < extraTensor1D.size(); k++)
           extraTensor1D[k][segID] = extraTensor1D_t[k][i];
         for (int k = 0; k < extraTensor2D.size(); k++)
-          extraTensor2D[k].col(segID) = extraTensor2D_t[k].block(position,i,segLen,1);
+          extraTensor2D[k].col(segID) = extraTensor2D_t[k].block(position, i, segLen, 1);
         for (int k = 0; k < extraTensor3D.size(); k++)
-          extraTensor3D[k].batch(segID) = extraTensor3D_t[k].batch(i).block(0,position,extraTensor3D_t[k].dim(0),segLen);
+          extraTensor3D[k].batch(segID) =
+              extraTensor3D_t[k].batch(i).block(0, position, extraTensor3D_t[k].dim(0), segLen);
 
         if (keepHiddenState) {
           /// We only use first column.
@@ -164,6 +266,39 @@ class LearningData {
       }
     }
 
+  }
+
+  void computeAdvantage(std::vector<Trajectory_> &traj, Task_ *task, ValueFunc_ *vf, Dtype lambda, bool normalize = true) {
+    int batchID = 0;
+    int dataID = 0;
+    Dtype sum = 0;
+    advantages.resize(maxLen, batchNum);
+    Eigen::Matrix<Dtype, 1, -1> temp(1, dataN);
+
+    Utils::timer->startTimer("GAE");
+    for (auto &tra : traj) {
+      ///compute advantage for each trajectory
+      ValueBatch advTra = tra.getGAE(vf, task->discountFtr(), lambda, task->termValue());
+      temp.block(0, dataID, 1, advTra.cols()) = advTra;
+      dataID += advTra.cols();
+    }
+    if (normalize) {
+      rai::Math::MathFunc::normalize(temp);
+    }
+
+    if (isRecurrent) {
+      dataID = 0;
+      advantages.setZero();
+      for (auto &tra : traj) {
+        ///compute advantage for each trajectory
+        advantages.block(0, batchID, tra.size() - 1, 1) = temp.block(0, dataID, 1, tra.size() - 1).transpose();
+        dataID += tra.size() - 1;
+        batchID++;
+      }
+    } else {
+      advantages.copyDataFrom(temp);
+    }
+    Utils::timer->stopTimer("GAE");
   }
 
   void resize(int maxlen, int batches) {
@@ -179,20 +314,17 @@ class LearningData {
     costs.resize(maxlen, batches);
     if (useValue) values.resize(maxlen, batches);
     if (useAdvantage) advantages.resize(maxlen, batches);
-//    stdevs.resize(ActionDim, batches);
 
     if (isRecurrent) lengths.resize(batches);
     if (isRecurrent) hiddenStates.resize(hDim, maxlen, batches);
     termtypes.resize(batches);
 
-
     for (int k = 0; k < extraTensor1D.size(); k++)
       extraTensor1D[k].resize(batches);
     for (int k = 0; k < extraTensor2D.size(); k++)
-      extraTensor2D[k].resize(maxlen,batches);
+      extraTensor2D[k].resize(maxlen, batches);
     for (int k = 0; k < extraTensor3D.size(); k++)
       extraTensor3D[k].resize(extraTensor3D[k].dim(0), maxlen, batches);
-
   }
 
   void setZero() {
@@ -203,7 +335,6 @@ class LearningData {
     costs.setZero();
     if (useValue) values.setZero();
     if (useAdvantage) advantages.setZero();
-//    stdevs.setZero();
     if (isRecurrent) lengths.setZero();
     termtypes.setZero();
 
@@ -211,6 +342,7 @@ class LearningData {
     for (auto &ten2D: extraTensor2D) ten2D.setZero();
     for (auto &ten1D: extraTensor1D) ten1D.setZero();
   }
+
  private:
   void fillminiBatch(int batchSize = 0) {
 
@@ -221,9 +353,8 @@ class LearningData {
     miniBatch->states = states.batchBlock(batchID, batchSize);
     miniBatch->actions = actions.batchBlock(batchID, batchSize);
     miniBatch->actionNoises = actionNoises.batchBlock(batchID, batchSize);
-//    miniBatch->costs = costs.block(0, batchID, maxLen, batchSize);
-//    miniBatch->stdevs = stdevs.block(0, batchID, ActionDim, batchSize);
 
+    miniBatch->costs = costs.block(0, batchID, maxLen, batchSize);
     if (useValue) miniBatch->values = values.block(0, batchID, maxLen, batchSize);
     if (useAdvantage) miniBatch->advantages = advantages.block(0, batchID, maxLen, batchSize);
 
@@ -258,6 +389,7 @@ class LearningData {
   int batchNum;
   int batchID;
   int hDim;
+  int dataN;
 
   bool useValue = false;
   bool useAdvantage = false;
@@ -270,8 +402,6 @@ class LearningData {
   Tensor2D costs;
   Tensor2D values;
   Tensor2D advantages;
-//  Tensor2D stdevs;
-
   Tensor1D lengths;
   Tensor1D termtypes;
 
