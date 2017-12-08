@@ -121,9 +121,7 @@ class PPO {
     for (int i = 0; i < task_.size(); i++)
       noiseBasePtr_.push_back(noise_[i]);
   };
-
   ~PPO() { delete Dataset_.miniBatch; };
-
   void runOneLoop(int numOfSteps) {
     iterNumber_++;
     tester_.testPerformance(task_,
@@ -134,7 +132,6 @@ class PPO {
                             acquisitor_->stepsTaken(),
                             vis_lv_,
                             std::to_string(iterNumber_));
-    LOG(INFO) << "Simulation";
     acquisitor_->acquireVineTrajForNTimeSteps(task_,
                                               noiseBasePtr_,
                                               policy_,
@@ -145,33 +142,23 @@ class PPO {
                                               vis_lv_);
     PPOUpdater();
   }
-
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
-
  private:
-
   void PPOUpdater() {
     Utils::timer->startTimer("policy Training");
-
     Utils::timer->startTimer("data processing");
     Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], policy_->isRecurrent(), vfunction_, lambda_, true);
     Utils::timer->stopTimer("data processing");
-
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0;
     Dtype loss;
-
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
-
     policy_->getStdev(stdev_t);
-
     for (int i = 0; i < n_epoch_; i++) {
-
       while (Dataset_.iterateBatch(n_minibatch_)) {
-
         Utils::timer->startTimer("Vfunction update");
         if (vfunction_->isRecurrent())
           loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
@@ -183,18 +170,14 @@ class PPO {
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
-
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
-
         Utils::timer->startTimer("Gradient computation");
         if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
         else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
         Utils::timer->stopTimer("Gradient computation");
-
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
         Utils::logger->appendData("gradnorm", updateN++, policy_grad.norm());
-
         Utils::timer->startTimer("SGD");
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("SGD");
@@ -212,14 +195,12 @@ class PPO {
         policy_->setParams(algoParams);
       }
     }
-
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
 
 ///Logging
     LOG(INFO) << "Final KL divergence = " << KL;
     if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KLCoeff_;
-
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL);
   }
@@ -261,21 +242,16 @@ class PPO {
   int updateN;
   /////////////////////////// batches
   ValueBatch advantage_, bellmanErr_;
-
   /////////////////////////// Policy parameter
   VectorXD parameter_;
   VectorXD algoParams;
-
   Action stdev_o;
   Action stdev_t;
   Covariance policycov;
-
   /////////////////////////// plotting
   int iterNumber_ = 0;
-
   ///////////////////////////testing
   unsigned testingTrajN_;
-
   /////////////////////////// visualization
   int vis_lv_ = 0;
 };
