@@ -1,26 +1,20 @@
 # 1. Contributors
-Main developer: Jemin Hwangbo (RSL, ETH Zurich, Switzerland, jhwangbo@ethz.ch), Joonho Lee (ETH Zurich, Switzerland, jolee@ethz.ch)
+Main developers: Jemin Hwangbo (RSL, ETH Zurich, Switzerland, jhwangbo@ethz.ch), Joonho Lee (ETH Zurich, Switzerland, jolee@ethz.ch)
 
 Contributors: Michael Ackermann (ETH Zurich, Switzerland)
 
 # 2. Installation
-Clone with "git clone --recursive {URL}"
+Clone
 
-(Optional) Install Nvidia driver, Cuda, Cudnn if you use GPU.
+(if you are going to use GPU) Install Nvidia driver, Cuda, Cudnn.
 
 Run install.sh: *./install_basics.sh*
 
 This installs all the dependencies except tensorflow
 
-If you are going to use GPU, install cuda and cudnn from Nvidia website.
-
 Then run *install_tensorflow.sh*
 
-# 3. Recommended developing environment
-+ Clion is recommended
-+ Use google style (available in Clion by default) and 105 characters per line
-
-# 4. Allowed abbreviations in the code
+# 3. Common abbreviations in the code
 + traj = trajectory
 + dim = dimension
 + term = terminal/termination
@@ -29,7 +23,7 @@ Then run *install_tensorflow.sh*
 + prop = properties
 + LP/AP = learnable/all parameters
 
-# 5. To cite RAI
+# 4. To cite RAI
 Please cite the following paper
 
 "journal{hwangbo2017control,

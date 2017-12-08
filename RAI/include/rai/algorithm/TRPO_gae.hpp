@@ -202,6 +202,8 @@ class TRPO_gae {
   void updatePolicyVar() {
     Action temp;
     policy_->getStdev(stdev_o);
+    stdev_o = stdev_o.cwiseMax(sqrt(minCov_));
+    policy_->setStdev(stdev_o);
     temp = stdev_o;
     temp = temp.array().square(); //var
     policycov = temp.asDiagonal();
