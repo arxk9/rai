@@ -35,9 +35,6 @@
 
 // common
 #include "raiCommon/enumeration.hpp"
-#include "raiCommon/math/inverseUsingCholesky.hpp"
-#include "raiCommon/math/ConjugateGradient.hpp"
-#include "math.h"
 #include "rai/RAI_core"
 
 namespace rai {
@@ -54,11 +51,8 @@ class DDPG {
   typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ScalarBatch;
-  typedef Eigen::Matrix<Dtype, StateDim, ActionDim> JacobianStateResAct;
-  typedef Eigen::Matrix<Dtype, 1, ActionDim> JacobianCostResAct;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
-  typedef Eigen::Matrix<Dtype, 1, -1> RowVectorXD;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using ReplayMemory_ = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
@@ -67,9 +61,6 @@ class DDPG {
   using Noise_ = Noise::Noise<Dtype, ActionDim>;
   using Trajectory = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Acquisitor_ = ExpAcq::ExperienceTupleAcquisitor<Dtype, StateDim, ActionDim>;
-  //using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
-  using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
- // using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_SingleThreadBatch<Dtype, StateDim, ActionDim>;
 
   DDPG(std::vector<Task_ *> &task,
        Qfunction_ *qfunction,
@@ -79,6 +70,8 @@ class DDPG {
        std::vector<Noise_ *> &noise,
        Acquisitor_ *acquisitor,
        ReplayMemory_ *memory,
+       unsigned n_epoch,
+       unsigned n_newSamplePerEpoch,
        unsigned batchSize,
        unsigned testingTrajN,  // how many trajectories to use to test the policy
        Dtype tau = 1e-3) :
@@ -90,6 +83,8 @@ class DDPG {
       acquisitor_(acquisitor),
       memorySARS_(memory),
       batSize_(batchSize),
+      n_epoch_(n_epoch),
+      n_newSamplePerEpoch_(n_newSamplePerEpoch),
       tau_(tau),
       testingTrajN_(testingTrajN),
       task_(task) {
@@ -130,35 +125,25 @@ class DDPG {
       task->setToInitialState();
     for (auto &noise : noise_)
       noise->initializeNoise();
-
     Utils::timer->enable();
     /////////////////////////////////////////////////////////////////////////
-    for (unsigned i = 0; i < numOfSteps / task_.size(); i++)
-      learnForOneStep();
+    for (unsigned i = 0; i < numOfSteps / n_newSamplePerEpoch_; i++)
+      learnForOneCycle();
   }
 
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
 
  private:
 
-  void sampleBatchOfInitial(StateBatch& initial){
-    for (int trajID = 0; trajID < initial.cols(); trajID++) {
-      State state;
-      task_[0]->setToInitialState();
-      task_[0]->getState(state);
-      initial.col(trajID) = state;
-    }
-  }
-
-  void learnForOneStep() {
+  void learnForOneCycle() {
     Utils::timer->startTimer("Simulation");
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
-    acquisitor_->acquire(task_, policy_, noise_, memorySARS_, task_.size());
+    acquisitor_->acquire(task_, policy_, noise_, memorySARS_, n_newSamplePerEpoch_);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
     Utils::timer->stopTimer("Simulation");
-    numOfStepsTaken_ += task_.size();
     Utils::timer->startTimer("Qfunction and Policy update");
-    updateQfunctionAndPolicy();
+    for (unsigned i = 0; i <  n_epoch_; i++)
+      updateQfunctionAndPolicy();
     Utils::timer->stopTimer("Qfunction and Policy update");
   }
 
@@ -199,24 +184,20 @@ class DDPG {
   std::vector<Task_ *> task_;
   Qfunction_ *qfunction_, *qfunction_target_;
   Policy_ *policy_, *policy_target_;
-  Noise::NoNoise<Dtype, ActionDim> noNoise_;
   Acquisitor_ *acquisitor_;
   ReplayMemory_ *memorySARS_;
   std::vector<Noise_ *> noise_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
-
+  unsigned n_epoch_;
+  unsigned n_newSamplePerEpoch_;
   unsigned batSize_;
   Dtype tau_;
 
   /////////////////////////// visualization
   int vis_lv_ = 0;
 
-  /////////////////////////// logging
-  unsigned long int numOfStepsTaken_ = 0;
-
   /////////////////////////// testing
   unsigned testingTrajN_;
-  TestAcquisitor_ testAcquisitor_;
   int iterNumber_ = 0;
 };
 

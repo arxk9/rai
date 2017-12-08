@@ -112,6 +112,8 @@ int main(int argc, char *argv[]) {
                 noiseVector,
                 &acquisitor,
                 &replayMemorySARS,
+                5,
+                10,
                 80,
                 1,
                 1e-3);
@@ -151,7 +153,7 @@ int main(int argc, char *argv[]) {
   constexpr int loggingInterval = 10;
 
   ////////////////////////// Learning /////////////////////////////////
-  for (int iterationNumber = 0; iterationNumber < 20; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 21; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
