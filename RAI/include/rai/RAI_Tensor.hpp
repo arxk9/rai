@@ -188,12 +188,37 @@ class TensorBase {
     return *this;
   }
 
-  TensorBase<Dtype, NDim>& operator*=(const TensorBase<Dtype, NDim> &other) {
-    LOG_IF(FATAL, size() != other.size())<<"size mismatch";
-    for (int i = 0; i < size(); i++)
-      data()[i] *= other.data()[i];
-    return *this;
+  friend TensorBase<Dtype, NDim> operator-(const TensorBase<Dtype, NDim> &lhs, const TensorBase<Dtype, NDim> & rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result -= rhs;
+    return result;
   }
+  friend TensorBase<Dtype, NDim>&& operator-(TensorBase<Dtype, NDim> &&lhs, const TensorBase<Dtype, NDim> & rhs) {
+    return std::move(lhs -= rhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator-(const TensorBase<Dtype, NDim> &lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(rhs -= lhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator-(TensorBase<Dtype, NDim> &&lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(rhs -= lhs);
+  }
+
+  friend TensorBase<Dtype, NDim> operator+(const TensorBase<Dtype, NDim> &lhs, const TensorBase<Dtype, NDim> & rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result += rhs;
+    return result;
+  }
+  friend TensorBase<Dtype, NDim>&& operator+(TensorBase<Dtype, NDim> &&lhs, const TensorBase<Dtype, NDim> & rhs) {
+    return std::move(lhs += rhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator+(const TensorBase<Dtype, NDim> &lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(rhs += lhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator+(TensorBase<Dtype, NDim> &&lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(lhs += rhs);
+  }
+
+
   ///scalar operators
   rai::TensorBase<Dtype, NDim>& operator+=(const Dtype rhs) {
     for (int i = 0; i < size(); i++)
@@ -215,20 +240,6 @@ class TensorBase {
       data()[i] /= rhs;
     return *this;
   }
-  friend TensorBase<Dtype, NDim> operator+(const TensorBase<Dtype, NDim> &lhs, const TensorBase<Dtype, NDim> & rhs) {
-    TensorBase<Dtype, NDim> result(lhs);
-    result += rhs;
-    return result;
-  }
-  friend TensorBase<Dtype, NDim>&& operator+(TensorBase<Dtype, NDim> &&lhs, const TensorBase<Dtype, NDim> & rhs) {
-    return std::move(lhs += rhs);
-  }
-  friend TensorBase<Dtype, NDim>&& operator+(const TensorBase<Dtype, NDim> &lhs, TensorBase<Dtype, NDim> && rhs) {
-    return std::move(rhs += lhs);
-  }
-  friend TensorBase<Dtype, NDim>&& operator+(TensorBase<Dtype, NDim> &&lhs, TensorBase<Dtype, NDim> && rhs) {
-    return std::move(rhs += lhs);
-  }
 
   friend TensorBase<Dtype, NDim> operator+(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
   TensorBase<Dtype, NDim> result(lhs);
@@ -239,7 +250,6 @@ class TensorBase {
     return operator+(rhs, lhs);
   }
 
-  //////////////////////////////////////
   friend TensorBase<Dtype, NDim> operator-(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
     TensorBase<Dtype, NDim> result(lhs);
     result -= rhs;

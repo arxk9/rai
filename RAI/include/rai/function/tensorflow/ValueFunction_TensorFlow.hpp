@@ -71,8 +71,8 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   }
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
-
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
+    values = "targetValue";
     this->tf_->run({states,
                     values,
                     lr},
@@ -95,6 +95,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
     std::vector<MatrixXD> loss;
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+    values = "targetValue";
 
     this->tf_->run({states,
                     values,

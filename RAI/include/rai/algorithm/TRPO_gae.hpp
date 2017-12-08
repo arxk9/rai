@@ -125,6 +125,11 @@ class TRPO_gae {
                                      vfunction_,
                                      vis_lv_,
                                      noisifyState_);
+    /// Update Dataset_
+    Utils::timer->startTimer("data processing");
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], false, vfunction_, lambda_, true);
+    Utils::timer->stopTimer("data processing");
+
     LOG(INFO) << "Vfunction update";
     VFupdate();
     LOG(INFO) << "Policy update";
@@ -138,7 +143,7 @@ class TRPO_gae {
  private:
 
   void VFupdate() {
-    Tensor<Dtype, 2> valuePrev("predictedValue");
+    Tensor<Dtype, 2> valuePrev;
     valuePrev.resize(1, Dataset_.batchNum);
 
     Dtype loss;
@@ -149,16 +154,11 @@ class TRPO_gae {
     for (int i = 0; i < 50; i++)
       loss = vfunction_->performOneSolverIter(Dataset_.states, Dataset_.values );
     Utils::timer->stopTimer("Vfunction update");
-
     LOG(INFO) << "value function loss : " << loss;
   }
 
   void TRPOUpdater() {
     Utils::timer->startTimer("policy Training");
-    /// Update Dataset_
-    Utils::timer->startTimer("data processing");
-    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], false, vfunction_, lambda_, true);
-    Utils::timer->stopTimer("data processing");
 
     /// Update Policy
     Parameter policy_grad = Parameter::Zero(parameter_.rows());

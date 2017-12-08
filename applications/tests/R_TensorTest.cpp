@@ -32,13 +32,6 @@ int main() {
   ten = tfTensor;
   std::cout << "my tensor (should be 3)" << std::endl << ten << std::endl;
 
-  Eigen::Matrix<double, 3,3>test01, test02;
-  test01.setOnes();
-  test02.setOnes();
-  std::cout << 5 * test01 + test02  <<std::endl;
-  ten = ten + ten;
-  ten = ten*5 +ten;
-
   ////scalar operators
   ten *= 2;
   std::cout << "my tensor (should be 6)" << std::endl << ten << std::endl;
@@ -51,7 +44,7 @@ int main() {
   ten = 5 - ten;
   std::cout << "my tensor (should be 5)" << std::endl << ten << std::endl;
   ten = 0.5 * ten + ten/5;
-  std::cout << "my tensor (should be 3)" << std::endl << ten << std::endl;
+  std::cout << "my tensor (should be 3.5)" << std::endl << ten << std::endl;
 
   /// checking 2d Eigen Matrix operation test
   Eigen::Vector3f eigenVec(7, 7, 7);
