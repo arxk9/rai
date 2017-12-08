@@ -128,7 +128,7 @@ class DDPG {
     Utils::timer->enable();
     /////////////////////////////////////////////////////////////////////////
     for (unsigned i = 0; i < numOfSteps / n_newSamplePerEpoch_; i++)
-      learnForOneCycle();
+        learnForOneCycle();
   }
 
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }

@@ -64,7 +64,7 @@ using Acquisitor_ = rai::ExpAcq::ExperienceTupleAcquisitor_Parallel<Dtype, State
 using Noise = rai::Noise::Noise<Dtype, ActionDim>;
 Dtype learningRateQfunction = 1e-3;
 Dtype learningRatePolicy = 1e-3;
-#define nThread 10
+#define nThread 5
 
 int main(int argc, char *argv[]) {
 
@@ -112,9 +112,9 @@ int main(int argc, char *argv[]) {
                 noiseVector,
                 &acquisitor,
                 &replayMemorySARS,
-                5,
-                10,
-                80,
+                4,
+                4,
+                100,
                 1,
                 1e-3);
   algorithm.setVisualizationLevel(0);
