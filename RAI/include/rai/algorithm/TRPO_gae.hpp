@@ -151,9 +151,11 @@ class TRPO_gae {
     mixfrac = 0.1;
     Utils::timer->startTimer("Vfunction update");
     Dataset_.values = Dataset_.values * mixfrac + valuePrev * (1 - mixfrac);
+
     for (int i = 0; i < 50; i++)
       loss = vfunction_->performOneSolverIter(Dataset_.states, Dataset_.values );
     Utils::timer->stopTimer("Vfunction update");
+
     LOG(INFO) << "value function loss : " << loss;
   }
 

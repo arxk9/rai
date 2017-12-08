@@ -155,6 +155,17 @@ class TensorBase {
   ///////////////////////////////
   ////////// operators //////////
   ///////////////////////////////
+  TensorBase<Dtype, NDim>& operator=(const TensorBase<Dtype, NDim> &rTensor) {
+    ///copy everything without name
+    dim_ = rTensor.dim_;
+    dim_inv_ = rTensor.dim_inv_;
+    size_ = rTensor.size_;
+    esizes_ = rTensor.esizes_;
+    vecTens = rTensor.vecTens;
+    std::memcpy(namedTensor_.second.flat<Dtype>().data(), rTensor.namedTensor_.second.template flat<Dtype>().data(), sizeof(Dtype) * size_);
+    return *this;
+  }
+
   TensorBase<Dtype, NDim>& operator=(const tensorflow::Tensor &tfTensor) {
     LOG_IF(FATAL, dim_inv_ != tfTensor.shape()) << "Tensor shape mismatch";
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), tfTensor.flat<Dtype>().data(), sizeof(Dtype) * size_);
@@ -217,7 +228,7 @@ class TensorBase {
   friend TensorBase<Dtype, NDim>&& operator+(TensorBase<Dtype, NDim> &&lhs, TensorBase<Dtype, NDim> && rhs) {
     return std::move(lhs += rhs);
   }
-
+  // TODO: Matmul, *
 
   ///scalar operators
   rai::TensorBase<Dtype, NDim>& operator+=(const Dtype rhs) {
