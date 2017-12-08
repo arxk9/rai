@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Noise Model //////////////////////
   std::vector<rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>>
-      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.15, 1, 0.05));
+      noiseVec(nThread, rai::Noise::OrnsteinUhlenbeck<Dtype, ActionDim>(0.15, 1));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
@@ -148,10 +148,10 @@ int main(int argc, char *argv[]) {
       state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
     }
   }
-  constexpr int loggingInterval = 1;
+  constexpr int loggingInterval = 25;
 
   ////////////////////////// Learning /////////////////////////////////
-  for (int iterationNumber = 0; iterationNumber < 20; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 51; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);

@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
-    task.setRealTimeFactor(3);
+    task.setRealTimeFactor(1.5);
     task.setTimeLimitPerEpisode(25.0);
     taskVector.push_back(&task);
   }
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 10, 0,true);
+      algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 4, 4, true);
 
   algorithm.setVisualizationLevel(0);
 

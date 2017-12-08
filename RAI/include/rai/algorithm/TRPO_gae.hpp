@@ -69,6 +69,7 @@ class TRPO_gae {
                 int numofjunctions = 0,
                 unsigned testingTrajN = 1,
                 Dtype noiseCov = 1,
+                Dtype minCov = 0,
                 bool noisifyState = false) :
       task_(tasks),
       vfunction_(vfunction),
@@ -84,7 +85,8 @@ class TRPO_gae {
       klD_threshold(0.01),
       cov_in(noiseCov),
       Dataset_(),
-      noisifyState_(noisifyState){
+      noisifyState_(noisifyState),
+      minCov_(minCov){
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
     timeLimit = task_[0]->timeLimit();
@@ -235,7 +237,6 @@ class TRPO_gae {
       }
     }
     LOG(INFO) << "best_idx :" << best_indx;
-
     return bestParamUpdate;
   }
 
@@ -265,11 +266,9 @@ class TRPO_gae {
   Dtype mixfrac;
   Dtype klD_threshold;
   Dtype cg_damping;
+  Dtype minCov_;
   double timeLimit;
   bool noisifyState_=false;
-
-  /////////////////////////// batches
-  ValueBatch advantage_, bellmanErr_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
@@ -278,9 +277,6 @@ class TRPO_gae {
 
   /////////////////////////// plotting
   int iterNumber_ = 0;
-
-  /////////////////////////// random number generator
-  RandomNumberGenerator<Dtype> rn_;
 
   ///////////////////////////testing
   unsigned testingTrajN_;

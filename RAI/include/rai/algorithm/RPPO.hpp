@@ -137,7 +137,6 @@ class RPPO {
                             acquisitor_->stepsTaken(),
                             vis_lv_,
                             std::to_string(iterNumber_));
-//    LOG(INFO) << "Simulation";
     acquisitor_->acquireVineTrajForNTimeSteps(task_,
                                               noiseBasePtr_,
                                               policy_,

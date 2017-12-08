@@ -86,7 +86,6 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
                     {"trainUsingCritic/learningRate", this->learningRate_}}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
     this->tf_->run({{"state", states}}, {}, {"action"}, dummy);
-    LOG(INFO) << dummy[0](0);
     return averageQ;
   }
 

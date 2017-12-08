@@ -156,7 +156,7 @@ class TensorBase {
   ////////// operators //////////
   ///////////////////////////////
   TensorBase<Dtype, NDim>& operator=(const TensorBase<Dtype, NDim> &rTensor) {
-    ///copy everything without name
+    ///copy everything except for the name
     dim_ = rTensor.dim_;
     dim_inv_ = rTensor.dim_inv_;
     size_ = rTensor.size_;
