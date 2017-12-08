@@ -16,6 +16,9 @@ class DeterministicModel(bc.SpecializedFunction):
         output = tf.identity(gs.output, name=self.output_names[0])
         input = gs.input
 
+        # jacobian
+        jac_Action_wrt_State = tf.identity(tf.stack([tf.gradients(output[:, idx], input) for idx in range(output_dim)], axis=3)[0, :, :, :], name='jac_output_wrt_input')
+
         # new placeholders
         output_target = tf.placeholder(dtype, shape=[None, output_dim], name='targetOutput')
 
