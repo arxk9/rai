@@ -140,12 +140,7 @@ class TRPO_gae {
   void VFupdate() {
     Tensor<Dtype, 2> valuePrev("predictedValue");
     valuePrev.resize(1, Dataset_.batchNum);
-    Eigen::Matrix<Dtype,3,3> test;
-    test.setZero();
 
-    test = test * 1.6;
-    test = 5.3 * test;
-    test = test / 5 ;
     Dtype loss;
     vfunction_->forward(Dataset_.states, valuePrev);
     mixfrac = 0.1;
