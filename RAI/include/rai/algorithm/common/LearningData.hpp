@@ -163,18 +163,21 @@ class LearningData {
     }
   }
   void appendTrajsWithAdvantage(std::vector<Trajectory_> &traj, Task_ *task, bool isRecurrent_,
-                                 ValueFunc_ *vf, Dtype lambda = 0.97, bool normalizeAdv = true){
+                                ValueFunc_ *vf, Dtype lambda = 0.97, bool normalizeAdv = true) {
     LOG_IF(FATAL, !vf) << "value function is necessary for this method";
     appendTrajs(traj, task, isRecurrent_, vf);
     computeAdvantage(traj, task, vf, lambda, normalizeAdv);
   }
 
-  bool iterateBatch(int batchSize) {
-    int cur_batch_size = batchSize;
-    if (cur_batch_size >= batchNum - batchID || cur_batch_size == 0) {
+  bool iterateBatch(int minibatchNum = 0) {
+    // fill minibatch with data
+
+    minibatchNum = std::max(minibatchNum, 1);
+    int cur_batch_size = batchNum / minibatchNum;
+    if (cur_batch_size >= batchNum - batchID) {
       cur_batch_size = batchNum - batchID;
     }
-//    LOG(INFO) << batchID << "batchID ";
+//    LOG(INFO) << "batchsize:" << cur_batch_size;
 
     if (batchID >= batchNum) {
       batchID = 0;
@@ -264,14 +267,18 @@ class LearningData {
 
   }
 
-  void computeAdvantage(std::vector<Trajectory_> &traj, Task_ *task, ValueFunc_ *vf, Dtype lambda, bool normalize = true) {
+  void computeAdvantage(std::vector<Trajectory_> &traj,
+                        Task_ *task,
+                        ValueFunc_ *vf,
+                        Dtype lambda,
+                        bool normalize = true) {
     int batchID = 0;
     int dataID = 0;
     Dtype sum = 0;
     Eigen::Matrix<Dtype, 1, -1> temp(1, dataN);
 
     useAdvantage = true;
-    if(miniBatch) miniBatch->useAdvantage = true;
+    if (miniBatch) miniBatch->useAdvantage = true;
     advantages.resize(maxLen, batchNum);
 
     Utils::timer->startTimer("GAE");

@@ -15,7 +15,6 @@ int main() {
 
   rai::Tensor<float, 2> ten({3, 4}, "test tensor");
   Eigen::Matrix<float, 3, 4> eMat;
-
   Eigen::Tensor<float, 2> eigenTen(3, 4);
   tensorflow::Tensor tfTensor(tensorflow::DataType::DT_FLOAT, tensorflow::TensorShape({4, 3}));
   ten.row(1);
@@ -32,6 +31,22 @@ int main() {
   std::cout << "my tensor (should be 2)" << std::endl << ten << std::endl;
   ten = tfTensor;
   std::cout << "my tensor (should be 3)" << std::endl << ten << std::endl;
+
+  ////scalar operators
+  ten *= 2;
+  std::cout << "my tensor (should be 6)" << std::endl << ten << std::endl;
+  ten -= 3;
+  std::cout << "my tensor (should be 3)" << std::endl << ten << std::endl;
+  ten += 2;
+  std::cout << "my tensor (should be 5)" << std::endl << ten << std::endl;
+  ten = ten + 5;
+  std::cout << "my tensor (should be 10)" << std::endl << ten << std::endl;
+  ten = 5 - ten;
+  std::cout << "my tensor (should be 5)" << std::endl << ten << std::endl;
+  ten = 0.5 * ten;
+  std::cout << "my tensor (should be 2.5)" << std::endl << ten << std::endl;
+  ten = ten/5;
+  std::cout << "my tensor (should be 0.5)" << std::endl << ten << std::endl;
 
   /// checking 2d Eigen Matrix operation test
   Eigen::Vector3f eigenVec(7, 7, 7);

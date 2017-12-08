@@ -86,7 +86,8 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
                                     int numofjunct,
                                     int numOfBranchPerJunct,
                                     ValueFunc_ *vfunction = nullptr,
-                                    int vis_lv = 0) {
+                                    int vis_lv = 0,
+                                    bool noisifyState = false) {
 
     Utils::timer->startTimer("Simulation");
     std::vector<Trajectory> trajectories;
@@ -119,9 +120,8 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     if (numOfSteps > stepsInThisLoop) {
       int stepsneeded = numOfSteps - stepsInThisLoop;
       std::vector<Trajectory> tempTraj_;
-      while (1) {
+      while (true) {
         int numofnewtraj = std::ceil(1.5 * stepsneeded * dt / timeLimit);
-
         tempTraj_.resize(numofnewtraj);
         for (auto &tra : tempTraj_)
           tra.clear();
@@ -168,6 +168,8 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
       tra.clear();
     for (auto &noise : noise)
       noise->initializeNoise();
+
+    if(noisifyState) task[0]->noisifyState(rolloutstartState);
 
     this->acquire(task, policy, noise, trajectories, rolloutstartState, timeLimit, true);
 

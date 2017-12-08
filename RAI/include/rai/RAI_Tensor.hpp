@@ -155,32 +155,101 @@ class TensorBase {
   ///////////////////////////////
   ////////// operators //////////
   ///////////////////////////////
-  void operator=(const tensorflow::Tensor &tfTensor) {
+  TensorBase<Dtype, NDim>& operator=(const tensorflow::Tensor &tfTensor) {
     LOG_IF(FATAL, dim_inv_ != tfTensor.shape()) << "Tensor shape mismatch";
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), tfTensor.flat<Dtype>().data(), sizeof(Dtype) * size_);
+    return *this;
   }
 
-  void operator=(const std::string name) {
+  TensorBase<Dtype, NDim>& operator=(const std::string name) {
     setName(name);
+    return *this;
   }
 
-  void operator=(const Eigen::Tensor<Dtype, NDim> &eTensor) {
+  TensorBase<Dtype, NDim>& operator=(const Eigen::Tensor<Dtype, NDim> &eTensor) {
     for (int i = 0; i < NDim; i++)
       LOG_IF(FATAL, dim_[i] != eTensor.dimension(i))
       << "Tensor size mismatch: " << i << "th Dim " << dim_[i] << "vs" << eTensor.dimension(i);
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), eTensor.data(), sizeof(Dtype) * size_);
+    return *this;
   }
 
-  void operator-=(TensorBase<Dtype, NDim> &other) {
+  TensorBase<Dtype, NDim>& operator-=(TensorBase<Dtype, NDim> &other) {
     LOG_IF(FATAL, size() != other.size())<<"size mismatch";
     for (int i = 0; i < size(); i++)
       data()[i] -= other.data()[i];
+    return *this;
   }
 
-  void operator+=(TensorBase<Dtype, NDim> &other) {
+  TensorBase<Dtype, NDim>& operator+=(TensorBase<Dtype, NDim> &other) {
     LOG_IF(FATAL, size() != other.size())<<"size mismatch";
     for (int i = 0; i < size(); i++)
       data()[i] += other.data()[i];
+    return *this;
+  }
+
+  TensorBase<Dtype, NDim>& operator*=(TensorBase<Dtype, NDim> &other) {
+    LOG_IF(FATAL, size() != other.size())<<"size mismatch";
+    for (int i = 0; i < size(); i++)
+      data()[i] *= other.data()[i];
+    return *this;
+  }
+  ///scalar operators
+  rai::TensorBase<Dtype, NDim>& operator+=(Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] += rhs;
+    return *this;
+  }
+  TensorBase<Dtype, NDim>& operator-=(Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] -= rhs;
+    return *this;
+  }
+  TensorBase<Dtype, NDim>& operator*=(Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] *= rhs;
+    return *this;
+  }
+  TensorBase<Dtype, NDim>& operator/=(Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] /= rhs;
+    return *this;
+  }
+
+  friend TensorBase<Dtype, NDim> operator+(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+  TensorBase<Dtype, NDim> result(lhs);
+    result += rhs;
+    return result;
+  }
+
+  friend TensorBase<Dtype, NDim> operator+(Dtype lhs, TensorBase<Dtype, NDim> &rhs) {
+    return operator+(rhs, lhs);
+  }
+
+  friend TensorBase<Dtype, NDim> operator-(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result -= rhs;
+    return result;
+  }
+
+  friend TensorBase<Dtype, NDim> operator-(Dtype lhs, TensorBase<Dtype, NDim> &rhs) {
+    return operator-(rhs, lhs);
+  }
+
+  friend TensorBase<Dtype, NDim> operator*(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result *= rhs;
+    return result;
+  }
+
+  friend TensorBase<Dtype, NDim> operator*(Dtype lhs, TensorBase<Dtype, NDim> &rhs) {
+    return operator*(rhs, lhs);
+  }
+
+  friend TensorBase<Dtype, NDim> operator/(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result /= rhs;
+    return result;
   }
 
   template<int rows, int cols>
@@ -624,8 +693,9 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
   }
 };
 
+
 template<typename Dtype, int NDim>
-std::ostream &operator<<(std::ostream &os, Tensor<Dtype, NDim> &m) {
+std::ostream &operator<<(std::ostream &os, TensorBase<Dtype, NDim> &m) {
   os << m.eTensor();
   return os;
 }

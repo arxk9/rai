@@ -8,18 +8,9 @@
 #include <iostream>
 #include "glog/logging.h"
 
-#include "rai/tasks/common/Task.hpp"
 #include <Eigen/Core>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/noiseModel/NoNoise.hpp>
-#include <Eigen/Cholesky>
-#include <Eigen/Jacobi>
-#include <Eigen/Cholesky>
-#include <boost/bind.hpp>
-#include <math.h>
-#include "rai/RAI_core"
-#include <vector>
-#include <raiCommon/math/RAI_math.hpp>
 
 // Neural network
 //function approximations
@@ -34,14 +25,13 @@
 // acquisitor
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
-#include <rai/algorithm/common/LearningData.hpp>
 
 // common
 #include "raiCommon/enumeration.hpp"
-#include "raiCommon/math/inverseUsingCholesky.hpp"
-#include "raiCommon/math/ConjugateGradient.hpp"
 #include "rai/RAI_core"
 #include "common/PerformanceTester.hpp"
+#include <rai/algorithm/common/LearningData.hpp>
+#include "rai/tasks/common/Task.hpp"
 
 namespace rai {
 namespace Algorithm {
@@ -82,9 +72,12 @@ class RPPO {
        int n_minibatch = 0,
        int segLen = 0,
        int stride = 1,
-       bool statefull = true,
+       bool keepHiddenState = true,
        Dtype maxGradNorm = 0.5,
-       Dtype cov = 1, Dtype vCoeff = 0.5, Dtype entCoeff = 0.01, Dtype clipCoeff = 0.2) :
+       Dtype noiseCov = 1,
+       Dtype vCoeff = 0.5,
+       Dtype entCoeff = 0.01,
+       Dtype clipCoeff = 0.2) :
       task_(tasks),
       policy_(policy),
       vfunction_(policy),
@@ -98,8 +91,8 @@ class RPPO {
       n_minibatch_(n_minibatch),
       segLen_(segLen),
       stride_(stride),
-      stateFull_(statefull),
-      covIn_(cov),
+      stateFull_(keepHiddenState),
+      covIn_(noiseCov),
       maxGradNorm_(maxGradNorm),
       clipCoeff_(clipCoeff),
       entCoeff_(entCoeff), vCoeff_(vCoeff), Dataset_() {
@@ -153,7 +146,6 @@ class RPPO {
                                               numOfBranchPerJunct_,
                                               vfunction_,
                                               vis_lv_);
-//    LOG(INFO) << "PPO Updater";
     PPOUpdater();
   }
 
@@ -168,31 +160,32 @@ class RPPO {
     Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], true, vfunction_, lambda_,true);
     Utils::timer->stopTimer("Data Processing");
 
-    Dtype loss;
-//    LOG(INFO) << "Optimizing policy";
 
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
     Dtype KL = 0;
+    Dtype loss;
 
     /// Append predicted value to Dataset_ for trust region update
-    policy_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
+    vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
     Utils::timer->startTimer("Data Processing");
     if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_,stateFull_);
     Utils::timer->stopTimer("Data Processing");
 
-    int train_batchsize = Dataset_.batchNum / n_minibatch_;
-    LOG(INFO) << "batchsize:" << train_batchsize;
+    policy_->getStdev(stdev_t);
+
     for (int i = 0; i < n_epoch_; i++) {
 
-      while (Dataset_.iterateBatch(train_batchsize)) {
+      while (Dataset_.iterateBatch(n_minibatch_)) {
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
+
         Utils::timer->startTimer("Gradient computation");
         policy_->PPOpg(Dataset_.miniBatch, Dataset_.miniBatch->extraTensor2D[0], stdev_o, policy_grad);
         Utils::timer->stopTimer("Gradient computation");
+
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
         Utils::logger->appendData("gradnorm", updateN++, policy_grad.norm());
 
@@ -200,7 +193,7 @@ class RPPO {
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("SGD");
 
-        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
+        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_t);
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       }
 
@@ -257,6 +250,7 @@ class RPPO {
   VectorXD algoParams;
 
   Action stdev_o;
+  Action stdev_t;
   Covariance policycov;
 
   /////////////////////////// plotting

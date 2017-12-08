@@ -12,14 +12,6 @@
 #include <Eigen/Core>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/noiseModel/NoNoise.hpp>
-#include <Eigen/Cholesky>
-#include <Eigen/Jacobi>
-#include <Eigen/Cholesky>
-#include <boost/bind.hpp>
-#include <math.h>
-#include "rai/RAI_core"
-#include <vector>
-#include <raiCommon/math/RAI_math.hpp>
 
 // Neural network
 //function approximations
@@ -34,17 +26,12 @@
 // acquisitor
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
-#include <rai/algorithm/common/PerformanceTester.hpp>
-#include <rai/algorithm/common/LearningData.hpp>
 
 // common
 #include "raiCommon/enumeration.hpp"
-#include "raiCommon/math/inverseUsingCholesky.hpp"
-#include "raiCommon/math/ConjugateGradient.hpp"
-#include "math.h"
 #include "rai/RAI_core"
-
-#include <Eigen/StdVector>
+#include <rai/algorithm/common/PerformanceTester.hpp>
+#include <rai/algorithm/common/LearningData.hpp>
 
 namespace rai {
 namespace Algorithm {
@@ -52,21 +39,18 @@ template<typename Dtype, int StateDim, int ActionDim>
 class TRPO_gae {
 
  public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+//  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, 1> Value;
   typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
-  typedef Eigen::Matrix<Dtype, StateDim, ActionDim> JacobianStateResAct;
-  typedef Eigen::Matrix<Dtype, 1, ActionDim> JacobianCostResAct;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> JacobianActResParam;
-  typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> FimInActionSapce;
   typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> Covariance;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
+  typedef rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> Dataset;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
@@ -84,7 +68,7 @@ class TRPO_gae {
                 int K = 0,
                 int numofjunctions = 0,
                 unsigned testingTrajN = 1,
-                Dtype Cov = 1,
+                Dtype noiseCov = 1,
                 bool noisifyState = false) :
       task_(tasks),
       vfunction_(vfunction),
@@ -98,16 +82,11 @@ class TRPO_gae {
       stepsTaken(0),
       cg_damping(0.1),
       klD_threshold(0.01),
-      cov_in(Cov),
-      ld_(acquisitor),
+      cov_in(noiseCov),
       Dataset_(),
       noisifyState_(noisifyState){
-    ld_.appendData(&Dataset_);
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
-    termCost = task_[0]->termValue();
-    discFactor = task_[0]->discountFtr();
-    dt = task_[0]->dt();
     timeLimit = task_[0]->timeLimit();
     noNoiseRaw_.resize(task_.size());
     noNoise_.resize(task_.size());
@@ -116,11 +95,10 @@ class TRPO_gae {
     stdev_o.setOnes();
     stdev_o *= std::sqrt(cov_in);
     policy_->setStdev(stdev_o);
+    updatePolicyVar();
 
     for (int i = 0; i < task_.size(); i++)
       noiseBasePtr_.push_back(noise_[i]);
-    updatePolicyVar();
-
     for (int i = 0; i < task_.size(); i++)
       noNoise_[i] = &noNoiseRaw_[i];
   };
@@ -138,7 +116,7 @@ class TRPO_gae {
                             vis_lv_,
                             std::to_string(iterNumber_));
     LOG(INFO) << "Simulation";
-    ld_.acquireVineTrajForNTimeSteps(task_,
+    acquisitor_->acquireVineTrajForNTimeSteps(task_,
                                      noiseBasePtr_,
                                      policy_,
                                      numOfSteps,
@@ -160,22 +138,32 @@ class TRPO_gae {
  private:
 
   void VFupdate() {
-    ValueBatch valuePrev(ld_.stateBat.cols());
+    Tensor<Dtype, 2> valuePrev("predictedValue");
+    valuePrev.resize(1, Dataset_.batchNum);
+    Eigen::Matrix<Dtype,3,3> test;
+    test.setZero();
+
+    test = test * 1.6;
+    test = 5.3 * test;
+    test = test / 5 ;
     Dtype loss;
-    vfunction_->forward(ld_.stateBat, valuePrev);
+    vfunction_->forward(Dataset_.states, valuePrev);
     mixfrac = 0.1;
     Utils::timer->startTimer("Vfunction update");
-    ld_.valueBat = ld_.valueBat * mixfrac + valuePrev * (1 - mixfrac);
-    for (int i = 0; i < 50; i++) // TODO : change terminal condition
-      loss = vfunction_->performOneSolverIter(ld_.stateBat, ld_.valueBat);
+    Dataset_.values = Dataset_.values * mixfrac + valuePrev * (1 - mixfrac);
+    for (int i = 0; i < 50; i++)
+      loss = vfunction_->performOneSolverIter(Dataset_.states, Dataset_.values );
     Utils::timer->stopTimer("Vfunction update");
+
     LOG(INFO) << "value function loss : " << loss;
   }
 
   void TRPOUpdater() {
     Utils::timer->startTimer("policy Training");
-    /// Update Advantage
-    ld_.computeAdvantage(task_[0],vfunction_,lambda_);
+    /// Update Dataset_
+    Utils::timer->startTimer("data processing");
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], false, vfunction_, lambda_, true);
+    Utils::timer->stopTimer("data processing");
 
     /// Update Policy
     Parameter policy_grad = Parameter::Zero(parameter_.rows());
@@ -195,7 +183,7 @@ class TRPO_gae {
     Dtype CGerror = policy_->TRPOcg(Dataset_,
                                     stdev_o,
                                     policy_grad,
-                                    Nat_grad); // TODO : test
+                                    Nat_grad);
     Utils::timer->stopTimer("Conjugate gradient");
     LOG(INFO) << "conjugate grad error :" << CGerror;
 
@@ -268,8 +256,7 @@ class TRPO_gae {
   Acquisitor_ *acquisitor_;
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
-  LearningData<Dtype, StateDim, ActionDim> ld_;
-  historyWithAdvantage<Dtype, StateDim, ActionDim> Dataset_;
+  Dataset Dataset_;
 
   /////////////////////////// Algorithmic parameter ///////////////////
   int stepsTaken;
@@ -279,9 +266,6 @@ class TRPO_gae {
   Dtype mixfrac;
   Dtype klD_threshold;
   Dtype cg_damping;
-  Dtype termCost;
-  Dtype discFactor;
-  Dtype dt;
   double timeLimit;
   bool noisifyState_=false;
 

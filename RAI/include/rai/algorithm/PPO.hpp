@@ -8,18 +8,9 @@
 #include <iostream>
 #include "glog/logging.h"
 
-#include "rai/tasks/common/Task.hpp"
 #include <Eigen/Core>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/noiseModel/NoNoise.hpp>
-#include <Eigen/Cholesky>
-#include <Eigen/Jacobi>
-#include <Eigen/Cholesky>
-#include <boost/bind.hpp>
-#include <math.h>
-#include "rai/RAI_core"
-#include <vector>
-#include <raiCommon/math/RAI_math.hpp>
 
 // Neural network
 //function approximations
@@ -34,16 +25,13 @@
 // acquisitor
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
-#include <rai/algorithm/common/LearningData.hpp>
-
 
 // common
 #include "raiCommon/enumeration.hpp"
-#include "raiCommon/math/inverseUsingCholesky.hpp"
-#include "raiCommon/math/ConjugateGradient.hpp"
-#include "math.h"
 #include "rai/RAI_core"
 #include "common/PerformanceTester.hpp"
+#include <rai/algorithm/common/LearningData.hpp>
+#include "rai/tasks/common/Task.hpp"
 
 namespace rai {
 namespace Algorithm {
@@ -81,13 +69,13 @@ class PPO {
       int numofJunctions,
       unsigned testingTrajN,
       int n_epoch = 30,
-      int minibatchSize = 0,
+      int n_minibatch = 0,
       bool KL_adapt = true,
-      Dtype cov = 1,
+      Dtype noiseCov = 1,
       Dtype KLThres = 0.01,
+      Dtype maxGradNorm = 0.1,
       Dtype entCoeff = 0.01,
       Dtype clipCoeff = 0.2,
-      Dtype maxGradNorm = 0.5,
       Dtype KL_coeff = 1) :
       task_(tasks),
       vfunction_(vfunction),
@@ -100,13 +88,13 @@ class PPO {
       testingTrajN_(testingTrajN),
       KL_adapt_(KL_adapt),
       n_epoch_(n_epoch),
-      minibatchSize_(minibatchSize),
-      covIn(cov),
+      n_minibatch_(n_minibatch),
+      covIn(noiseCov),
       maxGradNorm_(maxGradNorm),
       KLThres_(KLThres),
       KLCoeff_(KL_coeff),
       clipCoeff_(clipCoeff),
-      entCoeff_(entCoeff), Dataset_(){
+      entCoeff_(entCoeff), Dataset_() {
     updateN = 0;
     ///Construct Dataset
     Dataset_.miniBatch = new Dataset;
@@ -121,21 +109,17 @@ class PPO {
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
     algoParams.resize(4);
-    algoParams << KLCoeff_, entCoeff_, clipCoeff_,maxGradNorm_;
+    algoParams << KLCoeff_, entCoeff_, clipCoeff_, maxGradNorm_;
     policy_->setParams(algoParams);
-
-    termCost = task_[0]->termValue();
-    discFactor = task_[0]->discountFtr();
-    dt = task_[0]->dt();
-    timeLimit = task_[0]->timeLimit();
-    for (int i = 0; i < task_.size(); i++)
-      noiseBasePtr_.push_back(noise_[i]);
 
     ///update input stdev
     stdev_o.setOnes();
     stdev_o *= std::sqrt(covIn);
     policy_->setStdev(stdev_o);
     updatePolicyVar();
+
+    for (int i = 0; i < task_.size(); i++)
+      noiseBasePtr_.push_back(noise_[i]);
   };
 
   ~PPO() { delete Dataset_.miniBatch; };
@@ -159,8 +143,6 @@ class PPO {
                                               numOfBranchPerJunct_,
                                               vfunction_,
                                               vis_lv_);
-
-    LOG(INFO) << "PPO Updater";
     PPOUpdater();
   }
 
@@ -169,13 +151,11 @@ class PPO {
  private:
 
   void PPOUpdater() {
-     Utils::timer->startTimer("policy Training");
+    Utils::timer->startTimer("policy Training");
 
     Utils::timer->startTimer("data processing");
-    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj,task_[0], policy_->isRecurrent(), vfunction_, lambda_, true);
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], policy_->isRecurrent(), vfunction_, lambda_, true);
     Utils::timer->stopTimer("data processing");
-
-    LOG(INFO) << "Optimizing policy";
 
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
@@ -186,37 +166,40 @@ class PPO {
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
     vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
 
+    policy_->getStdev(stdev_t);
+
     for (int i = 0; i < n_epoch_; i++) {
 
-      while (Dataset_.iterateBatch(minibatchSize_)) {
+      while (Dataset_.iterateBatch(n_minibatch_)) {
 
         Utils::timer->startTimer("Vfunction update");
-        if(vfunction_->isRecurrent())
+        if (vfunction_->isRecurrent())
           loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,
-                                                              Dataset_.miniBatch->extraTensor2D[0],Dataset_.miniBatch->lengths);
-          else
-        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+                                                              Dataset_.miniBatch->extraTensor2D[0],
+                                                              Dataset_.miniBatch->lengths);
+        else
+          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
 
         policy_->getStdev(stdev_o);
         LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
-        Utils::timer->startTimer("Gradient computation");
 
+        Utils::timer->startTimer("Gradient computation");
         if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
         else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
         Utils::timer->stopTimer("Gradient computation");
 
         LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
-        Utils::logger->appendData("gradnorm", updateN++ , policy_grad.norm());
+        Utils::logger->appendData("gradnorm", updateN++, policy_grad.norm());
 
-        Utils::timer->startTimer("Adam update");
+        Utils::timer->startTimer("SGD");
         policy_->trainUsingGrad(policy_grad);
-        Utils::timer->stopTimer("Adam update");
+        Utils::timer->stopTimer("SGD");
 
-        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_o);
+        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_t);
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       }
       if (KL_adapt_) {
@@ -266,11 +249,8 @@ class PPO {
   int numOfJunct_;
   int numOfBranchPerJunct_;
   int n_epoch_;
-  int minibatchSize_;
+  int n_minibatch_;
   Dtype covIn;
-  Dtype termCost;
-  Dtype discFactor;
-  Dtype dt;
   Dtype maxGradNorm_;
   Dtype clipCoeff_;
   Dtype entCoeff_;
@@ -280,13 +260,14 @@ class PPO {
   bool KL_adapt_;
   int updateN;
   /////////////////////////// batches
-  ValueBatch advantage_ , bellmanErr_;
+  ValueBatch advantage_, bellmanErr_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
   VectorXD algoParams;
 
   Action stdev_o;
+  Action stdev_t;
   Covariance policycov;
 
   /////////////////////////// plotting

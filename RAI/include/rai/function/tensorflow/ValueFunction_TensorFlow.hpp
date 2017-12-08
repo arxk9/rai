@@ -69,7 +69,17 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                    {"trainUsingTargetValue/solver"}, loss);
     return loss[0](0);
   }
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
+    std::vector<MatrixXD> loss;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
 
+    this->tf_->run({states,
+                    values,
+                    lr},
+                   {"trainUsingTargetValue/loss"},
+                   {"trainUsingTargetValue/solver"}, loss);
+    return loss[0](0);
+  }
   virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
     std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
@@ -80,33 +90,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                    {"trainUsingTRValue/loss"},
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
-  }
-//  template <int actionDim>
-//  virtual Dtype performOneSolverIter_trustregion(rai::Algorithm::LearningData<Dtype,stateDim, actionDim>* minibatch , Tensor2D &old_values) {
-//    std::vector<MatrixXD> loss;
-//    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
-//
-//    this->tf_->run({minibatch->states,
-//                    minibatch->values,
-//                    old_values,
-//                    lr},
-//                   {"trainUsingTRValue/loss"},
-//                   {"trainUsingTRValue/solver"}, loss);
-//    return loss[0](0);
-//  }
-
-  virtual Dtype test(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Eigen::Matrix<Dtype,-1,-1> &testout) {
-    std::vector<MatrixXD> test;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
-
-    this->tf_->run({states,
-                    values,
-                    old_values,
-                    lr},
-                   {"test"},
-                   {"trainUsingTRValue/solver"}, test);
-    testout = test[0];
-    return test[0](0);
   }
 
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
@@ -140,6 +123,20 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     input << param_in;
     this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_param_assign"}, dummy);
 
+  }
+
+  virtual Dtype test(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Eigen::Matrix<Dtype,-1,-1> &testout) {
+    std::vector<MatrixXD> test;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+
+    this->tf_->run({states,
+                    values,
+                    old_values,
+                    lr},
+                   {"test"},
+                   {"trainUsingTRValue/solver"}, test);
+    testout = test[0];
+    return test[0](0);
   }
 
  protected:

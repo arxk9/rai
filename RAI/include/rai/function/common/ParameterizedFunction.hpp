@@ -75,6 +75,16 @@ class ParameterizedFunction {
     return Dtype(0);
   };
 
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &targetOutputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  };
+
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &targetOutputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  };
+
   virtual Dtype performOneSolverIter_infimum(InputBatch &states, OutputBatch &targetOutputs, Dtype linSlope) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
@@ -84,10 +94,8 @@ class ParameterizedFunction {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
-  virtual Dtype performOneSolverIter_trustregion(InputBatch &states, OutputBatch &targetOutputs, OutputBatch &old_prediction) {
-    LOG(FATAL) << "NOT IMPLEMENTED";
-    return Dtype(0);
-  };
+
+
   virtual void backward(InputBatch &states, OutputBatch &targetOutputs, ParameterGradient &gradient) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };

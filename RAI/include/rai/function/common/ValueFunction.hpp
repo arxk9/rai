@@ -29,6 +29,10 @@ public:
 
   ValueFunction(){};
   virtual ~ValueFunction(){};
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  };
 
   virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &targetOutputs, ValueBatch &old_prediction) {
     LOG(FATAL) << "NOT IMPLEMENTED";
@@ -44,11 +48,7 @@ public:
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
-//  template <int actionDimension>
-//  virtual Dtype performOneSolverIter_trustregion(rai::Algorithm::LearningData<Dtype,stateDimension, actionDimension>* dataset, Tensor2D &old_prediction) {
-//    LOG(FATAL) << "NOT IMPLEMENTED";
-//    return Dtype(0);
-//  };
+
 };
 
 }} // namespaces
