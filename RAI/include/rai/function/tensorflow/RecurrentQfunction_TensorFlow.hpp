@@ -177,10 +177,11 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
   Dtype getGradient_AvgOf_Q_wrt_action(Dataset *minibatch, Tensor3D &gradients) const
   {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor2D h_({hdim, minibatch->batchNum}, 0, "h_init");
+    Tensor2D hiddenState({hdim, minibatch->batchNum}, "h_init");
+    hiddenState = minibatch->hiddenStates.col(0);
 
     this->tf_->run({minibatch->states,
-                    minibatch->actions, minibatch->lengths,h_},
+                    minibatch->actions, minibatch->lengths,hiddenState},
                    {"gradient_AvgOf_Q_wrt_action", "average_Q_value"}, {}, vectorOfOutputs);
     gradients = (vectorOfOutputs[0]);
     return vectorOfOutputs[1].scalar<Dtype>()();

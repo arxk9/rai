@@ -20,7 +20,6 @@ class RecurrentVfunction(bc.SpecializedFunction):
         # new placeholders
         value_target = tf.placeholder(dtype, shape=[None, None], name='targetValue')
         value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
-
         mask = tf.sequence_mask(gs.seq_length, name='mask')
 
         # Assign ops.
@@ -29,10 +28,12 @@ class RecurrentVfunction(bc.SpecializedFunction):
 
         # solvers
         with tf.name_scope('trainUsingTargetValue'):
-            core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer)
+            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
+            core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=learning_rate))
 
         with tf.name_scope('trainUsingTargetValue_huber'):
-            core.huber_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer)
+            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
+            core.huber_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=learning_rate))
 
         with tf.name_scope('trainUsingTRValue'):
             # Clipping-based trust region loss (https://github.com/openai/baselines/blob/master/baselines/pposgd/pposgd_simple.py)

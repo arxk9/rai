@@ -92,7 +92,6 @@ class RecurrentStochasticPolicy(pc.Policy):
                 Total_loss2 = PPO_loss - tf.multiply(ent_coeff, meanent) + tf.multiply(kl_coeff, tf.reduce_mean(kl_))
 
                 policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list), axis=0), name='Pg')  # flatgrad
-
                 policy_gradient2 = tf.identity(tf.expand_dims(util.flatgrad(Total_loss2, gs.l_param_list), axis=0), name='Pg2')  # flatgrad
 
                 #

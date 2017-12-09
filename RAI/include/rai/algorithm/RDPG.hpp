@@ -73,6 +73,7 @@ class RDPG {
        ReplayMemory_ *memory,
        unsigned batchSize,
        unsigned testingTrajN,
+       Dtype maxGradNorm = 0.1,
        Dtype tau = 1e-3):
       testQ_(testQ),
       qfunction_(qfunction),
@@ -86,7 +87,8 @@ class RDPG {
       tau_(tau),
       testingTrajN_(testingTrajN),
       task_(task),
-      Dataset_(){
+      maxGradNorm_(maxGradNorm),
+      Dataset_(false,true){
 
     ///Construct Dataset
     timeLimit = task_[0]->timeLimit();
@@ -142,15 +144,6 @@ class RDPG {
 
  private:
 
-  void sampleBatchOfInitial(StateBatch &initial) {
-    for (int trajID = 0; trajID < initial.cols(); trajID++) {
-      State state;
-      task_[0]->setToInitialState();
-      task_[0]->getState(state);
-      initial.col(trajID) = state;
-    }
-  }
-
   void learnForOneEpisode() {
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
     acquisitor_->acquireNEpisodes(task_, noiseBasePtr_, policy_, 1);
@@ -194,33 +187,6 @@ class RDPG {
       for(unsigned timeID = 0; timeID< Dataset_.lengths[batchID] - 2 ; timeID++)
         value_target.eTensor()(0,timeID,batchID) = Dataset_.costs.eTensor()(timeID,batchID)  + disFtr * value_.eTensor()(0,timeID+1,batchID) ;
     }
-    StateBatch state_t(StateDim, batSize_*Dataset_.maxLen);
-    Eigen::Matrix<Dtype, 1 , -1> action_t(1, batSize_*Dataset_.maxLen);
-    Eigen::Matrix<Dtype, 1 , -1> value_t(1, batSize_*Dataset_.maxLen);
-
-    std::memcpy(state_t.data(), Dataset_.states.data(),sizeof(Dtype) *state_t.size());
-    std::memcpy(action_t.data(), Dataset_.actions.data(),sizeof(Dtype) *action_t.size());
-    std::memcpy(value_t.data(), value_target.data(),sizeof(Dtype) *value_t.size());
-
-//    std::cout << state_t << std::endl;
-    testQ_->performOneSolverIter(state_t, action_t, value_t);
-//    std::cout << "costs" << std::endl << Dataset_.costs << std::endl;
-//    std::cout << "val" << std::endl << value_.batch(0) << std::endl;
-//    std::cout << "TD" << std::endl << value_t.batch(0) << std::endl;
-//    StateBatch temp;
-//    Eigen::Matrix<Dtype, 1, Eigen::Dynamic> temp2;
-//    Eigen::Matrix<Dtype, 1, Eigen::Dynamic> temp3;
-//
-//    temp.resize(StateDim,Dataset_.maxLen * batSize_);
-//    temp2.resize(1,Dataset_.maxLen * batSize_);
-//    temp3.resize(1,Dataset_.maxLen * batSize_);
-//
-//    for(int i = 0; i<batSize_; i++){
-//      int strid = Dataset_.maxLen * i;
-//    temp.block(0,strid,StateDim, Dataset_.maxLen) = Dataset_.states.batch(0);
-//    temp2.block(0,strid,1, Dataset_.maxLen) = Dataset_.actions.batch(0);
-//    temp3.block(0,strid,1, Dataset_.maxLen) =  value_t.batch(0);
-//    }
 
     qfunction_->performOneSolverIter(&Dataset_, value_target);
     Utils::timer->stopTimer("Qfunction update");
@@ -251,6 +217,7 @@ class RDPG {
   double timeLimit;
   unsigned batSize_;
   Dtype tau_;
+  Dtype maxGradNorm_;
 
   /////////////////////////// plotting
   int iterNumber_ = 0;

@@ -23,6 +23,8 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
                                                                                                 actionDim> {
 
  public:
+  typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
+  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
   using Pfunction_tensorflow = RecurrentParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim>;
   using Qfunction_tensorflow = RecurrentQfunction_TensorFlow<Dtype, stateDim, actionDim>;
@@ -105,6 +107,13 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     h.copyDataFrom(vectorOfOutputs[1]);
     actions.copyDataFrom(vectorOfOutputs[0]);
   }
+  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &hiddenstates) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+
+    this->tf_->run({states, hiddenstates, len}, {"action", "h_state"}, {}, vectorOfOutputs);
+    actions.copyDataFrom(vectorOfOutputs[0]);
+  }
 
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
 //    std::vector<MatrixXD> loss, dummy;
@@ -124,7 +133,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
 
     if (h.cols() != minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
-    h.setZero();
+    h = minibatch->hiddenStates.col(0);
 
     this->tf_->run({minibatch->states, minibatch->lengths, actions, h, lr},
                    {"trainUsingTargetAction/loss"},
@@ -137,22 +146,21 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     std::vector<MatrixXD> dummy;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingCritic/learningRate");
+    Tensor2D hiddenState({hdim, minibatch->batchNum}, "h_init");
+    hiddenState = minibatch->hiddenStates.col(0);
 
     auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     gradients.resize(minibatch->actions.dim());
-    if (h.cols() != minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
-    h.setZero();
 
-    forward(minibatch->states, minibatch->actions);
+    forward(minibatch->states, minibatch->actions, hiddenState);
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(minibatch, gradients);
-//    std::cout << "grad" << std::endl << gradients<< std::endl;
 
-    this->tf_->run({minibatch->states, minibatch->lengths, h, gradients, lr}, {"trainUsingCritic/gradnorm"},
+    this->tf_->run({minibatch->states, minibatch->lengths, hiddenState, gradients, lr}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
-    LOG(INFO) << dummy[0](0);
     return averageQ;
   }
+
   Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states) {};
 
   Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco) {

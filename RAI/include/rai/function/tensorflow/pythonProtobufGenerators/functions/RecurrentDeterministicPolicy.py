@@ -14,7 +14,11 @@ class RecurrentDeterministicPolicy(pc.Policy):
         mask = tf.sequence_mask(gs.seq_length, name='mask')
         action_masked = tf.boolean_mask(action, mask)
 
+        # variables
+        max_grad_norm = tf.Variable(0.5, name='max_grad_norm')
+
         # new placeholders
+        gradNorm_placeholder = tf.placeholder(dtype, name='gradNorm_placeholder')
         action_target = tf.placeholder(dtype, shape=[None, None, action_dim], name='targetAction')
 
         # gradients
@@ -26,15 +30,18 @@ class RecurrentDeterministicPolicy(pc.Policy):
             tf.stack([tf.gradients(action[:, :, idx], state) for idx in range(action_dim)], axis=3)[0, 0, :, :],
             name='jac_Action_wrt_State')
 
+        # Operations
+        gradNorm_assign_ops = tf.assign(max_grad_norm, gradNorm_placeholder, name='max_norm_assign')
+
         with tf.name_scope('trainUsingCritic'):
             gradient_from_critic = tf.placeholder(dtype, shape=[None, None, action_dim], name='gradientFromCritic')
+            gradient_from_critic_masked = tf.boolean_mask(gradient_from_critic, mask)
             train_using_critic_learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'),
                                                           shape=[])
             train_using_critic_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate)
-            manipulated_parameter_gradients = []
-            for parameter in gs.l_param_list:
-                manipulated_parameter_gradients += [tf.gradients(action_masked, parameter, gradient_from_critic)][0]
-            grad_norm = tf.reduce_sum([tf.norm(grad) for grad in manipulated_parameter_gradients], name='gradnorm')
-            manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
+            grads = tf.gradients(action_masked, gs.l_param_list, gradient_from_critic_masked)
+            grads, grad_norm = tf.clip_by_global_norm(grads, clip_norm=max_grad_norm)
+            tf.identity(grad_norm, name="gradnorm")
+            manipulated_parameter_gradients_and_parameters = zip(grads, gs.l_param_list)
             train_using_critic_apply_gradients = train_using_critic_optimizer.apply_gradients(
                 manipulated_parameter_gradients_and_parameters, name='applyGradients')

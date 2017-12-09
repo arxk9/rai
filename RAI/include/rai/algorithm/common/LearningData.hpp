@@ -56,6 +56,31 @@ class LearningData {
     lengths = "length";
     termtypes = "termtypes";
   };
+  LearningData(bool useminibatch, bool recurrent = false)
+      : maxLen(0),
+        batchNum(0),
+        batchID(0),
+        dataN(0),
+        miniBatch(nullptr),
+        extraTensor1D(0),
+        extraTensor2D(0),
+        extraTensor3D(0),
+        hDim(-1), isRecurrent(recurrent) {
+    if(useminibatch) miniBatch = new LearningData<Dtype, StateDim, ActionDim>;
+    states = "state";
+    actions = "sampledAction";
+    actionNoises = "actionNoise";
+//    hiddenStates = "h_init";
+
+    costs = "costs";
+    values = "targetValue";
+    advantages = "advantage";
+//    stdevs = "stdevs";
+
+    lengths = "length";
+    termtypes = "termtypes";
+  };
+
 
   ///method for additional data
   void append(Tensor1D &newData) {
@@ -304,9 +329,37 @@ class LearningData {
     }
     Utils::timer->stopTimer("GAE");
   }
+  void resize(int hdim, int maxlen, int batches) {
+    ///For recurrent functions.
+    ///Keep first dimension.
+
+    maxLen = maxlen;
+    batchNum = batches;
+
+    states.resize(StateDim, maxlen, batches);
+    actions.resize(ActionDim, maxlen, batches);
+    actionNoises.resize(ActionDim, maxlen, batches);
+
+    costs.resize(maxlen, batches);
+    if (useValue) values.resize(maxlen, batches);
+    if (useAdvantage) advantages.resize(maxlen, batches);
+
+    if (isRecurrent) lengths.resize(batches);
+    if (isRecurrent) hiddenStates.resize(hdim, maxlen, batches);
+    termtypes.resize(batches);
+
+    for (int k = 0; k < extraTensor1D.size(); k++)
+      extraTensor1D[k].resize(batches);
+    for (int k = 0; k < extraTensor2D.size(); k++)
+      extraTensor2D[k].resize(maxlen, batches);
+    for (int k = 0; k < extraTensor3D.size(); k++)
+      extraTensor3D[k].resize(extraTensor3D[k].dim(0), maxlen, batches);
+  }
 
   void resize(int maxlen, int batches) {
     ///Keep first dimension.
+
+    LOG_IF(FATAL, isRecurrent && hDim == -1) << "you should set this->hDim first or call resize(hdim, maxlen, batches)";
 
     maxLen = maxlen;
     batchNum = batches;
@@ -397,7 +450,7 @@ class LearningData {
 
   bool useValue = false;
   bool useAdvantage = false;
-  bool isRecurrent = false;
+  bool isRecurrent;
 
   Tensor3D states;
   Tensor3D actions;

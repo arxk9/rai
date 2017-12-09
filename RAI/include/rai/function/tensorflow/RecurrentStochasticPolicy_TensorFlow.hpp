@@ -33,8 +33,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
-  using RecurrentState = Eigen::VectorXd;
-  using RecurrentStateBatch = Eigen::MatrixXd;
   typedef typename PolicyBase::Action Action;
   typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;

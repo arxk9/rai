@@ -25,7 +25,9 @@ class Qfunction(bc.SpecializedFunction):
 
         # solvers
         with tf.name_scope('trainUsingTargetQValue'):
-            core.square_loss_opt(dtype, q_value_target, q_value, tf.train.AdamOptimizer)
+            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
+            core.square_loss_opt(dtype, q_value_target, q_value, tf.train.AdamOptimizer(learning_rate=learning_rate))
 
         with tf.name_scope('trainUsingTargetQValue_huber'):
-            core.huber_loss_opt(dtype, q_value_target, q_value, tf.train.AdamOptimizer)
+            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
+            core.huber_loss_opt(dtype, q_value_target, q_value, tf.train.AdamOptimizer(learning_rate=learning_rate))

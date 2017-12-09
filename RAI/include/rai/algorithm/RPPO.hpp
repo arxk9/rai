@@ -95,10 +95,9 @@ class RPPO {
       covIn_(noiseCov),
       maxGradNorm_(maxGradNorm),
       clipCoeff_(clipCoeff),
-      entCoeff_(entCoeff), vCoeff_(vCoeff), Dataset_() {
+      entCoeff_(entCoeff), vCoeff_(vCoeff), Dataset_(true, true) {
 
     ///Construct Dataset
-    Dataset_.miniBatch = new Dataset;
     ///Additional valueTensor for Trustregion update
     Tensor<Dtype, 2> valuePred("predictedValue");
     Dataset_.append(valuePred);

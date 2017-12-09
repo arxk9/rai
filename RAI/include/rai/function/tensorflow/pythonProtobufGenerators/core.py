@@ -119,36 +119,45 @@ def gpu_config(dev_list, gs):
 #         return self.Param
 
 # loss function related
-def huber_loss(labels, predictions, delta=1e-1, name=None, extraCost=0):
+def huber_loss(labels, predictions, delta=1e-1, extraCost=0, name=None):
     cutoffline = tf.constant(value=delta, dtype=labels.dtype)
     residual = tf.sqrt(tf.reduce_sum(tf.square(predictions - labels), axis=1))
     condition = tf.less(residual, delta)
     small_res = 0.5 * tf.square(residual)
     large_res = cutoffline * residual - 0.5 * tf.square(cutoffline)
-    return tf.reduce_mean(tf.where(condition, small_res, large_res), 0, name=name)
+    return tf.reduce_mean(tf.where(condition, small_res, large_res), 0, name=name) + extraCost
 
 
-def infimum_loss(labels, predictions, underesterror=1e-3, name=None, extraCost=0):
+def infimum_loss(labels, predictions, underesterror=1e-3, extraCost=0, name=None):
     residual = labels - predictions
     condition = tf.less(residual, 0)
     small_res = 0.5 * tf.square(residual)
     large_res = underesterror * residual
-    return tf.reduce_mean(tf.where(condition, small_res, large_res), 0, name=name)
+    return tf.reduce_mean(tf.where(condition, small_res, large_res), 0, name=name) + extraCost
 
+def huber_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
+    loss = huber_loss(target, value, extraCost, name='loss')
+    grad = optimizer.compute_gradients(loss)
+    if maxnorm is not None:
+        grads, variables = zip(*grad)
+        grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
+        grad = zip(grads, variables)
+    train = optimizer.apply_gradients(grad, name='solver')
 
-def huber_loss_opt(dtype, target, value, optimizer, extraCost=0):
-    loss = huber_loss(target, value, name='loss')
-    learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-    train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)
+def infimum_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
+    loss = infimum_loss(target, value, extraCost, name='loss')
+    grad = optimizer.compute_gradients(loss)
+    if maxnorm is not None:
+        grads, variables = zip(*grad)
+        grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
+        grad = zip(grads, variables)
+    train = optimizer.apply_gradients(grad, name='solver')
 
-
-def infimum_loss_opt(dtype, target, value, optimizer, extraCost=0):
-    loss = infimum_loss(target, value, name='loss')
-    learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-    train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)
-
-
-def square_loss_opt(dtype, target, value, optimizer, extraCost=0):
+def square_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
     loss = tf.reduce_mean(tf.square(target - value), name='loss') + extraCost
-    learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-    train = optimizer(learning_rate=learning_rate).minimize(loss, name='solver', colocate_gradients_with_ops=True)
+    grad = optimizer.compute_gradients(loss)
+    if maxnorm is not None:
+        grads, variables = zip(*grad)
+        grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
+        grad = zip(grads, variables)
+    train = optimizer.apply_gradients(grad, name='solver')

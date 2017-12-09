@@ -94,10 +94,9 @@ class PPO {
       KLThres_(KLThres),
       KLCoeff_(KL_coeff),
       clipCoeff_(clipCoeff),
-      entCoeff_(entCoeff), Dataset_() {
+      entCoeff_(entCoeff), Dataset_(true) {
     updateN = 0;
     ///Construct Dataset
-    Dataset_.miniBatch = new Dataset;
     ///Additional valueTensor for Trustregion update
     Tensor<Dtype, 2> valuePred("predictedValue");
     Dataset_.append(valuePred);

@@ -42,16 +42,28 @@ class DeterministicPolicy : public virtual Policy <Dtype, stateDim, actionDim> {
 
   virtual void forward(Tensor3D &states, Tensor3D &actions) =0;
 
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) = 0;
+  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return 0;
+  };
 
-  virtual Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states) = 0;
+  virtual Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return 0;
+  };
 
-  virtual Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco) = 0;
+  virtual Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return 0;
+  };
 
-  virtual void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) = 0;
+  virtual void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
 
-  virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) = 0;
-
+  virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
 };
 
 }} // namespaces

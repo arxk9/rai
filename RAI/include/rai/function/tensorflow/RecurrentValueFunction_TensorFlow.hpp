@@ -22,8 +22,6 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
 
   typedef typename ValueFunctionBase::State State;
   typedef typename ValueFunctionBase::StateBatch StateBatch;
-  using RecurrentState = Eigen::VectorXd;
-  using RecurrentStateBatch = Eigen::MatrixXd;
   typedef typename ValueFunctionBase::Value Value;
   typedef typename ValueFunctionBase::ValueBatch ValueBatch;
   typedef typename ValueFunctionBase::Gradient Gradient;
