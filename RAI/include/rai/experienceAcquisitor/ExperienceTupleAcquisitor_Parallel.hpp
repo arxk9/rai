@@ -25,9 +25,11 @@ class ExperienceTupleAcquisitor_Parallel : public ExperienceTupleAcquisitor<Dtyp
                        std::vector<Noise_*> &noise,
                        ReplayMemory_ *memory,
                        unsigned stepsToTake) {
-    for(unsigned stepId = 0; stepId < stepsToTake / task.size(); stepId++)
+    int nIter = stepsToTake / task.size();
+    nIter = std::max(1,nIter);
+    for(unsigned stepId = 0; stepId < nIter; stepId++)
       CommonFunc<Dtype, StateDim, ActionDim, 0>::takeOneStepInBatch(task, policy, noise, memory);
-    this->incrementSteps(stepsToTake / task.size() * task.size());
+    this->incrementSteps( nIter * task.size());
   }
 };
 
