@@ -9,6 +9,9 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                                  public virtual ValueFunction<Dtype, stateDim> {
 
  public:
+  typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
+  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
+
   using ValueFunctionBase = ValueFunction<Dtype, stateDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, 1>;
 
@@ -18,6 +21,10 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   typedef typename ValueFunctionBase::ValueBatch ValueBatch;
   typedef typename ValueFunctionBase::Gradient Gradient;
   typedef typename ValueFunctionBase::Jacobian Jacobian;
+
+  typedef typename ValueFunctionBase::Tensor1D Tensor1D;
+  typedef typename ValueFunctionBase::Tensor2D Tensor2D;
+  typedef typename ValueFunctionBase::Tensor3D Tensor3D;
 
   ValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -49,6 +56,12 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     values = vectorOfOutputs[0];
   }
 
+  virtual void forward(Tensor3D &states, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states}, {"value"}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+
   virtual Dtype performOneSolverIter(StateBatch &states, ValueBatch &values) {
     std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
@@ -59,7 +72,16 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                    {"trainUsingTargetValue/solver"}, loss);
     return loss[0](0);
   }
-
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
+    std::vector<MatrixXD> loss;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
+    this->tf_->run({states,
+                    values,
+                    lr},
+                   {"trainUsingTargetValue/loss"},
+                   {"trainUsingTargetValue/solver"}, loss);
+    return loss[0](0);
+  }
   virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
     std::vector<MatrixXD> loss, dummy;
     this->tf_->run({{"state", states},
@@ -72,6 +94,17 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     return loss[0](0);
   }
 
+  virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
+    std::vector<MatrixXD> loss;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+    this->tf_->run({states,
+                    values,
+                    old_values,
+                    lr},
+                   {"trainUsingTRValue/loss"},
+                   {"trainUsingTRValue/solver"}, loss);
+    return loss[0](0);
+  }
   virtual Dtype performOneSolverIter_infimum(StateBatch &states, ValueBatch &values, Dtype linSlope) {
     std::vector<MatrixXD> loss, dummy;
     auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
@@ -85,16 +118,33 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     return loss[0](0);
   }
 
-  void setClipRate(const Dtype param_in){
+  virtual void setClipRate(const Dtype param_in){
     std::vector<MatrixXD> dummy;
-    Eigen::VectorXd input;
+    VectorXD input(1);
     input << param_in;
     this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_param_assign"}, dummy);
 
   }
 
- protected:
-  using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
+  virtual void setMaxGradNorm(const Dtype Threshold){
+    std::vector<MatrixXD> dummy;
+    VectorXD input(1);
+    input << Threshold;
+    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"grad_param_assign"}, dummy);
+  }
+
+  virtual Dtype test(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Eigen::Matrix<Dtype,-1,-1> &testout) {
+    std::vector<MatrixXD> test;
+    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+    this->tf_->run({states,
+                    values,
+                    old_values,
+                    lr},
+                   {"test"},
+                   {"trainUsingTRValue/solver"}, test);
+    testout = test[0];
+    return test[0](0);
+  }
 
 };
 } // namespace FuncApprox

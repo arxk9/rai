@@ -21,6 +21,8 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   typedef typename QfunctionBase::Jacobian Jacobian;
   typedef typename QfunctionBase::Value Value;
   typedef typename QfunctionBase::ValueBatch ValueBatch;
+  typedef typename QfunctionBase::Dataset Dataset;
+
   typedef Eigen::Matrix<Dtype, actionDim, Eigen::Dynamic> JacobianQwrtActionBatch;
 
   Qfunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
@@ -38,7 +40,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   virtual void forward(State &state, Action &action, Dtype &value) {
     std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", state},
-                    {"action", action},
+                    {"sampledAction", action},
                     {"updateBNparams", this->notUpdateBN}},
                    {"QValue"}, {}, vectorOfOutputs);
     value = vectorOfOutputs[0](0);
@@ -47,7 +49,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   virtual void forward(StateBatch &states, ActionBatch &actions, ValueBatch &values) {
     std::vector<MatrixXD> vectorOfOutputs;
     this->tf_->run({{"state", states},
-                    {"action", actions},
+                    {"sampledAction", actions},
                     {"updateBNparams", this->notUpdateBN}},
                    {"QValue"}, {}, vectorOfOutputs);
     values = vectorOfOutputs[0];
@@ -56,14 +58,14 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions, ValueBatch &values) {
     std::vector<MatrixXD> outputs, dummy;
     this->tf_->run({{"state", states},
-                    {"action", actions},
+                    {"sampledAction", actions},
                     {"targetQValue", values},
                     {"trainUsingTargetQValue/learningRate", this->learningRate_},
                     {"updateBNparams",
                      this->notUpdateBN}}, {"trainUsingTargetQValue/loss"},
                    {"trainUsingTargetQValue/solver"}, outputs);
     this->tf_->run({{"state", states},
-                    {"action", actions},
+                    {"sampledAction", actions},
                     {"updateBNparams",
                      this->updateBN}}, {},
                    {"QValue"}, dummy);
@@ -74,7 +76,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
     std::vector<MatrixXD> outputs, dummy;
     auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
     this->tf_->run({{"state", states},
-                    {"action", actions},
+                    {"sampledAction", actions},
                     {"targetQValue", values},
                     {"trainUsingTargetQValue_infimum/linSlope", slope},
                     {"trainUsingTargetQValue_infimum/learningRate", this->learningRate_},
@@ -82,7 +84,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
                      this->notUpdateBN}}, {"trainUsingTargetQValue_infimum/loss"},
                    {"trainUsingTargetQValue_infimum/solver"}, outputs);
     this->tf_->run({{"state", states},
-                    {"action", actions},
+                    {"sampledAction", actions},
                     {"updateBNparams",
                      this->updateBN}}, {},
                    {"QValue"}, dummy);
@@ -93,7 +95,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
                                        JacobianQwrtActionBatch &gradients) const {
     std::vector<MatrixXD> outputs;
     this->tf_->run({{"state", states},
-                    {"action", actions},
+                    {"sampledAction", actions},
                     {"updateBNparams", this->notUpdateBN}},
                    {"gradient_AvgOf_Q_wrt_action", "average_Q_value"}, {}, outputs);
     gradients = outputs[0];

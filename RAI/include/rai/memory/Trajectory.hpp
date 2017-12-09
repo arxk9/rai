@@ -26,12 +26,17 @@ class Trajectory {
   typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, -1> CostBatch;
+  typedef Eigen::Matrix<Dtype, -1, 1> HiddenState;
+
   using Vfunction_ = FuncApprox::ValueFunction<Dtype, stateDim>;
 
   Trajectory() {}
   ~Trajectory() {}
 
   //////////////////////////// core methods /////////////////////////////////
+  void pushBackHiddenState(HiddenState &hiddenState){
+    hiddenStateTraj.push_back(hiddenState);
+  }
 
   void pushBackTrajectory(State &state,
                           Action &action,
@@ -89,6 +94,7 @@ class Trajectory {
     actionTraj.clear();
     stateTraj.clear();
     actionNoiseTraj.clear();
+    hiddenStateTraj.clear();
     costTraj.clear();
     accumCostTraj.clear();
     valueTraj.clear();
@@ -149,8 +155,9 @@ class Trajectory {
     advantage.resize(1, size() - 1);
     advantage[size() - 2] = bellmanErr[size() - 2];
     Dtype fctr = gamma * lambda;
-    for (int timeID = size() - 3; timeID > -1; timeID--)
+    for (int timeID = size() - 3; timeID > -1; timeID--) {
       advantage[timeID] = fctr * advantage[timeID + 1] + bellmanErr[timeID];
+    }
     gaeUpdated = true;
     return advantage;
   }
@@ -211,6 +218,8 @@ class Trajectory {
   std::vector<State> stateTraj;
   std::vector<Action> actionTraj;
   std::vector<Action> actionNoiseTraj;
+  std::vector<HiddenState> hiddenStateTraj;
+
   std::vector<Dtype> costTraj, accumCostTraj;
   std::vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;

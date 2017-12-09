@@ -42,7 +42,7 @@ Dtype sample(double dummy) {
 
 int main() {
   RAI_init();
-  constexpr int stateDimension = 5;
+  constexpr int stateDimension = 3;
   constexpr int actionDimension = 3;
 
   bool testCopyStructureCopyWeightAndWeightInterpolation = true;
@@ -61,8 +61,8 @@ int main() {
   ActionBatch actionBatch = ActionBatch::Random(actionDimension, batchSize);
   ValueBatch qValueTargetBatch = ((stateBatch.array()*4).sin()).square().colwise().sum();
   ValueBatch Qtest,Qtest2;
-  Qfunction_TensorFlow Q("cpu", "MLP2", "relu 1e-3 5 3 32 32 1", 0.001);
-  Qfunction_TensorFlow Qo("cpu", "MLP2", "relu 1e-3 5 3 32 32 1", 0.001);
+  Qfunction_TensorFlow Q("cpu", "MLP2", "relu 1e-3 3 3 32 32 1", 0.001);
+  Qfunction_TensorFlow Qo("cpu", "MLP2", "relu 1e-3 3 3 32 32 1", 0.001);
   VectorXD param,paramo;
 
   LOG(INFO) << "param # :" <<   Qo.getLPSize()- Q.getLPSize()<< ", "<< Qo.getAPSize()-Q.getAPSize();
@@ -83,8 +83,8 @@ int main() {
     cout << "Test: Policy::copyStructureFrom" << endl;
 
 
-    Qfunction_TensorFlow qfunction1("cpu", "MLP2", "relu 5e-3 5 3 2 2 2 2 1", 0.001);
-    Qfunction_TensorFlow qfunction2("cpu", "MLP2", "relu 5e-3 5 3 2 2 2 2 1", 0.001);
+    Qfunction_TensorFlow qfunction1("cpu", "MLP2", "relu 5e-3 3 3 2 2 2 2 1", 0.001);
+    Qfunction_TensorFlow qfunction2("cpu", "MLP2", "relu 5e-3 3 3 2 2 2 2 1", 0.001);
 
     qfunction2.copyStructureFrom(&qfunction1);
 
@@ -93,8 +93,8 @@ int main() {
     for (int iteration = 0; iteration < nIterations; ++iteration) {
       StateBatch stateBatch = StateBatch::Random(stateDimension, batchSize);
       ActionBatch actionBatch = ActionBatch::Random(actionDimension, batchSize);
-//      ValueBatch qValueTargetBatch = ((stateBatch.array()*4).sin() - actionBatch.array()).square().colwise().sum();
-      ValueBatch qValueTargetBatch = ((stateBatch.array()*4).sin()).square().colwise().sum();
+      ValueBatch qValueTargetBatch = ((stateBatch.array()*4).sin() - actionBatch.array()).square().colwise().sum();
+//      ValueBatch qValueTargetBatch = ((stateBatch.array()*4).sin()).square().colwise().sum();
       Dtype loss = qfunction1.performOneSolverIter(stateBatch, actionBatch, qValueTargetBatch);
       if (iteration % 100 == 0) cout << iteration << ", loss = "<<loss<< endl;
     }

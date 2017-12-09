@@ -24,15 +24,7 @@ class DeterministicPolicy(pc.Policy):
             gradient_from_critic = tf.placeholder(dtype, shape=[None, action_dim], name='gradientFromCritic')
             train_using_critic_learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
             train_using_critic_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate)
-            manipulated_parameter_gradients = []
-            for parameter in gs.l_param_list:
-                manipulated_parameter_gradients += [tf.gradients(action, parameter, gradient_from_critic)][0]
-            manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
+            grads = tf.gradients(action, gs.l_param_list, gradient_from_critic)
+            grad_norm = tf.reduce_sum([tf.norm(grad) for grad in grads], name='gradnorm')
+            manipulated_parameter_gradients_and_parameters = zip(grads, gs.l_param_list)
             train_using_critic_apply_gradients = train_using_critic_optimizer.apply_gradients(manipulated_parameter_gradients_and_parameters, name='applyGradients')
-
-        # solvers
-        with tf.name_scope('trainUsingTargetQValue'):
-            core.square_loss_opt(dtype, action_target, action, tf.train.AdamOptimizer)
-
-        with tf.name_scope('trainUsingTargetQValue_huber'):
-            core.huber_loss_opt(dtype, action_target, action, tf.train.AdamOptimizer)

@@ -85,8 +85,8 @@ int main() {
 
 //  StateTensor = "state";
   StateTensor3 = "state";
-  ActionTensor = "sampled_oa";
-  ActionNTensor = "noise_oa";
+  ActionTensor = "sampledAction";
+  ActionNTensor = "actionNoise";
   len = "length";
   StateTensor3.resize(stateBatch.rows(),1,stateBatch.cols());
   StateTensor3.copyDataFrom(stateBatch);

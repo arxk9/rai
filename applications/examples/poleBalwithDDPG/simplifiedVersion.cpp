@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   std::vector<rai::Task::Task<Dtype,StateDim,ActionDim,0> *> taskVector = {&task};
   std::vector<Noise*> noiseVector = {&noise};
   rai::Algorithm::DDPG<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &qfunction, &qfunction_target, &policy, &policy_target, noiseVector, &acquisitor, &replayMemorySARS, 80, 1, 1e-3);
+      algorithm(taskVector, &qfunction, &qfunction_target, &policy, &policy_target, noiseVector, &acquisitor, &replayMemorySARS, 4, 4, 100, 1, 1e-3);
   algorithm.setVisualizationLevel(1);
 
   ////////////////////////// Learning /////////////////////////////////

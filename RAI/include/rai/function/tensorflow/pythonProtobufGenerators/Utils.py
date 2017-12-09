@@ -14,19 +14,22 @@ class Utils:
     def numel(self, x):
         return np.prod(self.var_shape(x))
 
-    def flatgrad(self, loss, var_list):
+
+    def flatgrad(self, loss, var_list, maxnorm=None):
         grads = tf.gradients(loss, var_list)
+        if maxnorm is not None:
+            grads, _ = tf.clip_by_global_norm(grads, maxnorm)
         return tf.reshape(tf.concat([tf.reshape(grad, [self.numel(v)]) for (v, grad) in zip(var_list, grads)], axis=0),
                           [1, -1])
 
-    def log_likelihood(self, mean, stdev, a=None):
+    def log_likelihood(self, mean, stdev, sampledAction=None):
         dim = tf.cast(tf.shape(mean)[-1], dtype=self.Dtype)
-        if a is None:
+        if sampledAction is None:
             return - 0.5 * tf.reduce_sum(tf.square(mean / stdev), axis=-1) - \
                    tf.reduce_sum(tf.log(stdev), axis=-1) - \
                    0.5 * tf.cast(tf.log(2.0 * np.pi), self.Dtype) * dim
         else:
-            return - 0.5 * tf.reduce_sum(tf.square((a - mean) / stdev), axis=-1) - \
+            return - 0.5 * tf.reduce_sum(tf.square((sampledAction - mean) / stdev), axis=-1) - \
                    tf.reduce_sum(tf.log(stdev), axis=-1) - \
                    0.5 * tf.cast(tf.log(2.0 * np.pi), self.Dtype) * dim
 

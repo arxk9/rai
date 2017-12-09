@@ -155,32 +155,132 @@ class TensorBase {
   ///////////////////////////////
   ////////// operators //////////
   ///////////////////////////////
-  void operator=(const tensorflow::Tensor &tfTensor) {
+  TensorBase<Dtype, NDim>& operator=(const TensorBase<Dtype, NDim> &rTensor) {
+    ///copy everything except for the name
+    dim_ = rTensor.dim_;
+    dim_inv_ = rTensor.dim_inv_;
+    size_ = rTensor.size_;
+    esizes_ = rTensor.esizes_;
+    vecTens = rTensor.vecTens;
+    std::memcpy(namedTensor_.second.flat<Dtype>().data(), rTensor.namedTensor_.second.template flat<Dtype>().data(), sizeof(Dtype) * size_);
+    return *this;
+  }
+
+  TensorBase<Dtype, NDim>& operator=(const tensorflow::Tensor &tfTensor) {
     LOG_IF(FATAL, dim_inv_ != tfTensor.shape()) << "Tensor shape mismatch";
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), tfTensor.flat<Dtype>().data(), sizeof(Dtype) * size_);
+    return *this;
   }
 
-  void operator=(const std::string name) {
+  TensorBase<Dtype, NDim>& operator=(const std::string name) {
     setName(name);
+    return *this;
   }
 
-  void operator=(const Eigen::Tensor<Dtype, NDim> &eTensor) {
+  TensorBase<Dtype, NDim>& operator=(const Eigen::Tensor<Dtype, NDim> &eTensor) {
     for (int i = 0; i < NDim; i++)
       LOG_IF(FATAL, dim_[i] != eTensor.dimension(i))
       << "Tensor size mismatch: " << i << "th Dim " << dim_[i] << "vs" << eTensor.dimension(i);
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), eTensor.data(), sizeof(Dtype) * size_);
+    return *this;
   }
 
-  void operator-=(TensorBase<Dtype, NDim> &other) {
+  TensorBase<Dtype, NDim>& operator-=(const TensorBase<Dtype, NDim> &other) {
     LOG_IF(FATAL, size() != other.size())<<"size mismatch";
     for (int i = 0; i < size(); i++)
       data()[i] -= other.data()[i];
+    return *this;
   }
 
-  void operator+=(TensorBase<Dtype, NDim> &other) {
+  TensorBase<Dtype, NDim>& operator+=(const TensorBase<Dtype, NDim> &other) {
     LOG_IF(FATAL, size() != other.size())<<"size mismatch";
     for (int i = 0; i < size(); i++)
       data()[i] += other.data()[i];
+    return *this;
+  }
+
+  friend TensorBase<Dtype, NDim> operator-(const TensorBase<Dtype, NDim> &lhs, const TensorBase<Dtype, NDim> & rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result -= rhs;
+    return result;
+  }
+  friend TensorBase<Dtype, NDim>&& operator-(TensorBase<Dtype, NDim> &&lhs, const TensorBase<Dtype, NDim> & rhs) {
+    return std::move(lhs -= rhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator-(const TensorBase<Dtype, NDim> &lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(rhs -= lhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator-(TensorBase<Dtype, NDim> &&lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(rhs -= lhs);
+  }
+
+  friend TensorBase<Dtype, NDim> operator+(const TensorBase<Dtype, NDim> &lhs, const TensorBase<Dtype, NDim> & rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result += rhs;
+    return result;
+  }
+  friend TensorBase<Dtype, NDim>&& operator+(TensorBase<Dtype, NDim> &&lhs, const TensorBase<Dtype, NDim> & rhs) {
+    return std::move(lhs += rhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator+(const TensorBase<Dtype, NDim> &lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(rhs += lhs);
+  }
+  friend TensorBase<Dtype, NDim>&& operator+(TensorBase<Dtype, NDim> &&lhs, TensorBase<Dtype, NDim> && rhs) {
+    return std::move(lhs += rhs);
+  }
+  // TODO: Matmul, *
+
+  ///scalar operators
+  rai::TensorBase<Dtype, NDim>& operator+=(const Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] += rhs;
+    return *this;
+  }
+  TensorBase<Dtype, NDim>& operator-=(const Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] -= rhs;
+    return *this;
+  }
+  TensorBase<Dtype, NDim>& operator*=(const Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] *= rhs;
+    return *this;
+  }
+  TensorBase<Dtype, NDim>& operator/=(const Dtype rhs) {
+    for (int i = 0; i < size(); i++)
+      data()[i] /= rhs;
+    return *this;
+  }
+
+  friend TensorBase<Dtype, NDim> operator+(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+  TensorBase<Dtype, NDim> result(lhs);
+    result += rhs;
+    return result;
+  }
+  friend TensorBase<Dtype, NDim> operator+(Dtype lhs, TensorBase<Dtype, NDim> &rhs) {
+    return operator+(rhs, lhs);
+  }
+
+  friend TensorBase<Dtype, NDim> operator-(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result -= rhs;
+    return result;
+  }
+  friend TensorBase<Dtype, NDim> operator-(Dtype lhs, TensorBase<Dtype, NDim> &rhs) {
+    return operator-(rhs, lhs);
+  }
+  friend TensorBase<Dtype, NDim> operator*(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result *= rhs;
+    return result;
+  }
+  friend TensorBase<Dtype, NDim> operator*(Dtype lhs, TensorBase<Dtype, NDim> &rhs) {
+    return operator*(rhs, lhs);
+  }
+  friend TensorBase<Dtype, NDim> operator/(TensorBase<Dtype, NDim> &lhs, Dtype rhs) {
+    TensorBase<Dtype, NDim> result(lhs);
+    result /= rhs;
+    return result;
   }
 
   template<int rows, int cols>
@@ -200,9 +300,21 @@ class TensorBase {
 //    return vecTens[x].flat<Dtype>().data();
 //  };
 
-  Dtype &operator[](int i) {
+  Dtype& operator[](int i) {
     return namedTensor_.second.flat<Dtype>().data()[i];
-  };
+  }
+
+  Dtype& at(int i){
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  }
+
+  const Dtype& operator[](int i) const {
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  }
+
+  const Dtype& at(int i) const {
+    return namedTensor_.second.flat<Dtype>().data()[i];
+  }
 
   ///////////////////////////////
   /////////// generic ///////////
@@ -606,14 +718,15 @@ class Tensor<Dtype, 3> : public rai::TensorBase<Dtype, 3> {
 
   template<int rows>
   void partiallyFillBatch(int batchId, std::vector<Eigen::Matrix<Dtype, rows, 1>> &eMatVec, int ignoreLastN = 0) {
-    LOG_IF(FATAL, dim_[0] != rows) << "Column size mismatch ";
+    LOG_IF(FATAL, dim_[0] != eMatVec[0].rows()) << "Column size mismatch " <<  dim_[0] << "vs." <<eMatVec[0].rows() ;
     for (int colId = 0; colId < eMatVec.size() - ignoreLastN; colId++)
       batch(batchId).col(colId) = eMatVec[colId];
   }
 };
 
+
 template<typename Dtype, int NDim>
-std::ostream &operator<<(std::ostream &os, Tensor<Dtype, NDim> &m) {
+std::ostream &operator<<(std::ostream &os, TensorBase<Dtype, NDim> &m) {
   os << m.eTensor();
   return os;
 }

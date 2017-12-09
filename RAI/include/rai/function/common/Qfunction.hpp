@@ -7,8 +7,8 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
-
 #include "ParameterizedFunction.hpp"
+#include <rai/algorithm/common/LearningData.hpp>
 
 namespace rai {
 namespace FuncApprox {
@@ -18,7 +18,8 @@ class Qfunction : public virtual ParameterizedFunction <Dtype, stateDimension + 
 
 public:
 
-  using FunctionBase = ParameterizedFunction <Dtype, stateDimension, 1>;
+  using FunctionBase = ParameterizedFunction <Dtype, stateDimension + actionDimension, 1>;
+  using Dataset = rai::Algorithm::LearningData<Dtype,stateDimension, actionDimension>;
 
   typedef typename FunctionBase::Input StateAction;
   typedef typename FunctionBase::InputBatch StateActionBatch;
@@ -26,6 +27,9 @@ public:
   typedef typename FunctionBase::OutputBatch ValueBatch;
   typedef typename FunctionBase::Gradient Gradient;
   typedef typename FunctionBase::Jacobian Jacobian;
+  typedef typename FunctionBase::Tensor1D Tensor1D;
+  typedef typename FunctionBase::Tensor2D Tensor2D;
+  typedef typename FunctionBase::Tensor3D Tensor3D;
 
   typedef Eigen::Matrix<Dtype, stateDimension, 1> State;
   typedef Eigen::Matrix<Dtype, stateDimension, Eigen::Dynamic> StateBatch;

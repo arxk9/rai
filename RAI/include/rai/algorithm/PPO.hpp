@@ -8,18 +8,9 @@
 #include <iostream>
 #include "glog/logging.h"
 
-#include "rai/tasks/common/Task.hpp"
 #include <Eigen/Core>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/noiseModel/NoNoise.hpp>
-#include <Eigen/Cholesky>
-#include <Eigen/Jacobi>
-#include <Eigen/Cholesky>
-#include <boost/bind.hpp>
-#include <math.h>
-#include "rai/RAI_core"
-#include <vector>
-#include <raiCommon/math/RAI_math.hpp>
 
 // Neural network
 //function approximations
@@ -32,18 +23,15 @@
 #include "rai/memory/Trajectory.hpp"
 
 // acquisitor
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
-#include <rai/algorithm/common/LearningData.hpp>
 
 // common
 #include "raiCommon/enumeration.hpp"
-#include "raiCommon/math/inverseUsingCholesky.hpp"
-#include "raiCommon/math/ConjugateGradient.hpp"
-#include "math.h"
 #include "rai/RAI_core"
 #include "common/PerformanceTester.hpp"
+#include <rai/algorithm/common/LearningData.hpp>
+#include "rai/tasks/common/Task.hpp"
 
 namespace rai {
 namespace Algorithm {
@@ -52,7 +40,6 @@ template<typename Dtype, int StateDim, int ActionDim>
 class PPO {
 
  public:
-
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
@@ -62,6 +49,7 @@ class PPO {
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef Eigen::Matrix<Dtype, -1, 1> Parameter;
+  typedef rai::Algorithm::LearningData<Dtype, StateDim, ActionDim> Dataset;
 
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
@@ -76,54 +64,64 @@ class PPO {
       std::vector<Noise_ *> &noises,
       Acquisitor_ *acquisitor,
       Dtype lambda,
-      int K,
-      int numofjunctions,
+      int numOfBranchPerJunction,
+      int numofJunctions,
       unsigned testingTrajN,
-      int n_epoch = 30, bool KL_adapt = true,
-      Dtype Cov = 1, Dtype Clip_param = 0.2, Dtype Ent_coeff = 0.01,
-      Dtype KL_thres = 0.01, Dtype KL_coeff = 1) :
+      int n_epoch = 5,
+      int n_minibatch = 0,
+      bool KL_adapt = true,
+      Dtype noiseCov = 1,
+      Dtype KLThres = 0.01,
+      Dtype maxGradNorm = 0.1,
+      Dtype entCoeff = 0.01,
+      Dtype clipCoeff = 0.2,
+      Dtype KL_coeff = 1) :
       task_(tasks),
       vfunction_(vfunction),
       policy_(policy),
       noise_(noises),
       acquisitor_(acquisitor),
       lambda_(lambda),
-      numOfBranchPerJunct_(K),
-      numOfJunct_(numofjunctions),
+      numOfBranchPerJunct_(numOfBranchPerJunction),
+      numOfJunct_(numofJunctions),
       testingTrajN_(testingTrajN),
       KL_adapt_(KL_adapt),
       n_epoch_(n_epoch),
-      cov_in(Cov),
-      KL_thres_(KL_thres),
-      KL_coeff_(KL_coeff),
-      clip_param_(Clip_param),
-      Ent_coeff_(Ent_coeff),
-      ld_(acquisitor){
+      n_minibatch_(n_minibatch),
+      covIn(noiseCov),
+      maxGradNorm_(maxGradNorm),
+      KLThres_(KLThres),
+      KLCoeff_(KL_coeff),
+      clipCoeff_(clipCoeff),
+      entCoeff_(entCoeff), Dataset_(true) {
+    updateN = 0;
+    ///Construct Dataset
+    ///Additional valueTensor for Trustregion update
+    Tensor<Dtype, 2> valuePred("predictedValue");
+    Dataset_.append(valuePred);
 
     Utils::logger->addVariableToLog(2, "klD", "");
     Utils::logger->addVariableToLog(2, "Stdev", "");
-    Utils::logger->addVariableToLog(2, "klcoef", "");
+    Utils::logger->addVariableToLog(2, "gradnorm", "");
 
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
-    policy_->setPPOparams(KL_coeff_, Ent_coeff, Clip_param);
-
-    termCost = task_[0]->termValue();
-    discFactor = task_[0]->discountFtr();
-    dt = task_[0]->dt();
-    timeLimit = task_[0]->timeLimit();
-    for (int i = 0; i < task_.size(); i++)
-      noiseBasePtr_.push_back(noise_[i]);
+    algoParams.resize(4);
+    algoParams << KLCoeff_, entCoeff_, clipCoeff_, maxGradNorm_;
+    policy_->setParams(algoParams);
+    vfunction_->setClipRate(clipCoeff_);
+    vfunction_->setMaxGradNorm(maxGradNorm_);
 
     ///update input stdev
     stdev_o.setOnes();
-    stdev_o *= std::sqrt(cov_in);
+    stdev_o *= std::sqrt(covIn);
     policy_->setStdev(stdev_o);
     updatePolicyVar();
+
+    for (int i = 0; i < task_.size(); i++)
+      noiseBasePtr_.push_back(noise_[i]);
   };
-
-  ~PPO() {};
-
+  ~PPO() { delete Dataset_.miniBatch; };
   void runOneLoop(int numOfSteps) {
     iterNumber_++;
     tester_.testPerformance(task_,
@@ -131,123 +129,71 @@ class PPO {
                             policy_,
                             task_[0]->timeLimit(),
                             testingTrajN_,
-                            ld_.stepsTaken(),
+                            acquisitor_->stepsTaken(),
                             vis_lv_,
                             std::to_string(iterNumber_));
-    LOG(INFO) << "Simulation";
-    ld_.acquireVineTrajForNTimeSteps(task_,
-                                     noiseBasePtr_,
-                                     policy_,
-                                     numOfSteps,
-                                     numOfJunct_,
-                                     numOfBranchPerJunct_,
-                                     vfunction_,
-                                     vis_lv_);
-
-    LOG(INFO) << "PPO Updater";
+    acquisitor_->acquireVineTrajForNTimeSteps(task_,
+                                              noiseBasePtr_,
+                                              policy_,
+                                              numOfSteps,
+                                              numOfJunct_,
+                                              numOfBranchPerJunct_,
+                                              vfunction_,
+                                              vis_lv_);
     PPOUpdater();
   }
-
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
-
  private:
-
   void PPOUpdater() {
-
     Utils::timer->startTimer("policy Training");
-    Utils::timer->startTimer("GAE");
-
-    /// Update Advantage
-    advantage_.resize(ld_.stateBat.cols());
-    bellmanErr_.resize(ld_.stateBat.cols());
-    ValueBatch valuePred(ld_.stateBat.cols());
-    Dtype loss;
-    LOG(INFO) << "Optimizing policy";
-
-
-    int dataID = 0;
-    for (auto &tra : ld_.traj) {
-      ValueBatch advTra = tra.getGAE(vfunction_, discFactor, lambda_, termCost);
-      advantage_.block(0, dataID, 1, advTra.cols()) = advTra;
-      bellmanErr_.block(0, dataID, 1, advTra.cols()) = tra.bellmanErr;
-      dataID += advTra.cols();
-    }
-    Eigen::Matrix<Dtype,-1,1> temp;
-    rai::Math::MathFunc::normalize(advantage_);
-
-    Utils::timer->stopTimer("GAE");
-
+    Utils::timer->startTimer("data processing");
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], false, vfunction_, lambda_, true);
+    Utils::timer->stopTimer("data processing");
     /// Update Policy & Value
-    // TODO : Apply minibatch to mlp and rnn. To train rnn, we need to keep inner states for each minibatches.
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
-    Dtype KL = 0, KLsum = 0;
-    vfunction_->forward(ld_.stateBat, valuePred);
-
-    ValueBatch testt;
-    testt.setZero();
-    vfunction_->forward(ld_.stateBat,testt);
-
+    Dtype KL = 0;
+    Dtype loss;
+    /// Append predicted value to Dataset_ for trust region update
+    Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
+    vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
+    policy_->getStdev(stdev_t);
     for (int i = 0; i < n_epoch_; i++) {
+      while (Dataset_.iterateBatch(n_minibatch_)) {
+        Utils::timer->startTimer("Vfunction update");
+        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+                                                              Dataset_.miniBatch->values,
+                                                              Dataset_.miniBatch->extraTensor2D[0]);
+        Utils::timer->stopTimer("Vfunction update");
+        policy_->getStdev(stdev_o);
+        LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
+        Utils::timer->startTimer("Gradient computation");
+        if (KL_adapt_) policy_->PPOpg_kladapt(Dataset_.miniBatch, stdev_o, policy_grad);
+        else policy_->PPOpg(Dataset_.miniBatch, stdev_o, policy_grad);
+        Utils::timer->stopTimer("Gradient computation");
+        LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
+        Utils::logger->appendData("gradnorm", updateN++, policy_grad.norm());
+        Utils::timer->startTimer("SGD");
+        policy_->trainUsingGrad(policy_grad);
+        Utils::timer->stopTimer("SGD");
 
-      Utils::timer->startTimer("Vfunction update");
-
-      loss = vfunction_->performOneSolverIter_trustregion(ld_.stateBat, ld_.valueBat, valuePred);
-
-      Utils::timer->stopTimer("Vfunction update");
-
-      policy_->getStdev(stdev_o);
-      LOG_IF(FATAL, isnan(stdev_o.norm())) << "stdev is nan!" << stdev_o.transpose();
-      Utils::timer->startTimer("Gradient computation");
-      if (KL_adapt_) {
-          policy_->PPOpg_kladapt(ld_.stateTensor,
-                                 ld_.actionTensor,
-                                 ld_.actionNoiseTensor,
-                                 advantage_,
-                                 stdev_o,
-                                 ld_.trajLength,
-                                 policy_grad);
-      } else {
-          policy_->PPOpg(ld_.stateTensor,
-                         ld_.actionTensor,
-                         ld_.actionNoiseTensor,
-                         advantage_,
-                         stdev_o,
-                         ld_.trajLength,
-                         policy_grad);
+        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_t);
+        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       }
-
-      Utils::timer->stopTimer("Gradient computation");
-
-      LOG_IF(FATAL, isnan(policy_grad.norm())) << "policy_grad is nan!" << policy_grad.transpose();
-
-      Utils::timer->startTimer("Adam update");
-      policy_->trainUsingGrad(policy_grad);
-      Utils::timer->stopTimer("Adam update");
-
-      KL = policy_->PPOgetkl(ld_.stateTensor, ld_.actionTensor, ld_.actionNoiseTensor, stdev_o, ld_.trajLength);
-
-      LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
-      KLsum += KL;
-
       if (KL_adapt_) {
-        if (KL > KL_thres_ * 1.5)
-          KL_coeff_ *= 2;
-        if (KL < KL_thres_ / 1.5)
-          KL_coeff_ *= 0.5;
-
-        policy_->setPPOparams(KL_coeff_, Ent_coeff_, clip_param_);
+        if (KL > KLThres_ * 1.5) KLCoeff_ *= 2;
+        if (KL < KLThres_ / 1.5) KLCoeff_ *= 0.5;
+        algoParams[0] = KLCoeff_;
+        policy_->setParams(algoParams);
       }
     }
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
 
 ///Logging
-    LOG(INFO) << "Mean KL divergence = " << KLsum / n_epoch_;
-    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KL_coeff_;
-
-    Utils::logger->appendData("Stdev", ld_.stepsTaken(), policy_grad.norm());
-    Utils::logger->appendData("klcoef", ld_.stepsTaken(), KL_coeff_);
-    Utils::logger->appendData("klD", ld_.stepsTaken(), KLsum / n_epoch_);
+    LOG(INFO) << "KL divergence = " << KL;
+    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KLCoeff_;
+    Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
+    Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL);
   }
 
   void updatePolicyVar() {
@@ -269,37 +215,33 @@ class PPO {
   Acquisitor_ *acquisitor_;
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
-  LearningData<Dtype, StateDim, ActionDim> ld_;
+  Dataset Dataset_;
 
   /////////////////////////// Algorithmic parameter ///////////////////
   int numOfJunct_;
   int numOfBranchPerJunct_;
   int n_epoch_;
-  Dtype cov_in;
-  Dtype termCost;
-  Dtype discFactor;
-  Dtype dt;
-  Dtype clip_param_;
-  Dtype Ent_coeff_;
-  Dtype KL_coeff_;
-  Dtype KL_thres_;
+  int n_minibatch_;
+  Dtype covIn;
+  Dtype maxGradNorm_;
+  Dtype clipCoeff_;
+  Dtype entCoeff_;
+  Dtype KLCoeff_;
+  Dtype KLThres_;
   double timeLimit;
   bool KL_adapt_;
-
-  /////////////////////////// batches
-  ValueBatch advantage_ , bellmanErr_;
+  int updateN;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;
+  VectorXD algoParams;
   Action stdev_o;
+  Action stdev_t;
   Covariance policycov;
-
   /////////////////////////// plotting
   int iterNumber_ = 0;
-
   ///////////////////////////testing
   unsigned testingTrajN_;
-
   /////////////////////////// visualization
   int vis_lv_ = 0;
 };

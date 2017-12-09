@@ -33,11 +33,10 @@ class ParameterizedFunction {
   typedef Eigen::Matrix<Dtype, inputDimension, 1> Gradient;
   typedef Eigen::Matrix<Dtype, outputDimension, Eigen::Dynamic> JacobianWRTparam;
 
-  typedef Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic> InnerState;
-
   typedef rai::Tensor<Dtype, 1> Tensor1D;
   typedef rai::Tensor<Dtype, 2> Tensor2D;
   typedef rai::Tensor<Dtype, 3> Tensor3D;
+  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
 
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> Parameter;
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> ParameterGradient;
@@ -47,6 +46,10 @@ class ParameterizedFunction {
   virtual ~ParameterizedFunction() {};
 
   /// must be implemented all by function libraries
+
+  virtual void test(Tensor3D &intputs, Tensor2D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
 
   virtual void forward(Input &input, Output &output) {
     LOG(FATAL) << "NOT IMPLEMENTED";
@@ -59,11 +62,25 @@ class ParameterizedFunction {
   virtual void forward(Tensor2D &intputs, Tensor2D &outputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
+  virtual void forward(Tensor3D &intputs, Tensor2D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
+
   virtual void forward(Tensor3D &intputs, Tensor3D &outputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
 
   virtual Dtype performOneSolverIter(InputBatch &states, OutputBatch &targetOutputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  };
+
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &targetOutputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  };
+
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &targetOutputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
@@ -77,10 +94,8 @@ class ParameterizedFunction {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   };
-  virtual Dtype performOneSolverIter_trustregion(InputBatch &states, OutputBatch &targetOutputs, OutputBatch &old_prediction) {
-    LOG(FATAL) << "NOT IMPLEMENTED";
-    return Dtype(0);
-  };
+
+
   virtual void backward(InputBatch &states, OutputBatch &targetOutputs, ParameterGradient &gradient) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
@@ -150,7 +165,9 @@ class ParameterizedFunction {
   virtual bool isRecurrent() { return false; }
   virtual void reset(int n) {}
   virtual void terminate(int n) {}
-  virtual int getInnerStatesize() { return 0; }
+  virtual int getHiddenStatesize() { return 0; }
+  virtual typename EigenMat::ColXpr getHiddenState(int Id){LOG(FATAL) << "NOT IMPLEMENTED"; }
+  virtual void getHiddenStates(Tensor2D &h_out){LOG(FATAL) << "NOT IMPLEMENTED"; }
 
   LibraryID libraryID_ = LibraryID::notSpecified;
   int parameterSize = 0;

@@ -7,8 +7,6 @@
 
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include "rai/function/common/StochasticPolicy.hpp"
-#include "rai/function/common/Qfunction.hpp"
-#include "Qfunction_TensorFlow.hpp"
 #include "common/ParameterizedFunction_TensorFlow.hpp"
 namespace rai {
 namespace FuncApprox {
@@ -18,6 +16,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                                     public virtual ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim> {
  public:
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
+  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, 2 * actionDim, -1> JacobianWRTparam;
 
   using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
@@ -37,6 +36,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
+  typedef typename PolicyBase::Dataset Dataset;
 
   StochasticPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -58,71 +58,77 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
   ///TRPO
   //batch
-  virtual void TRPOpg(Tensor3D &states,
-                      Tensor3D &actions,
-                      Tensor3D &actionNoise,
-                      Advantages &advs,
+  virtual void TRPOpg(Dataset &batch,
                       Action &Stdev,
                       VectorXD &grad) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
 
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advsT,
+    this->tf_->run({batch.states,
+                    batch.actions,
+                    batch.actionNoises,
+                    batch.advantages,
                     StdevT},
                    {"Algo/TRPO/Pg"},
                    {},
                    vectorOfOutputs);
-    std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
+
+    grad = vectorOfOutputs[0];
   }
 
-  virtual Dtype TRPOcg(Tensor3D &states,
-                       Tensor3D &actions,
-                       Tensor3D &actionNoise,
-                       Advantages &advs,
+  virtual Dtype TRPOcg(Dataset &batch,
                        Action &Stdev,
                        VectorXD &grad, VectorXD &getng) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
     Tensor1D gradT(grad, {grad.rows()}, "tangent");
 
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advsT,
+    this->tf_->run({batch.states,
+                    batch.actions,
+                    batch.actionNoises,
+                    batch.advantages,
                     StdevT,
                     gradT},
                    {"Algo/TRPO/Cg", "Algo/TRPO/Cgerror"}, {}, vectorOfOutputs);
-    std::memcpy(getng.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * getng.size());
-    return  *(vectorOfOutputs[1].flat<Dtype>().data());
+    getng = vectorOfOutputs[0];
+    return  vectorOfOutputs[1](0);
   }
 
-  virtual Dtype TRPOloss(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Advantages &advs,
+  virtual Dtype TRPOloss(Dataset &batch,
                          Action &Stdev) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor1D advsT(advs, {advs.cols()}, "advantage");
 
-    this->tf_->run({states,
-                    actions,
-                    actionNoise,
-                    advsT,
+    this->tf_->run({batch.states,
+                    batch.actions,
+                    batch.actionNoises,
+                    batch.advantages,
                     StdevT},
                    {"Algo/TRPO/loss"},
                    {}, vectorOfOutputs);
 
-    return *(vectorOfOutputs[0].flat<Dtype>().data());
+    return vectorOfOutputs[0](0);
   }
 
   ///PPO
+  virtual void test(Dataset *minibatch,
+                     Action &Stdev) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    VectorXD test;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+    ///Test function for debugging
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
+                    StdevT},
+                   {"test"},
+                   {},
+                   vectorOfOutputs);
+    test.resize(vectorOfOutputs[0].template flat<Dtype>().size());
+    std::memcpy(test.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * test.size());
+  LOG(INFO) << test.transpose();
+  }
   virtual void PPOpg(Tensor3D &states,
                      Tensor3D &actions,
                      Tensor3D &actionNoise,
@@ -164,19 +170,54 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::memcpy(grad.data(), vectorOfOutputs[0].template flat<Dtype>().data(), sizeof(Dtype) * grad.size());
   }
 
-  virtual Dtype PPOgetkl(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Action &Stdev,
-                         Tensor1D &len) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
+
+  virtual void PPOpg(Dataset *minibatch,
+                     Action &Stdev,
+                     VectorXD &grad) {
+    std::vector<MatrixXD> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
 
-    this->tf_->run({states, actions, actionNoise, StdevT},
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
+                    StdevT},
+                   {"Algo/PPO/Pg"},
+                   {},
+                   vectorOfOutputs);
+    grad = vectorOfOutputs[0];
+  }
+
+  virtual void PPOpg_kladapt(Dataset *minibatch,
+                             Action &Stdev,
+                             VectorXD &grad) {
+    std::vector<MatrixXD> vectorOfOutputs;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    minibatch->advantages,
+                    StdevT},
+                   {"Algo/PPO/Pg2"},
+                   {},
+                   vectorOfOutputs);
+    grad = vectorOfOutputs[0];
+  }
+
+  virtual Dtype PPOgetkl(Dataset *minibatch,
+                         Action &Stdev) {
+    std::vector<MatrixXD> vectorOfOutputs;
+    Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
+
+    this->tf_->run({minibatch->states,
+                    minibatch->actions,
+                    minibatch->actionNoises,
+                    StdevT},
                    {"Algo/PPO/kl_mean"},
                    {},
                    vectorOfOutputs);
-    return vectorOfOutputs[0].template flat<Dtype>().data()[0];
+    return vectorOfOutputs[0](0);
   }
 
   virtual void setStdev(const Action &Stdev) {
@@ -189,14 +230,10 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     this->tf_->run({{"Stdev_placeholder", Stdev}}, {"getStdev"}, {}, vectorOfOutputs);
     Stdev = vectorOfOutputs[0];
   }
-
-  virtual void setPPOparams(const Dtype &kl_coeff, const Dtype &ent_coeff, const Dtype &clip_param) {
+  
+  virtual void setParams(const VectorXD params) {
     std::vector<MatrixXD> dummy;
-    VectorXD input;
-    input.resize(3);
-    input << kl_coeff, ent_coeff, clip_param;
-
-    this->tf_->run({{"PPO_params_placeholder", input}}, {}, {"PPO_param_assign_ops"}, dummy);
+    this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
 
   virtual void forward(State &state, Action &action) {
@@ -255,9 +292,6 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_State"}, {}, temp);
     jacobian = temp[0];
   }
-
- protected:
-  using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
 
 };
 }//namespace FuncApprox

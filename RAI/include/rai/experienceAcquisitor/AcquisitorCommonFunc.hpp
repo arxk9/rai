@@ -68,6 +68,13 @@ class CommonFunc {
     noise->initializeNoise();
     task->setToParticularState(state);
 
+    if (policy->isRecurrent()) {
+      ///start with zero hiddenstate
+      Eigen::Matrix<Dtype, -1, 1> hiddenState_t(policy->getHiddenStatesize(), 1);
+      hiddenState_t.setZero();
+      trajectory.pushBackHiddenState(hiddenState_t);
+    }
+
     if (task->isTerminalState()) {
       termType = TerminationType::terminalState;
       trajectory.terminateTrajectoryAndUpdateValueTraj(
@@ -86,6 +93,12 @@ class CommonFunc {
       if (memory) memory->saveAnExperienceTuple(state, action, cost, state_tp1, termType);
       timer->stopTimer("Dynamics");
       stepCount++;
+      ///save Hidden States
+      if (policy->isRecurrent()) {
+        Eigen::Matrix<Dtype, -1, 1> hiddenState_t;
+        hiddenState_t = policy->getHiddenState(0);
+        trajectory.pushBackHiddenState(hiddenState_t);
+      }
       trajectory.pushBackTrajectory(state, action, actionNoise, cost);
       costInThisEpisode += cost;
 
@@ -151,6 +164,14 @@ class CommonFunc {
       taskset[i]->setToParticularState(state_t[i]);
       trajectoryID[i] = trajcnt++;
       active[i] = true;
+
+      if (policy->isRecurrent()) {
+        ///start with zero hiddenstate
+        Eigen::Matrix<Dtype, -1, 1> hiddenState_t(policy->getHiddenStatesize(), 1);
+        hiddenState_t.setZero();
+        trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
+      }
+
     }
 
     while (true) {
@@ -160,17 +181,16 @@ class CommonFunc {
         bool isTimeout = episodetime[i] + taskset[i]->dt() * 0.5 >= timeLimit;
         bool isTerminal = taskset[i]->isTerminalState();
 
-
         while (isTerminal || isTimeout) {
 
           if (isTerminal) {
             trajectorySet[trajectoryID[i]].terminateTrajectoryAndUpdateValueTraj(
-              TerminationType::terminalState, state_t[i], action_t[i],
-              taskset[0]->termValue(), taskset[i]->discountFtr());
+                TerminationType::terminalState, state_t[i], action_t[i],
+                taskset[0]->termValue(), taskset[i]->discountFtr());
           } else if (isTimeout) {
             trajectorySet[trajectoryID[i]].terminateTrajectoryAndUpdateValueTraj(
-              TerminationType::timeout, state_t[i], action_t[i],
-              Dtype(0.0), taskset[i]->discountFtr());
+                TerminationType::timeout, state_t[i], action_t[i],
+                Dtype(0.0), taskset[i]->discountFtr());
           }
 
           if (trajcnt == numOfTraj) {
@@ -184,10 +204,17 @@ class CommonFunc {
             episodetime[i] = 0;
             isTimeout = false;
             isTerminal = taskset[i]->isTerminalState();
+
+            if (policy->isRecurrent()) {
+              ///start with zero hiddenstate
+              Eigen::Matrix<Dtype, -1, 1> hiddenState_t(policy->getHiddenStatesize(), 1);
+              hiddenState_t.setZero();
+              trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
+            }
+
           }
         }
       }
-
       if (activeThreads == 0) break;
 
       states.resize(StateDim, 1, activeThreads);
@@ -201,6 +228,17 @@ class CommonFunc {
       policy->forward(states, actions);
       timer->stopTimer("Policy evaluation");
 
+      ///save Hidden States
+      if (policy->isRecurrent()) {
+        Eigen::Matrix<Dtype, -1, 1> hiddenState_t;
+        colId = 0;
+        for (int taskID = 0; taskID < ThreadN; taskID++) {
+          if (!active[taskID]) continue;
+          hiddenState_t = policy->getHiddenState(colId++);
+          trajectorySet[trajectoryID[taskID]].pushBackHiddenState(hiddenState_t);
+        }
+      }
+
       colId = 0;
       for (int taskID = 0; taskID < ThreadN; taskID++) {
         if (!active[taskID]) continue;
@@ -210,7 +248,6 @@ class CommonFunc {
       }
 
       timer->startTimer("dynamics");
-
 #pragma omp parallel for schedule(dynamic) reduction(+:stepCount)
       for (int taskID = 0; taskID < ThreadN; taskID++) {
         if (!active[taskID]) continue;
@@ -233,7 +270,6 @@ class CommonFunc {
         episodetime[taskID] += taskset[taskID]->dt();
         state_t[taskID] = state_t2[taskID];
       }
-
       timer->stopTimer("dynamics");
 
       for (int taskID = 0; taskID < reducedIdx; taskID++) {

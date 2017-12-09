@@ -12,9 +12,6 @@
 #include <Eigen/Core>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
 #include <rai/noiseModel/NoNoise.hpp>
-#include <Eigen/Cholesky>
-#include <Eigen/Jacobi>
-#include <Eigen/Cholesky>
 #include <boost/bind.hpp>
 #include <math.h>
 #include "rai/RAI_core"
@@ -35,10 +32,8 @@
 
 // common
 #include "raiCommon/enumeration.hpp"
-#include "raiCommon/math/inverseUsingCholesky.hpp"
-#include "raiCommon/math/ConjugateGradient.hpp"
 #include "rai/RAI_core"
-#include "CMAES.hpp"
+#include "common/PerformanceTester.hpp"
 
 namespace rai {
 namespace Algorithm {
@@ -68,7 +63,7 @@ class AG_tree {
 
   AG_tree(std::vector<Task_*> &task,
           FuncApprox::ValueFunction<Dtype, StateDim> *vfunction,
-          FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy,
+          FuncApprox::DeterministicPolicy<Dtype, StateDim, ActionDim> *policy,
           std::vector<Noise_*> &noise,
           Acquisitor_* acquisitor,
           int numOfInitialTra,
@@ -77,7 +72,7 @@ class AG_tree {
           double initialTrajTailTime,
           double branchTrajLength,
           Dtype learningRate = 300.0,
-          int nOfTestTraj = 1) :
+          int testingTrajN = 1) :
       task_(task),
       vfunction_(vfunction),
       policy_(policy),
@@ -87,13 +82,13 @@ class AG_tree {
       numOfInitialTra_(numOfInitialTra),
       initialTraj_(numOfInitialTra),
       junctionTraj_(numOfBranches),
-      testTrajectory_(nOfTestTraj),
+      testTrajectory_(testingTrajN),
       branchTraj_(noiseDepth, std::vector<Trajectory_>(numOfBranches)),
       noiseDepth_(noiseDepth),
       initialTrajTailTime_(initialTrajTailTime),
       branchTrajTime_(branchTrajLength),
       learningRate_(learningRate),
-      nOfTestTraj_(nOfTestTraj) {
+      testingTrajN_(testingTrajN) {
     parameter_.setZero(policy_->getAPSize());
     policy_->getAP(parameter_);
     jaco_.resize(ActionDim, policy_->getAPSize());
@@ -118,7 +113,6 @@ class AG_tree {
     Dtype dicFtr = task_[0]->discountFtr();
     Dtype timeLimit = task_[0]->timeLimit();
     Dtype dt = task_[0]->dt();
-    iterNumber_++;
     /// clearout trajectories
     for (auto &tra : initialTraj_) tra.clear();
     for (auto &tra : junctionTraj_) tra.clear();
@@ -127,30 +121,15 @@ class AG_tree {
     for (auto &tra : testTrajectory_) tra.clear();
 
     ///////////////////////// testing (not part of the algorithm) /////////////////////////
-    timer->disable();
-    StateBatch startStateTest(StateDim, nOfTestTraj_);
-    sampleRandomBathOfInitial(startStateTest);
-
-    if (vis_lv_ > 0) {
-      task_[0]->turnOnVisualization("");
-      if (task_[0]->shouldRecordVideo())
-        task_[0]->startRecordingVideo(RAI_LOG_PATH + "/" + std::to_string(iterNumber_), "nominalPolicy");
-    }
-
-    Dtype averageCost =
-        acquisitor_->acquire(task_, policy_, noNoise_, testTrajectory_, startStateTest, timeLimit, false);
-
-    if (vis_lv_ > 0) task_[0]->turnOffVisualization();
-    if (task_[0]->shouldRecordVideo()) { task_[0]->endRecordingVideo(); }
-    Utils::logger->appendData("Nominal performance",
-                              acquisitor_->stepsTaken(),
-                              averageCost);
-
-    logger->appendData("Nominal performance", float(acquisitor_->stepsTaken()), float(averageCost));
-    LOG(INFO) << "steps taken " << logger->getData("Nominal performance")->at(0).back()
-              << ", average cost " << logger->getData("Nominal performance")->at(1).back();
-    timer->enable();
-    //////////////////////////////////////////////////////////////////////////////////////
+    iterNumber_++;
+    tester_.testPerformance(task_,
+                            noiseBasePtr_,
+                            policy_,
+                            task_[0]->timeLimit(),
+                            testingTrajN_,
+                            acquisitor_->stepsTaken(),
+                            vis_lv_,
+                            std::to_string(iterNumber_));
 
     ///////////////////////// stage 1: simulation //////////////////
     Utils::timer->startTimer("simulation");
@@ -169,7 +148,6 @@ class AG_tree {
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
     acquisitor_->acquire(task_, policy_, noNoise_, initialTraj_, startStateOrg, timeLimit, true);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
-
     LOG(INFO) << "initial trajectories are computed";
 
     /// update terminal value and value trajectory of the initial trajectories
@@ -190,6 +168,7 @@ class AG_tree {
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
     acquisitor_->acquire(task_, policy_, noiseBasePtr_, junctionTraj_, startStateJunct, dt * noiseDepth_, true);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
+    LOG(INFO) << "junctions are computed";
 
     for (int trajID = 0; trajID < numOfBranches_; trajID++)
       valueJunction[0][trajID] = initialTraj_[indx[trajID].first].valueTraj[indx[trajID].second];
@@ -214,6 +193,7 @@ class AG_tree {
                                         * advTuple_advantage.back());
       }
     }
+    LOG(INFO) << "branch trajectories are computed";
 
     rai::Math::MathFunc::normalize(advTuple_advantage);
     Utils::timer->stopTimer("simulation");
@@ -334,7 +314,7 @@ class AG_tree {
   /////////////////////////// Core //////////////////////////////////////////
   std::vector<Task_*> task_;
   FuncApprox::ValueFunction<Dtype, StateDim> *vfunction_;
-  FuncApprox::Policy<Dtype, StateDim, ActionDim> *policy_;
+  FuncApprox::DeterministicPolicy<Dtype, StateDim, ActionDim> *policy_;
   Acquisitor_* acquisitor_;
   std::vector<Noise_*> noise_;
   std::vector<Noise::Noise<Dtype, ActionDim>* > noNoise_;
@@ -342,6 +322,7 @@ class AG_tree {
   std::vector<Noise::Noise<Dtype, ActionDim>* > noiseBasePtr_;
   Dtype learningRate_;
   int iterNumber_ = 0;
+  PerformanceTester<Dtype, StateDim, ActionDim> tester_;
 
   /////////////////////////// Algorithmic parameter ///////////////////
   int numOfInitialTra_ = 1;
@@ -359,7 +340,7 @@ class AG_tree {
   JacobianActResParam jaco_, fimCholesky_;
   Dtype klD_threshold = 0.1;
   Covariance covInv_;
-  int nOfTestTraj_;
+  int testingTrajN_;
 
   /////////////////////////// Policy parameter
   VectorXD parameter_;

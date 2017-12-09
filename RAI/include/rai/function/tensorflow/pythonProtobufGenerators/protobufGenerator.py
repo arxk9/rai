@@ -1,7 +1,5 @@
 import sys
 import tensorflow as tf
-import functions
-import graph_structure
 import core
 import os
 # from tensorflow.contrib.keras import backend as K
@@ -14,13 +12,31 @@ fn_type = sys.argv[4]
 gs_type = sys.argv[5]
 gs_arg = sys.argv[6:]
 
-__import__('graph_structure.' + gs_type)
-gs = sys.modules['graph_structure.' + gs_type]
+def Import_graph(module_name):
+    try:
+        __import__('graph_structure.' + module_name)
+        module = sys.modules['graph_structure.' + module_name]
+
+    except ImportError:
+        try:
+            __import__('graph_structure.RNN.' + module_name)
+        except ImportError:
+            print(module_name + ' does not exist')
+            sys.exit(1)
+        else:
+            module = sys.modules['graph_structure.RNN.' + module_name]
+            gs_method = getattr(module, module_name)
+            return gs_method
+    else:
+        gs_method = getattr(module, module_name)
+        return gs_method
+
+# Import modules
+
+gs_method = Import_graph(gs_type)
 
 __import__('functions.' + fn_type)
 fn = sys.modules['functions.' + fn_type]
-
-gs_method = getattr(gs, gs_type)
 fn_method = getattr(fn, fn_type)
 
 config = tf.ConfigProto()

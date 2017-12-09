@@ -7,13 +7,12 @@
 #include <rai/memory/Trajectory.hpp>
 #include <rai/tasks/common/Task.hpp>
 #include <rai/noiseModel/NormalDistributionNoise.hpp>
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp>
+#include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>
 #include "rai/RAI_core"
 
 namespace rai {
 
 namespace Algorithm {
-
 template<typename Dtype, int StateDim, int ActionDim>
 class PerformanceTester {
 
@@ -26,7 +25,7 @@ class PerformanceTester {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;
   using Noise_ = Noise::Noise<Dtype, ActionDim>;
-  using Acquisitor_ = ExpAcq::TrajectoryAcquisitor_MultiThreadBatch<Dtype, StateDim, ActionDim>;
+  using Acquisitor_ = ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
  public:

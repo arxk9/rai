@@ -32,7 +32,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   typedef typename PfunctionBase::ParameterGradient ParameterGradient;
   typedef typename PfunctionBase::JacobianWRTparam JacobianWRTparam;
   typedef typename PfunctionBase::Parameter Parameter;
-  typedef typename PfunctionBase::InnerState InnerState;
 
   /*
    * When setting nThreads = 0, TensorFlow uses the number of core to determine the number of threads.
@@ -90,24 +89,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
               {"updateBNparams", notUpdateBN}},
              {"output"}, {}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
-  }
-//  virtual void forward(InputTensor &inputs, OutputTensor &outputs) {
-//    std::vector<Tensor3D> vectorOfOutputs;
-//    tf_->run({{"input", inputs}},
-//             {"output"}, {}, vectorOfOutputs);
-//    outputs = vectorOfOutputs[0];
-//  }
-
-  virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &targetOutputs) {
-    std::vector<MatrixXD> outputs, dummy;
-    tf_->run({{"input", inputs},
-              {"targetOutput", targetOutputs},
-              {"trainUsingTargetOutput/learningRate", learningRate_},
-              {"updateBNparams", notUpdateBN}}, {"loss"},
-             {"trainUsingTargetOutput/solver"}, outputs);
-    tf_->run({{"input", inputs}, {"updateBNparams", updateBN}}, {},
-             {"output"}, dummy);
-    return outputs[0](0);
   }
 
   virtual void
@@ -247,7 +228,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
 
   TensorFlowNeuralNetwork<Dtype> *tf_;
   MatrixXD learningRate_;
-  InnerState Innerstate_;
 
   const MatrixXD notUpdateBN = (MatrixXD(1, 1) << 0).finished();
   const MatrixXD updateBN = (MatrixXD(1, 1) << 1).finished();

@@ -23,8 +23,7 @@
 
 // acquisitor
 #include "rai/experienceAcquisitor/ExperienceTupleAcquisitor.hpp"
-#include "rai/experienceAcquisitor/TrajectoryAcquisitor_MultiThreadBatch.hpp"
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_SingleThreadBatch.hpp>
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 #include <rai/experienceAcquisitor/TrajectoryAcquisitor_Sequential.hpp>
 #include <rai/algorithm/common/PerformanceTester.hpp>
 
@@ -110,7 +109,6 @@ class DDPG {
     iterNumber_++;
 
     //////////////// testing (not part of the algorithm) ////////////////////
-    Utils::timer->disable();
     tester_.testPerformance(task_,
                             noise_,
                             policy_,
@@ -124,8 +122,6 @@ class DDPG {
     for (auto &task : task_)
       task->setToInitialState();
     for (auto &noise : noise_)
-      noise->initializeNoise();
-    Utils::timer->enable();
     /////////////////////////////////////////////////////////////////////////
     for (unsigned i = 0; i < numOfSteps / n_newSamplePerEpoch_; i++)
         learnForOneCycle();
