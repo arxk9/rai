@@ -6,3 +6,10 @@ add_executable(quadrotor_PPO
 
 target_include_directories(quadrotor_PPO PUBLIC)
 target_link_libraries(quadrotor_PPO ${RAI_LINK})
+
+add_executable(quadrotor_RPPO
+        ${RAI_TASK_SRC}
+        quadrotorwithRPPO.cpp)
+
+target_include_directories(quadrotor_RPPO PUBLIC)
+target_link_libraries(quadrotor_RPPO ${RAI_LINK})
