@@ -35,6 +35,7 @@ class DeterministicPolicy : public virtual Policy <Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
+  typedef typename PolicyBase::Dataset Dataset;
 
   virtual void forward(State &state, Action &action) = 0;
 
@@ -45,17 +46,19 @@ class DeterministicPolicy : public virtual Policy <Dtype, stateDim, actionDim> {
   virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions){
     LOG(FATAL) << "NOT IMPLEMENTED";
     return 0;
-  };
-
+  }
+  virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return 0;
+  }
   virtual Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states){
     LOG(FATAL) << "NOT IMPLEMENTED";
     return 0;
-  };
-
+  }
   virtual Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco){
     LOG(FATAL) << "NOT IMPLEMENTED";
     return 0;
-  };
+  }
 
   virtual void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
     LOG(FATAL) << "NOT IMPLEMENTED";

@@ -1,19 +1,6 @@
 //
-// Created by jhwangbo on 22.09.16.
+// Created by joonho on 12/9/17.
 //
-
-/*
- * master.cpp
- *
- *  Created on: Mar 7, 2016
- *      Author: jemin
- *
- *
- *											   generalized coordinates
- *  Note"
- *	1. Visualize with a single CPU only
- *
- */
 
 #include <rai/RAI_core>
 
@@ -69,8 +56,8 @@ using NormalNoise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
 
-Dtype learningRateQfunction = 1e-3;
-Dtype learningRatePolicy = 1e-3;
+Dtype learningRateQfunction = 0.00025;
+Dtype learningRatePolicy = 0.0001;
 #define nThread 10
 
 int main(int argc, char *argv[]) {
@@ -86,7 +73,7 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.99);
     task.setRealTimeFactor(5);
-    task.setTimeLimitPerEpisode(10.0);
+    task.setTimeLimitPerEpisode(25.0);
     taskVector.push_back(&task);
   }
 
@@ -104,7 +91,7 @@ int main(int argc, char *argv[]) {
 //    noiseVector.push_back(&noise);
 
   ////////////////////////// Define Memory ////////////////////////////
-  ReplayMemory Memory(100);
+  ReplayMemory Memory(1000);
 
   ////////////////////////// Define Function approximations //////////
 //  Policy_TensorFlow policy("gpu,0", "LSTMNet", "tanh 1e-3 3 128 64 1", learningRatePolicy);
@@ -112,20 +99,18 @@ int main(int argc, char *argv[]) {
 //
 //  Qfunction_TensorFlow qfunction("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 128 64 1", learningRateQfunction);
 //  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMNet2", "tanh 1e-3 3 1 128 64 1", learningRateQfunction);
-  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 2 128 / 64 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 2 128 / 64 1", learningRatePolicy);
+  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "tanh 1e-3 2 64 / 64 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "tanh 1e-3 2 64 / 64 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 2 1 128 / 64 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 2 1 128 / 64 1", learningRateQfunction);
-
-  rai::FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> qfunction2("cpu", "MLP2", "relu 1e-3 3 1 32 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "tanh 1e-3 2 1 64 / 64 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "tanh 1e-3 2 1 64 / 64 1", learningRateQfunction);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RDPG<Dtype, StateDim, ActionDim>
-      algorithm(&qfunction2, taskVector,
+      algorithm(taskVector,
                 &qfunction,
                 &qfunction_target,
                 &policy,
@@ -133,7 +118,9 @@ int main(int argc, char *argv[]) {
                 noiseVector,
                 &acquisitor,
                 &Memory,
+                5,
                 10,
+                100,
                 1);
   algorithm.setVisualizationLevel(0);
   algorithm.initiallyFillTheMemory();
@@ -141,33 +128,8 @@ int main(int argc, char *argv[]) {
   /////////////////////// Plotting properties ////////////////////////
   rai::Utils::Graph::FigProp2D
       figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
-  rai::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "Q function");
-  figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-  rai::Utils::Graph::FigProp3D figurePropertiesSVA("angle", "angular velocity", "action", "Policy");
-  figurePropertiesSVA.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-  rai::Utils::Graph::FigProp3D
-      figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
   rai::Utils::Graph::FigPropPieChart propChart;
 
-  StateBatch state_plot(3, 2601);
-  ActionBatch action_plot(1, 2601);
-  CostBatch value_plot(1, 2601);
-  MatrixXD minimal_X_extended(1, 2601);
-  MatrixXD minimal_Y_extended(1, 2601);
-
-  MatrixXD minimal_X_sampled(1, 2601);
-  MatrixXD minimal_Y_sampled(1, 2601);
-  ActionBatch action_sampled(1, 2601);
-
-  for (int i = 0; i < 51; i++) {
-    for (int j = 0; j < 51; j++) {
-      minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
-      minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
-      state_plot(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
-      state_plot(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
-      state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
-    }
-  }
   constexpr int loggingInterval = 10;
 
   ////////////////////////// Learning /////////////////////////////////
@@ -178,7 +140,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
 
-    algorithm.learnForNepisodes(5);
+    algorithm.learnForNepisodes(50);
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
@@ -191,21 +153,6 @@ int main(int argc, char *argv[]) {
                         "performance",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1);
-
-      policy.forward(state_plot, action_plot);
-      qfunction.forward(state_plot, action_plot, value_plot);
-
-      graph->drawHeatMap(3, figurePropertiesSVC, minimal_X_extended.data(),
-                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
-      graph->drawFigure(3);
-      graph->drawHeatMap(4, figurePropertiesSVA, minimal_X_extended.data(),
-                         minimal_Y_extended.data(), action_plot.data(), 51, 51, "");
-      graph->drawFigure(4);
-
-      qfunction2.forward(state_plot, action_plot, value_plot);
-      graph->drawHeatMap(5, figurePropertiesSVC, minimal_X_extended.data(),
-                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
-      graph->drawFigure(5);
   }
   }
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");

@@ -21,7 +21,6 @@ class LSTMMLP(bc.GraphStructure):
         mlpDim = [int(i) for i in param[check+3:]]
 
         self.input = tf.placeholder(dtype, shape=[None, None, rnnDim[0]], name=fn.input_names[0])  # [batch, time, dim]
-        print(self.input)
 
         length_ = tf.placeholder(dtype, name='length')  # [batch]
         length_ = tf.cast(length_, dtype=tf.int32)

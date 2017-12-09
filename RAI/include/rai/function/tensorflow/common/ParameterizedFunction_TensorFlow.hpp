@@ -90,24 +90,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
              {"output"}, {}, vectorOfOutputs);
     outputs = vectorOfOutputs[0];
   }
-//  virtual void forward(InputTensor &inputs, OutputTensor &outputs) {
-//    std::vector<Tensor3D> vectorOfOutputs;
-//    tf_->run({{"input", inputs}},
-//             {"output"}, {}, vectorOfOutputs);
-//    outputs = vectorOfOutputs[0];
-//  }
-
-  virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &targetOutputs) {
-    std::vector<MatrixXD> outputs, dummy;
-    tf_->run({{"input", inputs},
-              {"targetOutput", targetOutputs},
-              {"trainUsingTargetOutput/learningRate", learningRate_},
-              {"updateBNparams", notUpdateBN}}, {"loss"},
-             {"trainUsingTargetOutput/solver"}, outputs);
-    tf_->run({{"input", inputs}, {"updateBNparams", updateBN}}, {},
-             {"output"}, dummy);
-    return outputs[0](0);
-  }
 
   virtual void
   copyStructureFrom(PfunctionBase const *const referenceFunction) {

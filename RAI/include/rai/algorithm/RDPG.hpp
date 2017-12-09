@@ -62,8 +62,7 @@ class RDPG {
   using TestAcquisitor_ = ExpAcq::TrajectoryAcquisitor_Sequential<Dtype, StateDim, ActionDim>;
   using ReplayMemory_ = rai::Memory::ReplayMemoryHistory<Dtype, StateDim, ActionDim>;
 
-  RDPG(FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> *testQ,
-      std::vector<Task_ *> &task,
+  RDPG(std::vector<Task_ *> &task,
        Qfunction_ *qfunction,
        Qfunction_ *qfunction_target,
        Policy_ *policy,
@@ -71,11 +70,12 @@ class RDPG {
        std::vector<Noise_ *> &noise,
        Acquisitor_ *acquisitor,
        ReplayMemory_ *memory,
+       unsigned n_epoch,
+       unsigned n_newEpisodesPerEpoch,
        unsigned batchSize,
        unsigned testingTrajN,
        Dtype maxGradNorm = 0.1,
        Dtype tau = 1e-3):
-      testQ_(testQ),
       qfunction_(qfunction),
       qfunction_target_(qfunction_target),
       policy_(policy),
@@ -83,6 +83,8 @@ class RDPG {
       noise_(noise),
       acquisitor_(acquisitor),
       memory(memory),
+      n_epoch_(n_epoch),
+      n_newEpisodesPerEpoch_(n_newEpisodesPerEpoch),
       batSize_(batchSize),
       tau_(tau),
       testingTrajN_(testingTrajN),
@@ -99,7 +101,6 @@ class RDPG {
     policy_->copyAPFrom(policy_target_);
     qfunction_->copyAPFrom(qfunction_target_);
   };
-  FuncApprox::Qfunction_TensorFlow<Dtype, StateDim, ActionDim> *testQ_;
   ~RDPG(){};
 
   void initiallyFillTheMemory() {
@@ -136,15 +137,17 @@ class RDPG {
 
     Utils::timer->enable();
     /////////////////////////////////////////////////////////////////////////
-    for (unsigned i = 0; i < numOfEpisodes; i++)
-      learnForOneEpisode();
+    if(numOfEpisodes > n_newEpisodesPerEpoch_) numOfEpisodes = n_newEpisodesPerEpoch_;
+
+    for (unsigned i = 0; i < numOfEpisodes/n_newEpisodesPerEpoch_; i++)
+      learnForOneCycle();
   }
 
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
 
  private:
 
-  void learnForOneEpisode() {
+  void learnForOneCycle() {
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
     acquisitor_->acquireNEpisodes(task_, noiseBasePtr_, policy_, 1);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
@@ -153,7 +156,8 @@ class RDPG {
     timer->stopTimer("SavingHistory");
 
     Utils::timer->startTimer("Qfunction and Policy update");
-    updateQfunctionAndPolicy();
+    for (unsigned i = 0; i <  n_epoch_; i++)
+      updateQfunctionAndPolicy();
     Utils::timer->stopTimer("Qfunction and Policy update");
   }
 
@@ -161,20 +165,19 @@ class RDPG {
     Dtype termValue = task_[0]->termValue();
     Dtype disFtr = task_[0]->discountFtr();
 
-    Tensor<Dtype, 3> value_;
-    Tensor<Dtype, 3> value_target("targetQValue");
-
     timer->startTimer("SamplingHistory");
     memory->sampleRandomHistory(Dataset_, batSize_);
     timer->stopTimer("SamplingHistory");
 
+    Utils::timer->startTimer("Qfunction update");
+    ///Target
+    Tensor<Dtype, 3> value_;
+    Tensor<Dtype, 3> value_target("targetQValue");
+    Tensor<Dtype, 3> action_target({ActionDim, Dataset_.maxLen, batSize_},"sampledAction");
+
     value_.resize(1, Dataset_.maxLen, batSize_);
     value_target.resize(1, Dataset_.maxLen, batSize_);
     value_target.setZero();
-
-    Utils::timer->startTimer("Qfunction update");
-    ///Target
-    Tensor<Dtype, 3> action_target({ActionDim, Dataset_.maxLen, batSize_},"sampledAction");
 
     policy_target_->forward(Dataset_.states, action_target);
     qfunction_target_->forward(Dataset_.states, action_target, value_);
@@ -218,6 +221,8 @@ class RDPG {
   unsigned batSize_;
   Dtype tau_;
   Dtype maxGradNorm_;
+  unsigned n_epoch_;
+  unsigned n_newEpisodesPerEpoch_;
 
   /////////////////////////// plotting
   int iterNumber_ = 0;

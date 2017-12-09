@@ -6,8 +6,6 @@
 #define RAI_RECURRENTDETERMINISTICPOLICY_HPP
 
 #include "rai/function/common/DeterministicPolicy.hpp"
-#include "rai/function/common/Qfunction.hpp"
-#include "Qfunction_TensorFlow.hpp"
 #include "common/RecurrentParametrizedFunction_TensorFlow.hpp"
 #include "RecurrentQfunction_TensorFlow.hpp"
 
@@ -40,8 +38,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
-  typedef typename PolicyBase::Jacobian JacobianWRTstate;
-  typedef typename PolicyBase::JacoqWRTparam JacoqWRTparam;
+
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
@@ -115,18 +112,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-//    std::vector<MatrixXD> loss, dummy;
-//    this->tf_->run({{"state", states},
-//                    {"targetAction", actions},
-//                    {"trainUsingTargetAction/learningRate", this->learningRate_}}, {"trainUsingTargetAction/loss"},
-//                   {"trainUsingTargetAction/solver"}, loss);
-//    this->tf_->run({{"state", states}}, {},
-//                   {"action"}, dummy);
-//    return loss[0](0);
-    return 0;
-  }
-
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions) {
     std::vector<MatrixXD> vectorOfOutputs;
     actions = "targetAction";
@@ -160,37 +145,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
                    {"trainUsingCritic/applyGradients"}, dummy);
     return averageQ;
   }
-
-  Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states) {};
-
-  Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco) {
-    return 0;
-  }
-
-  void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
-  }
-
-  virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
-  }
-  virtual bool isRecurrent() {
-    return true;
-  }
-
-  virtual void reset(int n) {
-    //n:index
-    if (n >= h.cols())
-      h.conservativeResize(hdim, n + 1);
-
-    h.col(n).setZero();
-  }
-
-  virtual void terminate(int n) {
-    int coldim = h.cols() - 1;
-    LOG_IF(FATAL, coldim < 0) << "Initialize Hiddenstates first (Call reset)";
-    LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
-    h.removeCol(n);
-  }
-
 };
 } // namespace FuncApprox
 } // namespace rai
