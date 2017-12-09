@@ -39,8 +39,6 @@ public:
   Policy(){};
   virtual ~Policy(){};
 
-  virtual int hiddenStateDim() {return 0;};
-
 };
 
 }} // namespaces

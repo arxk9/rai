@@ -1,17 +1,24 @@
 #include <rai/algorithm/common/LearningData.hpp>
 #include "rai/function/common/ValueFunction.hpp"
-#include "common/ParameterizedFunction_TensorFlow.hpp"
+#include "common/RecurrentParametrizedFunction_TensorFlow.hpp"
 
 namespace rai {
 namespace FuncApprox {
 
 template<typename Dtype, int stateDim>
-class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dtype, stateDim, 1>,
-                                          public virtual ValueFunction<Dtype, stateDim> {
+class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, stateDim>,
+                                          public virtual RecurrentParameterizedFunction_TensorFlow<Dtype,
+                                                                                                   stateDim,
+                                                                                                   1>{
 
  public:
+  typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
+  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   using ValueFunctionBase = ValueFunction<Dtype, stateDim>;
-  using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, 1>;
+  using Pfunction_tensorflow = RecurrentParameterizedFunction_TensorFlow<Dtype, stateDim, 1>;
+
+  using Pfunction_tensorflow::h;
+  using Pfunction_tensorflow::hdim;
 
   typedef typename ValueFunctionBase::State State;
   typedef typename ValueFunctionBase::StateBatch StateBatch;
@@ -26,7 +33,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
   typedef typename ValueFunctionBase::Tensor3D Tensor3D;
 
   RecurrentValueFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
-      Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
+      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow(
           pathToGraphDefProtobuf, learningRate) {
   }
 
@@ -34,11 +41,8 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                                     std::string graphName,
                                     std::string graphParam,
                                     Dtype learningRate = 1e-3) :
-      Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
-          "RecurrentVfunction", computeMode, graphName, graphParam, learningRate), h("h_init") {
-    hdim = this->getHiddenStatesize();
-    h.resize(hdim, 0);
-    h.setZero();
+      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow(
+          "RecurrentVfunction", computeMode, graphName, graphParam, learningRate){
   }
 
   ~RecurrentValueFunction_TensorFlow() {};
@@ -149,42 +153,6 @@ class RecurrentValueFunction_TensorFlow : public virtual ParameterizedFunction_T
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
-
-  virtual bool isRecurrent() {
-    return true;
-  }
-
-  virtual void reset(int n) {
-    //n:index
-    if (n >= h.cols())
-      h.conservativeResize(hdim, n + 1);
-
-    h.col(n).setZero();
-  }
-
-  virtual void terminate(int n) {
-    int coldim = h.cols() - 1;
-    LOG_IF(FATAL, coldim < 0) << "Initialize Hiddenstates first (Call reset)";
-    LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
-    h.removeCol(n);
-  }
-
-  virtual int getHiddenStatesize() {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
-    return vectorOfOutputs[0].scalar<int>()();
-  }
-
-  virtual void getHiddenStates(Tensor2D &h_out){
-    h_out = h;
-  }
-
-  int hiddenStateDim() { return hdim; }
-
- protected:
-  using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
-  int hdim = 0;
-  Tensor2D h;
 };
 } // namespace FuncApprox
 } // namespace rai

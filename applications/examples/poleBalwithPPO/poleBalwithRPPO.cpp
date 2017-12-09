@@ -16,10 +16,8 @@
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
 
 // Neural network
-#include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
-
-#include "rai/function/tensorflow/RecurrentValueFunction_TensorFlow.hpp"
-#include "rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp"
+//#include "rai/function/tensorflow/RecurrentValueFunction_TensorFlow.hpp"
+//#include "rai/function/tensorflow/RecurrentStochasticPolicy_TensorFlow.hpp"
 #include "rai/function/tensorflow/RecurrentStochasticPolicyValue_TensorFlow.hpp"
 
 // algorithm
@@ -46,8 +44,8 @@ using ActionBatch = Task::ActionBatch;
 using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
-using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
+//using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+//using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
 using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
 
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;

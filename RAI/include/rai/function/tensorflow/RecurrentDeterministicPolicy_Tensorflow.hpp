@@ -8,7 +8,7 @@
 #include "rai/function/common/DeterministicPolicy.hpp"
 #include "rai/function/common/Qfunction.hpp"
 #include "Qfunction_TensorFlow.hpp"
-#include "common/ParameterizedFunction_TensorFlow.hpp"
+#include "common/RecurrentParametrizedFunction_TensorFlow.hpp"
 #include "RecurrentQfunction_TensorFlow.hpp"
 
 #pragma once
@@ -18,15 +18,19 @@ namespace FuncApprox {
 
 template<typename Dtype, int stateDim, int actionDim>
 class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype, stateDim, actionDim>,
-                                                public virtual ParameterizedFunction_TensorFlow<Dtype,
+                                                public virtual RecurrentParameterizedFunction_TensorFlow<Dtype,
                                                                                                 stateDim,
                                                                                                 actionDim> {
 
  public:
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
-  using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim>;
+  using Pfunction_tensorflow = RecurrentParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim>;
   using Qfunction_tensorflow = RecurrentQfunction_TensorFlow<Dtype, stateDim, actionDim>;
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
+
+  using Pfunction_tensorflow::h;
+  using Pfunction_tensorflow::hdim;
+
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
@@ -42,17 +46,15 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   typedef typename PolicyBase::Dataset Dataset;
 
   RecurrentDeterministicPolicy_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
-      Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
+      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
   }
 
   RecurrentDeterministicPolicy_TensorFlow(std::string computeMode,
                                           std::string graphName,
                                           std::string graphParam,
                                           Dtype learningRate = 1e-3) :
-      Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
-          "RecurrentDeterministicPolicy", computeMode, graphName, graphParam, learningRate), h("h_init") {
-    hdim = this->getHiddenStatesize();
-    h.resize(hdim, 0);
+      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow(
+          "RecurrentDeterministicPolicy", computeMode, graphName, graphParam, learningRate) {
   }
 
   virtual void forward(State &state, Action &action) {
@@ -180,23 +182,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     LOG_IF(FATAL, n > coldim) << "n exceeds batchsize" << n << "vs." << coldim;
     h.removeCol(n);
   }
-
-  virtual int getHiddenStatesize() {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    this->tf_->run({}, {"h_dim"}, {}, vectorOfOutputs);
-    return vectorOfOutputs[0].scalar<int>()();
-  }
-
-  virtual void getHiddenStates(Tensor2D &h_out){
-    h_out = h;
-  }
-
-  int hiddenStateDim() { return hdim; }
-
- protected:
-  using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
-  int hdim = 0;
-  Tensor2D h;
 
 };
 } // namespace FuncApprox

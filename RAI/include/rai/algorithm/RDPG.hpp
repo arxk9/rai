@@ -11,11 +11,6 @@
 #include "rai/tasks/common/Task.hpp"
 #include <Eigen/Core>
 #include <rai/noiseModel/NoNoise.hpp>
-#include <Eigen/Cholesky>
-#include <Eigen/Jacobi>
-#include <Eigen/Cholesky>
-#include <boost/bind.hpp>
-#include <math.h>
 #include "rai/RAI_core"
 #include <vector>
 
