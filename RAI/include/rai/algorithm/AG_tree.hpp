@@ -168,6 +168,7 @@ class AG_tree {
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
     acquisitor_->acquire(task_, policy_, noiseBasePtr_, junctionTraj_, startStateJunct, dt * noiseDepth_, true);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
+    LOG(INFO) << "junctions are computed";
 
     for (int trajID = 0; trajID < numOfBranches_; trajID++)
       valueJunction[0][trajID] = initialTraj_[indx[trajID].first].valueTraj[indx[trajID].second];
@@ -192,6 +193,8 @@ class AG_tree {
                                         * advTuple_advantage.back());
       }
     }
+    LOG(INFO) << "branch trajectories are computed";
+
     rai::Math::MathFunc::normalize(advTuple_advantage);
     Utils::timer->stopTimer("simulation");
 

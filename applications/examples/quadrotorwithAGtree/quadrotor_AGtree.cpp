@@ -86,15 +86,15 @@ int main(int argc, char *argv[]) {
 
   /////////////////////// Plotting properties ////////////////////////
   rai::Utils::Graph::FigProp2D
-      figurePropertiesEVP("N. Steps Taken", "Performance", "process time vs Performance");
+      figurePropertiesEVP("process time", "Performance", "vs Performance");
 
   rai::Utils::Graph::FigPropPieChart propChart;
   rai::Utils::logger->addVariableToLog(1, "process time", "");
 
-  constexpr int loggingInterval = 5;
+  constexpr int loggingInterval = 10;
 
   ////////////////////////// Learning /////////////////////////////////
-  for (int iterationNumber = 0; iterationNumber < 50; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 51; iterationNumber++) {
     rai::Utils::logger->appendData("process time", rai::Utils::timer->getGlobalElapsedTimeInMin());
     LOG(INFO) << iterationNumber << "th loop";
     if (iterationNumber % loggingInterval == 0) {
@@ -115,9 +115,6 @@ int main(int argc, char *argv[]) {
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1, rai::Utils::Graph::OutputFormat::pdf);
     }
-
-    graph->drawPieChartWith_RAI_Timer(3, timer->getTimedItems(), propChart);
-    graph->drawFigure(3, rai::Utils::Graph::OutputFormat::pdf);
 
     if (iterationNumber % 200 == 49) {
       policy.dumpParam(RAI_LOG_PATH + "/policy_" + std::to_string(iterationNumber) + ".txt");
