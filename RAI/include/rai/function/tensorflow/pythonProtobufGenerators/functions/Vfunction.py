@@ -14,8 +14,9 @@ class Vfunction(bc.SpecializedFunction):
         state_dim = gs.input.shape[1]
         state = gs.input
         value = tf.identity(gs.output, name=self.output_names[0])
-        clip_param = tf.Variable(0.2, name='clip_param')
-        max_grad_norm = tf.Variable(0.5, name='max_grad_norm')
+
+        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
+        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), name='max_grad_norm')
 
         # new placeholders
         value_target = tf.placeholder(dtype, shape=[None, 1], name='targetValue')
@@ -24,7 +25,7 @@ class Vfunction(bc.SpecializedFunction):
         tf.identity(value_pred, name='test')
 
         # Assign ops.
-        param_assign_placeholder = tf.placeholder(dtype, shape=[1, 1], name='param_assign_placeholder')
+        param_assign_placeholder = tf.placeholder(dtype=dtype, shape=[1, 1], name='param_assign_placeholder')
         tf.assign(clip_param, tf.reshape(param_assign_placeholder, []), name='clip_param_assign')
         tf.assign(max_grad_norm, tf.reshape(param_assign_placeholder, []), name='grad_param_assign')
 

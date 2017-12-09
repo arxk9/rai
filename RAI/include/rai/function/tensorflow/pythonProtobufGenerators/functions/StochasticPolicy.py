@@ -39,10 +39,10 @@ class StochasticPolicy(pc.Policy):
         advantage = tf.reshape(advantage_in, shape=[-1], name='test')
 
         # Algorithm params
-        kl_coeff = tf.Variable(1.0, dtype, name='kl_coeff')
-        ent_coeff = tf.Variable(0.01, dtype, name='ent_coeff')
-        clip_param = tf.Variable(0.2, dtype, name='clip_param')
-        max_grad_norm = tf.Variable(0.5, dtype, name='max_grad_norm')
+        kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff')
+        ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff')
+        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
+        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), name='max_grad_norm')
 
         PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 4], name='PPO_params_placeholder')
 

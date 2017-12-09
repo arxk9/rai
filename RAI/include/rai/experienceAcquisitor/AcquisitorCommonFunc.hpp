@@ -68,6 +68,13 @@ class CommonFunc {
     noise->initializeNoise();
     task->setToParticularState(state);
 
+    if (policy->isRecurrent()) {
+      ///start with zero hiddenstate
+      Eigen::Matrix<Dtype, -1, 1> hiddenState_t(policy->getHiddenStatesize(), 1);
+      hiddenState_t.setZero();
+      trajectory.pushBackHiddenState(hiddenState_t);
+    }
+
     if (task->isTerminalState()) {
       termType = TerminationType::terminalState;
       trajectory.terminateTrajectoryAndUpdateValueTraj(
@@ -86,6 +93,12 @@ class CommonFunc {
       if (memory) memory->saveAnExperienceTuple(state, action, cost, state_tp1, termType);
       timer->stopTimer("Dynamics");
       stepCount++;
+      ///save Hidden States
+      if (policy->isRecurrent()) {
+        Eigen::Matrix<Dtype, -1, 1> hiddenState_t;
+        hiddenState_t = policy->getHiddenState(0);
+        trajectory.pushBackHiddenState(hiddenState_t);
+      }
       trajectory.pushBackTrajectory(state, action, actionNoise, cost);
       costInThisEpisode += cost;
 
@@ -202,7 +215,6 @@ class CommonFunc {
           }
         }
       }
-
       if (activeThreads == 0) break;
 
       states.resize(StateDim, 1, activeThreads);
@@ -236,7 +248,6 @@ class CommonFunc {
       }
 
       timer->startTimer("dynamics");
-
 #pragma omp parallel for schedule(dynamic) reduction(+:stepCount)
       for (int taskID = 0; taskID < ThreadN; taskID++) {
         if (!active[taskID]) continue;
@@ -259,7 +270,6 @@ class CommonFunc {
         episodetime[taskID] += taskset[taskID]->dt();
         state_t[taskID] = state_t2[taskID];
       }
-
       timer->stopTimer("dynamics");
 
       for (int taskID = 0; taskID < reducedIdx; taskID++) {

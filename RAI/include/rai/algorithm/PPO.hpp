@@ -67,7 +67,7 @@ class PPO {
       int numOfBranchPerJunction,
       int numofJunctions,
       unsigned testingTrajN,
-      int n_epoch = 30,
+      int n_epoch = 5,
       int n_minibatch = 0,
       bool KL_adapt = true,
       Dtype noiseCov = 1,
@@ -147,7 +147,7 @@ class PPO {
   void PPOUpdater() {
     Utils::timer->startTimer("policy Training");
     Utils::timer->startTimer("data processing");
-    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], policy_->isRecurrent(), vfunction_, lambda_, true);
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], false, vfunction_, lambda_, true);
     Utils::timer->stopTimer("data processing");
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
@@ -190,7 +190,7 @@ class PPO {
     Utils::timer->stopTimer("policy Training");
 
 ///Logging
-    LOG(INFO) << "Final KL divergence = " << KL;
+    LOG(INFO) << "KL divergence = " << KL;
     if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KLCoeff_;
     Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
     Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL);

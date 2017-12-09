@@ -103,7 +103,9 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
 
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) { LOG(FATAL) << "Not implemented"; }
 
-  virtual void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) { LOG(FATAL) << "Not implemented"; }
+  virtual void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
+    LOG(FATAL) << "Not implemented";
+  }
 
   virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
     LOG(FATAL) << "Not implemented";

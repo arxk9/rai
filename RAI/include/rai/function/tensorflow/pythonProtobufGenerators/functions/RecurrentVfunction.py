@@ -14,8 +14,9 @@ class RecurrentVfunction(bc.SpecializedFunction):
 
         state_dim = gs.input.shape[1]
         state = gs.input
-        clip_param = tf.Variable(0.2, dtype, name='clip_param')
-        max_grad_norm = tf.Variable(0.5, dtype, name='max_grad_norm')
+
+        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
+        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), name='max_grad_norm')
 
         # new placeholders
         value_target = tf.placeholder(dtype, shape=[None, None], name='targetValue')

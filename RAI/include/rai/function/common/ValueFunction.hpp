@@ -35,6 +35,11 @@ public:
   virtual void setClipRate(const Dtype param_in){
     LOG(FATAL) << "NOT IMPLEMENTED";
   }
+  virtual Dtype performOneSolverIter(StateBatch &states, ValueBatch &values) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  }
+
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);

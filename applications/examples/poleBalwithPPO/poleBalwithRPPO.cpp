@@ -77,14 +77,14 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 64 32 1", 0.0001);
+  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 64 32 1", 0.0025);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1,true, 0.3);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1, true, 0.3);
 
   algorithm.setVisualizationLevel(0);
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     }
     LOG(INFO) << "Learning rate:"<<lr;
 
-    algorithm.runOneLoop(10000);
+    algorithm.runOneLoop(20000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

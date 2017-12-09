@@ -15,7 +15,7 @@ class RecurrentDeterministicPolicy(pc.Policy):
         action_masked = tf.boolean_mask(action, mask)
 
         # variables
-        max_grad_norm = tf.Variable(0.5, name='max_grad_norm')
+        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), dtype, name='max_grad_norm')
 
         # new placeholders
         gradNorm_placeholder = tf.placeholder(dtype, [1,1], name='gradNorm_placeholder')

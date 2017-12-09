@@ -40,10 +40,10 @@ class RecurrentStochasticPolicyValue(pc.Policy):
         value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
 
         # Algorithm params
-        v_coeff = tf.Variable(0.5 ,dtype, name='v_coeff')
-        ent_coeff = tf.Variable(0.01, dtype, name='ent_coeff')
-        clip_param = tf.Variable(0.2, dtype, name='clip_param')
-        max_grad_norm = tf.Variable(0.5, dtype, name='max_grad_norm')
+        v_coeff = tf.Variable(tf.constant(0.5, dtype=dtype), name='v_coeff')
+        ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff')
+        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
+        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), name='max_grad_norm')
 
         # Assign ops.
         PPO_params_placeholder = tf.placeholder(dtype=dtype, shape=[1, 4], name='PPO_params_placeholder')
@@ -77,7 +77,6 @@ class RecurrentStochasticPolicyValue(pc.Policy):
             manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
             train_using_gradients = train_using_grad_optimizer.apply_gradients(
                 manipulated_parameter_gradients_and_parameters, name='applyGradients')
-
         util = Utils.Utils(dtype)
 
         with tf.name_scope('Algo'):
@@ -91,7 +90,6 @@ class RecurrentStochasticPolicyValue(pc.Policy):
 
 
             with tf.name_scope('RPPO'):
-
                 #POLICY LOSS
                 surr1 = tf.multiply(ratio, advantage)
                 surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param), advantage)

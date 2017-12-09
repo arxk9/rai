@@ -1,8 +1,5 @@
 import sys
 import tensorflow as tf
-import functions
-import graph_structure
-import graph_structure.RNN
 import core
 import os
 # from tensorflow.contrib.keras import backend as K

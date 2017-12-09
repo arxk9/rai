@@ -1,12 +1,10 @@
 /*
  * master.cpp
  *
- *  Created on: Mar 7, 2016
- *      Author: jemin
+ *  Created on: Nov 25, 2017
+ *      Author: Jaeyoung Lim
  *
  *  Note"
- *	1. quadrotor task with AG tree (Hwangbo et. al. 2017)
- *	2. takes about an hour with gpu
  *
  */
 
@@ -22,11 +20,11 @@
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
 
 // Neural network
-#include "rai/function/tensorflow/DeterministicPolicy_TensorFlow.hpp"
+#include "rai/function/tensorflow/StochasticPolicy_TensorFlow.hpp"
 #include "rai/function/tensorflow/ValueFunction_TensorFlow.hpp"
 
 // algorithm
-#include "rai/algorithm/AG_tree.hpp"
+#include "rai/algorithm/TRPO_gae.hpp"
 
 // acquisitor
 #include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
@@ -42,12 +40,12 @@ using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
 using Task = rai::Task::QuadrotorControl<Dtype>;
-using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
-using Policy = rai::FuncApprox::DeterministicPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
-using Vfunction = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
+using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
+using Policy_TensorFlow = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
+using Vfunction_TensorFlow = rai::FuncApprox::ValueFunction_TensorFlow<Dtype, StateDim>;
 using Acquisitor = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
-#define nThread 10
+#define nThread 1
 
 int main(int argc, char *argv[]) {
 
@@ -66,11 +64,13 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Define Function approximations //////////
-  Policy policy("gpu,0", "MLP", "tanh 3e-3 18 128 128 4", 1e-3);
-  Vfunction vfunction("gpu,0", "MLP", "tanh 3e-3 18 128 128 1", 1e-3);
+  Vfunction_TensorFlow vfunction("cpu", "MLP", "tanh 3e-3 18 128 128 1", 1e-3);
+  Policy_TensorFlow policy("cpu", "MLP", "tanh 3e-3 18 128 128 4", 1e-3);
 
   ////////////////////////// Define Noise Model //////////////////////
-  NoiseCovariance covariance = NoiseCovariance::Identity() * Dtype(0.2);
+  Dtype Stdev = 1;
+
+  NoiseCovariance covariance = NoiseCovariance::Identity() * Stdev;
   std::vector<Noise> noiseVec(nThread, Noise(covariance));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
@@ -80,34 +80,35 @@ int main(int argc, char *argv[]) {
   Acquisitor acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
-  rai::Algorithm::AG_tree<Dtype, StateDim, ActionDim>
-      algorithm(taskVector, &vfunction, &policy, noiseVector, &acquisitor, 512, 1024, 1, 1.5, 1.5, 350, 5);
-  algorithm.setVisualizationLevel(1);
+  rai::Algorithm::TRPO_gae<Dtype, StateDim, ActionDim>
+      algorithm(taskVector, &vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1);
+  algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
   rai::Utils::Graph::FigProp2D
-      figurePropertiesEVP("N. Steps Taken", "Performance", "process time vs Performance");
+      figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Episodes vs Performance");
 
   rai::Utils::Graph::FigPropPieChart propChart;
   rai::Utils::logger->addVariableToLog(1, "process time", "");
 
-  constexpr int loggingInterval = 5;
+  constexpr int loggingInterval = 50;
 
   ////////////////////////// Learning /////////////////////////////////
-  for (int iterationNumber = 0; iterationNumber < 50; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 300; iterationNumber++) {
     rai::Utils::logger->appendData("process time", rai::Utils::timer->getGlobalElapsedTimeInMin());
     LOG(INFO) << iterationNumber << "th loop";
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-
-    algorithm.runOneLoop();
+    algorithm.runOneLoop(2000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
+      taskVector[0]->disableRecording();
+
       graph->figure(1, figurePropertiesEVP);
-      graph->appendData(1, logger->getData("process time", 0),
+      graph->appendData(1, logger->getData("PerformanceTester/performance", 0),
                         logger->getData("PerformanceTester/performance", 1),
                         logger->getDataSize("PerformanceTester/performance"),
                         rai::Utils::Graph::PlotMethods2D::linespoints,
@@ -115,14 +116,11 @@ int main(int argc, char *argv[]) {
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1, rai::Utils::Graph::OutputFormat::pdf);
     }
-
-    graph->drawPieChartWith_RAI_Timer(3, timer->getTimedItems(), propChart);
-    graph->drawFigure(3, rai::Utils::Graph::OutputFormat::pdf);
-
     if (iterationNumber % 200 == 49) {
       policy.dumpParam(RAI_LOG_PATH + "/policy_" + std::to_string(iterationNumber) + ".txt");
       vfunction.dumpParam(RAI_LOG_PATH + "/value_" + std::to_string(iterationNumber) + ".txt");
     }
+
   }
 
   graph->drawPieChartWith_RAI_Timer(3, timer->getTimedItems(), propChart);

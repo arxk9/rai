@@ -282,7 +282,7 @@ class LearningData {
               extraTensor3D_t[k].batch(i).block(0, position, extraTensor3D_t[k].dim(0), segLen);
 
         if (keepHiddenState) {
-          /// We only use first column.
+          /// We only use the first column.
           hiddenStates.batch(segID).col(0) = hiddenStates_t.batch(i).col(position);
 //          hiddenStates.batch(segID) =  hiddenStates_t.batch(segID).block(0,stride*j,hDim,segLen);
         }
