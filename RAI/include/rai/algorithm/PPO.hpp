@@ -40,7 +40,6 @@ template<typename Dtype, int StateDim, int ActionDim>
 class PPO {
 
  public:
-
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
@@ -110,6 +109,8 @@ class PPO {
     algoParams.resize(4);
     algoParams << KLCoeff_, entCoeff_, clipCoeff_, maxGradNorm_;
     policy_->setParams(algoParams);
+    vfunction_->setClipRate(clipCoeff_);
+    vfunction_->setMaxGradNorm(maxGradNorm_);
 
     ///update input stdev
     stdev_o.setOnes();
@@ -159,13 +160,7 @@ class PPO {
     for (int i = 0; i < n_epoch_; i++) {
       while (Dataset_.iterateBatch(n_minibatch_)) {
         Utils::timer->startTimer("Vfunction update");
-        if (vfunction_->isRecurrent())
-          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
-                                                              Dataset_.miniBatch->values,
-                                                              Dataset_.miniBatch->extraTensor2D[0],
-                                                              Dataset_.miniBatch->lengths);
-        else
-          loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
+        loss = vfunction_->performOneSolverIter_trustregion(Dataset_.miniBatch->states,
                                                               Dataset_.miniBatch->values,
                                                               Dataset_.miniBatch->extraTensor2D[0]);
         Utils::timer->stopTimer("Vfunction update");
@@ -185,11 +180,8 @@ class PPO {
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       }
       if (KL_adapt_) {
-        if (KL > KLThres_ * 1.5)
-          KLCoeff_ *= 2;
-        if (KL < KLThres_ / 1.5)
-          KLCoeff_ *= 0.5;
-
+        if (KL > KLThres_ * 1.5) KLCoeff_ *= 2;
+        if (KL < KLThres_ / 1.5) KLCoeff_ *= 0.5;
         algoParams[0] = KLCoeff_;
         policy_->setParams(algoParams);
       }
@@ -239,8 +231,7 @@ class PPO {
   double timeLimit;
   bool KL_adapt_;
   int updateN;
-  /////////////////////////// batches
-  ValueBatch advantage_, bellmanErr_;
+
   /////////////////////////// Policy parameter
   VectorXD parameter_;
   VectorXD algoParams;

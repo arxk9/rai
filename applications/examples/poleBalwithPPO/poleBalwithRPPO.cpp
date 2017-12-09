@@ -44,8 +44,6 @@ using ActionBatch = Task::ActionBatch;
 using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
-//using Policy_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
-//using Vfunction_TensorFlow = rai::FuncApprox::RecurrentValueFunction_TensorFlow<Dtype, StateDim>;
 using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
 
 using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
@@ -79,14 +77,14 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "testNet", "relu 1e-3 2 64 / 32 32 1", 0.0001);
+  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 64 32 1", 0.0001);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 0, 50, 1,true, 0.3);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1,true, 0.3);
 
   algorithm.setVisualizationLevel(0);
 
@@ -106,48 +104,8 @@ int main(int argc, char *argv[]) {
   figurePropertieskl.xlabel = "N. Steps Taken";
   figurePropertieskl.ylabel = "gradNorm";
 
-  rai::Utils::Graph::FigProp3D figurePropertiesSVC;
-  figurePropertiesSVC.title = "V function";
-  figurePropertiesSVC.xlabel = "angle";
-  figurePropertiesSVC.ylabel = "T";
-  figurePropertiesSVC.zlabel = "value";
-  figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-
-  rai::Utils::Graph::FigProp3D figurePropertiesSVA;
-  figurePropertiesSVA.title = "Policy";
-  figurePropertiesSVA.xlabel = "angle";
-  figurePropertiesSVA.ylabel = "angular velocity";
-  figurePropertiesSVA.zlabel = "action";
-  figurePropertiesSVA.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
-
   rai::Utils::Graph::FigPropPieChart propChart;
 
-//  ////////////////////////// Choose the computation mode //////////////
-//
-//  ActionBatch action_plot(1, 2601);
-//  rai::Tensor<Dtype,3> state_plot("state");
-//  rai::Tensor<Dtype,2> value_plot;
-//  MatrixXD minimal_X_extended(1, 2601);
-//  MatrixXD minimal_Y_extended(1, 2601);
-//
-//  MatrixXD minimal_X_sampled(1, 2601);
-//  MatrixXD minimal_Y_sampled(1, 2601);
-//  ActionBatch action_sampled(1, 2601);
-//  MatrixXD arrowTip(1, 2601);
-//  MatrixXD zeros2601(1, 5601);
-//  zeros2601.setZero();
-//  state_plot.resize(3, 1, 2601);
-//  value_plot.resize(1, 2601);
-//
-//  for (int i = 0; i < 51; i++) {
-//    for (int j = 0; j < 51; j++) {
-//      minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
-//      minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
-//      state_plot.eTensor()(0,0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
-//      state_plot.eTensor()(1,0, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
-//      state_plot.eTensor()(2,0, i * 51 + j) = minimal_Y_extended(i * 51 + j);
-//    }
-//  }
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 20;
   int iteration = 5000;
@@ -200,11 +158,6 @@ int main(int argc, char *argv[]) {
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(3, rai::Utils::Graph::OutputFormat::pdf);
 
-//      policy.forward(state_plot, value_plot);
-//
-//      graph->drawHeatMap(3, figurePropertiesSVC, minimal_X_extended.data(),
-//                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
-//      graph->drawFigure(3);
     }
 
   }

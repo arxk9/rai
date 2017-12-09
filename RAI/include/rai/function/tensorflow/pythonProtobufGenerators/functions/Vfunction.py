@@ -14,7 +14,8 @@ class Vfunction(bc.SpecializedFunction):
         state_dim = gs.input.shape[1]
         state = gs.input
         value = tf.identity(gs.output, name=self.output_names[0])
-        clip_param = tf.Variable(0.2 * tf.ones(dtype=dtype, shape=[1, 1]), name='clip_param')
+        clip_param = tf.Variable(0.2, name='clip_param')
+        max_grad_norm = tf.Variable(0.5, name='max_grad_norm')
 
         # new placeholders
         value_target = tf.placeholder(dtype, shape=[None, 1], name='targetValue')
@@ -24,30 +25,32 @@ class Vfunction(bc.SpecializedFunction):
 
         # Assign ops.
         param_assign_placeholder = tf.placeholder(dtype, shape=[1, 1], name='param_assign_placeholder')
-        tf.assign(clip_param, param_assign_placeholder, name='clip_param_assign')
+        tf.assign(clip_param, tf.reshape(param_assign_placeholder, []), name='clip_param_assign')
+        tf.assign(max_grad_norm, tf.reshape(param_assign_placeholder, []), name='grad_param_assign')
 
         # gradients
         jac_V_wrt_State = tf.identity(tf.gradients(tf.reduce_mean(value), state)[0], name='gradient_AvgOf_V_wrt_State')
 
         # solvers
         with tf.name_scope('trainUsingTargetValue'):
-            core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer)
+            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
+            core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
 
         with tf.name_scope('trainUsingTargetValue_huber'):
-            core.huber_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer)
+            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
+            core.huber_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
 
         with tf.name_scope('trainUsingTRValue'):
             # Clipping-based trust region loss (https://github.com/openai/baselines/blob/master/baselines/pposgd/pposgd_simple.py)
-
+            vpredclipped = value_pred + tf.clip_by_value(value - value_pred, tf.negative(clip_param), clip_param)
             vfloss1 = tf.square(value - value_target)
-            clip_rate = clip_param[0]
-
-            vpredclipped = value_pred + tf.clip_by_value(value - value_pred, -clip_rate, clip_rate)
             vfloss2 = tf.square(vpredclipped - value_target)
-
             TR_loss = .5 * tf.reduce_mean(tf.maximum(vfloss1, vfloss2), name='loss')
-            # TR_loss = .5 * tf.reduce_mean(vfloss1, name='loss')
 
+            #Optimize
             learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            train = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(TR_loss, name='solver',
-                                                                                 colocate_gradients_with_ops=True)
+            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            grad = tf.gradients(TR_loss, gs.l_param_list, colocate_gradients_with_ops=True)
+            grads, gradnorm = tf.clip_by_global_norm(grad, clip_norm=max_grad_norm)
+            grads = zip(grads, gs.l_param_list)
+            train = optimizer.apply_gradients(grads, name='solver')

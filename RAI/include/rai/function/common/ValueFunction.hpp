@@ -29,6 +29,12 @@ public:
 
   ValueFunction(){};
   virtual ~ValueFunction(){};
+  virtual void setMaxGradNorm(const Dtype Threshold){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  }
+  virtual void setClipRate(const Dtype param_in){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  }
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);

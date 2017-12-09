@@ -16,6 +16,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
                                     public virtual ParameterizedFunction_TensorFlow<Dtype, stateDim, actionDim> {
  public:
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
+  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, 2 * actionDim, -1> JacobianWRTparam;
 
   using Advantages = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;
@@ -291,9 +292,6 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     this->tf_->run({{"state", state}}, {"jac_Action_wrt_State"}, {}, temp);
     jacobian = temp[0];
   }
-
- protected:
-  using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
 
 };
 }//namespace FuncApprox

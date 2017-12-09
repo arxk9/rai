@@ -50,7 +50,7 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                                        std::string graphName,
                                        std::string graphParam,
                                        Dtype learningRate = 1e-3) :
-      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("testfunction", computeMode, graphName, graphParam, learningRate) {
+      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("RecurrentStochasticPolicyValue", computeMode, graphName, graphParam, learningRate) {
 
   }
 

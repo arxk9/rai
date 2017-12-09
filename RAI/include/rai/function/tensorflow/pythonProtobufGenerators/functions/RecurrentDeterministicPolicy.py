@@ -18,7 +18,7 @@ class RecurrentDeterministicPolicy(pc.Policy):
         max_grad_norm = tf.Variable(0.5, name='max_grad_norm')
 
         # new placeholders
-        gradNorm_placeholder = tf.placeholder(dtype, name='gradNorm_placeholder')
+        gradNorm_placeholder = tf.placeholder(dtype, [1,1], name='gradNorm_placeholder')
         action_target = tf.placeholder(dtype, shape=[None, None, action_dim], name='targetAction')
 
         # gradients
@@ -31,7 +31,7 @@ class RecurrentDeterministicPolicy(pc.Policy):
             name='jac_Action_wrt_State')
 
         # Operations
-        gradNorm_assign_ops = tf.assign(max_grad_norm, gradNorm_placeholder, name='max_norm_assign')
+        gradNorm_assign_ops = tf.assign(max_grad_norm, tf.reshape(gradNorm_placeholder,[]), name='max_norm_assign')
 
         with tf.name_scope('trainUsingCritic'):
             gradient_from_critic = tf.placeholder(dtype, shape=[None, None, action_dim], name='gradientFromCritic')

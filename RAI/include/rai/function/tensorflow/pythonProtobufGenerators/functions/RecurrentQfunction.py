@@ -19,7 +19,7 @@ class RecurrentQfunction(bc.SpecializedFunction):
 
         # new placeholders
         q_value_target = tf.placeholder(dtype, shape=[None, None, 1], name='targetQValue') #[batch, time, 1]
-        gradNorm_placeholder = tf.placeholder(dtype, name='gradNorm_placeholder')
+        gradNorm_placeholder = tf.placeholder(dtype, [1,1], name='gradNorm_placeholder')
 
         mask = tf.sequence_mask(gs.seq_length, name='mask')
         q_value_target_masked = tf.boolean_mask(q_value_target, mask)
@@ -28,7 +28,7 @@ class RecurrentQfunction(bc.SpecializedFunction):
 
         # test = tf.identity(tf.cast(tf.shape(),dtype) ,name = 'test')
         # Operations
-        gradNorm_assign_ops = tf.assign(max_grad_norm, gradNorm_placeholder, name='max_norm_assign')
+        gradNorm_assign_ops = tf.assign(max_grad_norm, tf.reshape(gradNorm_placeholder,[]), name='max_norm_assign')
 
         # gradients
         jac_Q_wrt_State = tf.identity(tf.gradients(avg, gs.input1)[0], name='gradient_AvgOf_Q_wrt_State')

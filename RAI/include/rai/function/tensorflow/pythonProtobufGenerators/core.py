@@ -137,7 +137,7 @@ def infimum_loss(labels, predictions, underesterror=1e-3, extraCost=0, name=None
 
 def huber_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
     loss = huber_loss(target, value, extraCost, name='loss')
-    grad = optimizer.compute_gradients(loss)
+    grad = optimizer.compute_gradients(loss, colocate_gradients_with_ops=True)
     if maxnorm is not None:
         grads, variables = zip(*grad)
         grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
@@ -146,7 +146,7 @@ def huber_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None)
 
 def infimum_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
     loss = infimum_loss(target, value, extraCost, name='loss')
-    grad = optimizer.compute_gradients(loss)
+    grad = optimizer.compute_gradients(loss, colocate_gradients_with_ops=True)
     if maxnorm is not None:
         grads, variables = zip(*grad)
         grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
@@ -155,7 +155,7 @@ def infimum_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = Non
 
 def square_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
     loss = tf.reduce_mean(tf.square(target - value), name='loss') + extraCost
-    grad = optimizer.compute_gradients(loss)
+    grad = optimizer.compute_gradients(loss, colocate_gradients_with_ops=True)
     if maxnorm is not None:
         grads, variables = zip(*grad)
         grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)

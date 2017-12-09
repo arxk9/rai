@@ -7,9 +7,9 @@ from tensorflow.contrib.layers import layer_norm
 
 # multiple gated recurrent unit layers (https://arxiv.org/pdf/1406.1078v3.pdf)
 # Implementation of GRU + MLP layers
-class testNet(bc.GraphStructure):
+class LSTM_merged(bc.GraphStructure):
     def __init__(self, dtype, *param, fn):
-        super(testNet, self).__init__(dtype)
+        super(LSTM_merged, self).__init__(dtype)
         nonlin_str = param[0]
         nonlin = getattr(tf.nn, nonlin_str)
         weight = float(param[1])

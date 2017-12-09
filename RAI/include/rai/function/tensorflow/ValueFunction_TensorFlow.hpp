@@ -9,6 +9,9 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                                  public virtual ValueFunction<Dtype, stateDim> {
 
  public:
+  typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
+  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
+
   using ValueFunctionBase = ValueFunction<Dtype, stateDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim, 1>;
 
@@ -115,12 +118,19 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     return loss[0](0);
   }
 
-  void setClipRate(const Dtype param_in){
+  virtual void setClipRate(const Dtype param_in){
     std::vector<MatrixXD> dummy;
-    Eigen::VectorXd input;
+    VectorXD input(1);
     input << param_in;
     this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_param_assign"}, dummy);
 
+  }
+
+  virtual void setMaxGradNorm(const Dtype Threshold){
+    std::vector<MatrixXD> dummy;
+    VectorXD input(1);
+    input << Threshold;
+    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"grad_param_assign"}, dummy);
   }
 
   virtual Dtype test(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Eigen::Matrix<Dtype,-1,-1> &testout) {
@@ -135,9 +145,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     testout = test[0];
     return test[0](0);
   }
-
- protected:
-  using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
 
 };
 } // namespace FuncApprox

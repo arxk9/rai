@@ -153,11 +153,9 @@ class RPPO {
 
   void PPOUpdater() {
     Utils::timer->startTimer("policy Training");
-
     Utils::timer->startTimer("Data Processing");
     Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], true, vfunction_, lambda_,true);
     Utils::timer->stopTimer("Data Processing");
-
 
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
@@ -172,9 +170,7 @@ class RPPO {
     Utils::timer->stopTimer("Data Processing");
 
     policy_->getStdev(stdev_t);
-
     for (int i = 0; i < n_epoch_; i++) {
-
       while (Dataset_.iterateBatch(n_minibatch_)) {
 
         policy_->getStdev(stdev_o);
@@ -194,7 +190,6 @@ class RPPO {
         KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_t);
         LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
       }
-
     }
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
@@ -238,7 +233,6 @@ class RPPO {
   Dtype clipCoeff_;
   Dtype entCoeff_;
   Dtype vCoeff_;
-  Dtype KLThres_;
   double timeLimit;
   int updateN;
   bool stateFull_;
@@ -246,7 +240,6 @@ class RPPO {
   /////////////////////////// Policy parameter
   VectorXD parameter_;
   VectorXD algoParams;
-
   Action stdev_o;
   Action stdev_t;
   Covariance policycov;
