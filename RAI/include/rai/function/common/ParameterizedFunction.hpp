@@ -160,6 +160,7 @@ class ParameterizedFunction {
   virtual Dtype getLossFromLastBatch() { LOG(FATAL) << "NOT IMPLEMENTED"; };
 
   virtual void dumpParam(std::string fileName) { LOG(FATAL) << "NOT IMPLEMENTED"; };
+  virtual void loadParam(std::string fileName) { LOG(FATAL) << "NOT IMPLEMENTED"; };
 
   /// recurrent
   virtual bool isRecurrent() { return false; }

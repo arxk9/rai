@@ -104,14 +104,14 @@ class Trajectory {
     terminalValue_ = Dtype(0);
   }
 
-  StateBatch &getStateMat() {
+  Tensor<Dtype,3> &getStateMat() {
     updateMatrix();
-    return stateTrajMat;
+    return states;
   }
 
-  ActionBatch &getActionMat() {
+  Tensor<Dtype,2> &getActionMat() {
     updateMatrix();
-    return actionTrajMat;
+    return actions;
   }
 
   //////////////////////// non-core methods //////////////////////////////////
@@ -164,13 +164,13 @@ class Trajectory {
 
   void updateBellmanErr(Vfunction_ *baseline, Dtype discFtr, Dtype termCost) {
     updateMatrix();
-    valueMat.resize(size());
+    values.resize(1,size());
     bellmanErr.resize(size() - 1);
-    baseline->forward(stateTrajMat, valueMat);
+    baseline->forward(states, values);
     if (termType == TerminationType::terminalState)
-      valueMat[size() - 1] = termCost;
+      values[size() - 1] = termCost;
     for (int i = 0; i < size() - 1; i++)
-      bellmanErr[i] = valueMat[i + 1] * discFtr + costTraj[i] - valueMat[i];
+      bellmanErr[i] = values[i + 1] * discFtr + costTraj[i] - values[i];
   }
 
   void printOutTraj(){
@@ -178,8 +178,8 @@ class Trajectory {
     std::cout << "--------------------------------------------------------" << std::endl;
     std::cout << "--------------Trajectory printout, size " << size() << std::endl;
     std::cout << "--------------------------------------------------------" << std::endl;
-    std::cout << "stateTrajMat" << std::endl << stateTrajMat << std::endl;
-    std::cout << "actionTrajMat" << std::endl << actionTrajMat << std::endl;
+    std::cout << "stateTrajMat" << std::endl << states << std::endl;
+    std::cout << "actionTrajMat" << std::endl << actions << std::endl;
     std::cout << "termType" << std::endl << int(termType) << std::endl;
     std::cout << "--------------------------------------------------------" << std::endl;
   }
@@ -219,11 +219,10 @@ class Trajectory {
   std::vector<Action> actionTraj;
   std::vector<Action> actionNoiseTraj;
   std::vector<HiddenState> hiddenStateTraj;
-
   std::vector<Dtype> costTraj, accumCostTraj;
   std::vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;
-  CostBatch valueMat, bellmanErr, advantage;
+  CostBatch advantage;
   Dtype terminalValue_ = Dtype(0);
   Dtype discountFct_ = Dtype(0);
 
@@ -231,17 +230,19 @@ class Trajectory {
 
   void updateMatrix() {
     if (matrixUpdated) return;
-    stateTrajMat.resize(stateDim, size());
-    actionTrajMat.resize(actionDim, size());
+    states = "state";
+    states.resize(stateDim, size(), 1);
+    actions.resize(actionDim, size());
     for (int colID = 0; colID < size(); colID++) {
-      stateTrajMat.col(colID) = stateTraj[colID];
-      actionTrajMat.col(colID) = actionTraj[colID];
+      states.col(0, colID) = stateTraj[colID];
+      actions.col(colID) = actionTraj[colID];
     }
     matrixUpdated = true;
   }
+  Tensor<Dtype,3> states;
+  Tensor<Dtype,2> actions, values;
+  Tensor<Dtype,1> bellmanErr;
 
-  StateBatch stateTrajMat;
-  ActionBatch actionTrajMat;
   bool matrixUpdated = false;
   bool gaeUpdated = false;
 

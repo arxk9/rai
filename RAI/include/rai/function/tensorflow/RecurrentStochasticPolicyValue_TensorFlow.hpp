@@ -28,6 +28,22 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
 
   using Pfunction_tensorflow::h;
   using Pfunction_tensorflow::hdim;
+/// To avoid ambiguity
+  using Pfunction_tensorflow::getLearningRate;
+  using Pfunction_tensorflow::setLearningRate;
+  using Pfunction_tensorflow::dumpParam;
+  using Pfunction_tensorflow::loadParam;
+  using Pfunction_tensorflow::copyStructureFrom;
+  using Pfunction_tensorflow::copyLPFrom;
+  using Pfunction_tensorflow::copyAPFrom;
+  using Pfunction_tensorflow::interpolateLPWith;
+  using Pfunction_tensorflow::interpolateAPWith;
+  using Pfunction_tensorflow::getLPSize;
+  using Pfunction_tensorflow::getAPSize;
+  using Pfunction_tensorflow::getLP;
+  using Pfunction_tensorflow::getAP;
+  using Pfunction_tensorflow::setLP;
+  using Pfunction_tensorflow::setAP;
 
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
   typedef typename PolicyBase::State State;
@@ -36,7 +52,6 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
   typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
-
   typedef typename PolicyBase::Tensor1D Tensor1D;
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
@@ -140,7 +155,7 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
     std::vector<MatrixXD> dummy;
     this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
-  
+
   virtual void forward(State &state, Action &action) {
     std::vector<MatrixXD> vectorOfOutputs;
     MatrixXD h_, length;

@@ -122,6 +122,7 @@ class DDPG {
     for (auto &task : task_)
       task->setToInitialState();
     for (auto &noise : noise_)
+      noise->initializeNoise();
     /////////////////////////////////////////////////////////////////////////
     for (unsigned i = 0; i < numOfSteps / n_newSamplePerEpoch_; i++)
         learnForOneCycle();
