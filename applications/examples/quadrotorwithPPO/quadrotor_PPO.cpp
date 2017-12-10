@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   constexpr int loggingInterval = 50;
 
   ////////////////////////// Learning /////////////////////////////////
-  for (int iterationNumber = 0; iterationNumber < 100; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 101; iterationNumber++) {
     rai::Utils::logger->appendData("process time", rai::Utils::timer->getGlobalElapsedTimeInMin());
     LOG(INFO) << iterationNumber << "th loop";
     if (iterationNumber % loggingInterval == 0) {

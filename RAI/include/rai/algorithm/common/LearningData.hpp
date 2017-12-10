@@ -159,19 +159,19 @@ class LearningData {
 
     // update terimnal value
     if (vf) {
-      Eigen::Matrix<Dtype, 1, -1> termValueBat;
-      Eigen::Matrix<Dtype, StateDim, -1> termStateBat;
+      Tensor2D termValues;
+      Tensor3D termStates("state");
 
-      termValueBat.resize(1, traj.size());
-      termStateBat.resize(StateDim, traj.size());
+      termValues.resize(1, traj.size());
+      termStates.resize(StateDim, 1, traj.size());
 
       ///update value traj
       for (int traID = 0; traID < traj.size(); traID++)
-        termStateBat.col(traID) = traj[traID].stateTraj.back();
-      vf->forward(termStateBat, termValueBat);
+        termStates.batch(traID) = traj[traID].stateTraj.back();
+      vf->forward(termStates, termValues);
       for (int traID = 0; traID < traj.size(); traID++)
         if (traj[traID].termType == TerminationType::timeout) {
-          traj[traID].updateValueTrajWithNewTermValue(termValueBat(traID), task->discountFtr());
+          traj[traID].updateValueTrajWithNewTermValue(termValues[traID], task->discountFtr());
         }
 
       int colID = 0;
