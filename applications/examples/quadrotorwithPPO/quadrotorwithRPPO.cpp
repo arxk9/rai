@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 4, 4, 50, 1, true, 0.3);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 2, 10, 10, 4, 4, 50, 1, true, 0.3);
 
   algorithm.setVisualizationLevel(0);
 
