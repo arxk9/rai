@@ -57,12 +57,11 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions) {
     std::vector<MatrixXD> vectorOfOutputs;
     actions = "targetAction";
-    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue/learningRate");
 
     if (h.cols() != minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
     h = minibatch->hiddenStates.col(0);
 
-    this->tf_->run({minibatch->states, minibatch->lengths, actions, h, lr},
+    this->tf_->run({minibatch->states, minibatch->lengths, actions, h},
                    {"trainUsingTargetAction/loss"},
                    {"trainUsingTargetAction/solver"}, vectorOfOutputs);
 
@@ -72,7 +71,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   Dtype backwardUsingCritic(Qfunction_tensorflow *qFunction, Dataset *minibatch) {
     std::vector<MatrixXD> dummy;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
-    Tensor1D lr({1}, this->learningRate_, "trainUsingCritic/learningRate");
     Tensor2D hiddenState({hdim, minibatch->batchNum}, "h_init");
     hiddenState = minibatch->hiddenStates.col(0);
 
@@ -83,7 +81,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     forward(minibatch->states, minibatch->actions, hiddenState);
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(minibatch, gradients);
 
-    this->tf_->run({minibatch->states, minibatch->lengths, hiddenState, gradients, lr}, {"trainUsingCritic/gradnorm"},
+    this->tf_->run({minibatch->states, minibatch->lengths, hiddenState, gradients}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
     return averageQ;
   }

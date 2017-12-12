@@ -63,12 +63,11 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
   virtual Dtype performOneSolverIter( Tensor3D &states,  Tensor3D &actions, Tensor1D &lengths,Tensor3D &values){
     std::vector<MatrixXD> vectorOfOutputs;
     values = "targetQValue";
-    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue/learningRate");
 
     if(h.cols()!= states.batches()) h.resize(hdim, states.batches());
     h.setZero();
 
-    this->tf_->run({states, actions, lengths, values, h, lr},
+    this->tf_->run({states, actions, lengths, values, h},
                    {"trainUsingTargetQValue/loss"},
                    {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
 
@@ -78,12 +77,11 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &values){
     std::vector<MatrixXD> vectorOfOutputs;
     values = "targetQValue";
-    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue/learningRate");
 
     if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
     h.setZero();
 
-    this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, h, lr},
+    this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, h},
                     {"trainUsingTargetQValue/loss"},
                    {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
 
@@ -93,13 +91,12 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
 
   virtual Dtype test(Dataset *minibatch, Tensor3D &values){
     std::vector<MatrixXD> vectorOfOutputs;
-    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue/learningRate");
     values = "targetQValue";
     if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
     h.setZero();
 
     Eigen::Matrix<Dtype,-1,1> test;
-    this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, h, lr},
+    this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, h},
                    {"test"},
                    {}, vectorOfOutputs);
 

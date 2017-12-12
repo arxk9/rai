@@ -35,9 +35,7 @@ class RecurrentQfunction(bc.SpecializedFunction):
 
         # solvers
         with tf.name_scope('trainUsingTargetQValue'):
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            core.square_loss_opt(dtype, q_value_target_masked, q_value_masked, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
+            core.square_loss_opt(dtype, q_value_target_masked, q_value_masked, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=max_grad_norm)
 
         with tf.name_scope('trainUsingTargetQValue_huber'):
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            core.huber_loss_opt(dtype, q_value_target_masked, q_value_masked, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
+            core.huber_loss_opt(dtype, q_value_target_masked, q_value_masked, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=max_grad_norm)

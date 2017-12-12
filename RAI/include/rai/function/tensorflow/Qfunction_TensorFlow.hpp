@@ -51,11 +51,9 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
 
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions, Tensor2D &values) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue/learningRate");
     this->tf_->run({states,
                     actions,
-                    values,
-                    lr},
+                    values},
                     {"trainUsingTargetQValue/loss"},
                    {"trainUsingTargetQValue/solver"}, loss);
     return loss[0](0);
@@ -64,13 +62,11 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   virtual Dtype performOneSolverIter_infimum(Tensor3D &states, Tensor3D &actions, Tensor2D &values, Dtype linSlope) {
     std::vector<MatrixXD> loss;
     Tensor1D slope({1}, linSlope, "trainUsingTargetQValue_infimum/learningRate");
-    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue_infimum/learningRate");
 
     this->tf_->run({states,
                     actions,
                     values,
-                    slope,
-                    lr}, {"trainUsingTargetQValue_infimum/loss"},
+                    slope}, {"trainUsingTargetQValue_infimum/loss"},
                    {"trainUsingTargetQValue_infimum/solver"}, loss);
 
     return loss[0](0);

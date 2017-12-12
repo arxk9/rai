@@ -41,15 +41,16 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
    * In order to get a network that is initialized the same and, you also have to set the TensorFlow random seed when
    * when generating the net (due to the weights being initialized randomly).
    */
-  ParameterizedFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) : learningRate_(learningRate){
+  ParameterizedFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) {
     tf_ = new TensorFlowNeuralNetwork<Dtype>(pathToGraphDefProtobuf, 0);
+    this->setLearningRate(learningRate);
   }
 
   ParameterizedFunction_TensorFlow(std::string functionName,
                                    std::string computeMode,
                                    std::string graphName,
                                    std::string graphParam,
-                                   Dtype learningRate = 1e-3) : learningRate_(learningRate) {
+                                   Dtype learningRate = 1e-3) {
     LOG(INFO) << "use pregenerated files if you want to save time creating graph file";
     LOG_IF(FATAL, RAI_LOG_PATH.empty()) << "CALL RAI INIT FIRST";
 
@@ -66,6 +67,7 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
 
     system(cmnd.c_str());
     tf_ = new TensorFlowNeuralNetwork<Dtype>(RAI_LOG_PATH + "/" + functionName + "_" + graphName + ".pb", 0);
+    this->setLearningRate(learningRate);
   }
 
   virtual ~ParameterizedFunction_TensorFlow() {
@@ -142,9 +144,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   virtual void setAP(Parameter &param) {
     tf_->setAP(param);
   }
-  virtual Dtype getGlobalStep(){
-    return tf_->getGlobalStep();
-  }
 
   virtual void copyLPFrom(PfunctionBase const *const refFcn) {
     Pfunction_tensorflow const *pReferenceFunction = castToThisClass(refFcn);
@@ -171,8 +170,8 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 
   void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
-                                              const std::vector<std::string> &outputTensorNames,
-                                              const std::vector<std::string> &targetNodeNames, std::vector<tensorflow::Tensor> &outputs) {
+           const std::vector<std::string> &outputTensorNames,
+           const std::vector<std::string> &targetNodeNames, std::vector<tensorflow::Tensor> &outputs) {
     tf_->run(inputs, outputTensorNames, targetNodeNames, outputs);
   }
 
@@ -181,13 +180,24 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 
   virtual void setLearningRate(Dtype learningRate) {
-    learningRate_= learningRate;
+    Tensor1D lr({1}, learningRate, "trainingOptions/param_assign_placeholder");
+    tf_->run({lr}, {}, {"InitLR_assign"});
+  }
+
+  virtual void setLearningRateDecay(Dtype decayRate, int decaySteps) {
+    Tensor1D dr({1}, decayRate, "trainingOptions/param_assign_placeholder");
+    rai::Tensor<int, 1> ds({1}, decaySteps, "trainingOptions/param_assign_placeholder_int");
+    tf_->run({dr, ds}, {}, {"DecayRateLR_assign", "DecayStepLR_assign"});
   }
 
   virtual Dtype getLearningRate() {
-    return learningRate_;
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    tf_->run({}, {"trainingOptions/LR"}, {}, vectorOfOutputs);
+    return vectorOfOutputs[0].scalar<Dtype>()();
   }
-
+  int getGlobalStep() {
+    return tf_->getGlobalStep();
+  }
   virtual void setCheckNumerics(bool checkNumerics) {
     tf_->setCheckNumerics(checkNumerics);
   }
@@ -227,7 +237,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;
 
   TensorFlowNeuralNetwork<Dtype> *tf_;
-  Dtype learningRate_;
 
   const MatrixXD notUpdateBN = (MatrixXD(1, 1) << 0).finished();
   const MatrixXD updateBN = (MatrixXD(1, 1) << 1).finished();

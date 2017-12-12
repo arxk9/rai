@@ -31,6 +31,8 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
 /// To avoid ambiguity
   using Pfunction_tensorflow::getLearningRate;
   using Pfunction_tensorflow::setLearningRate;
+  using Pfunction_tensorflow::setLearningRateDecay;
+
   using Pfunction_tensorflow::dumpParam;
   using Pfunction_tensorflow::loadParam;
   using Pfunction_tensorflow::copyStructureFrom;
@@ -148,10 +150,7 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
 
   virtual void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
-    MatrixXD lr(1,1);
-    lr(0) = learningRate_;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", lr}}, {},
+    this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
 };

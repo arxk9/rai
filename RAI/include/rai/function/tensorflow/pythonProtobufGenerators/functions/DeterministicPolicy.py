@@ -23,8 +23,7 @@ class DeterministicPolicy(pc.Policy):
         with tf.name_scope('trainUsingCritic'):
             gradient_placeholder = tf.placeholder(dtype, name='gradientFromCritic')
             gradient_from_critic = tf.reshape(gradient_placeholder, shape=[-1, action_dim])
-            train_using_critic_learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            train_using_critic_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate)
+            train_using_critic_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
             grads = tf.gradients(action, gs.l_param_list, gradient_from_critic)
             grad_norm = tf.reduce_sum([tf.norm(grad) for grad in grads], name='gradnorm')
             manipulated_parameter_gradients_and_parameters = zip(grads, gs.l_param_list)

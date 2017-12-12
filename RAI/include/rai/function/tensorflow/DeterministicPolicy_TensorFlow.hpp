@@ -61,13 +61,11 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-    Tensor1D lr({1}, this->learningRate_, "trainUsingCritic/learningRate");
 
 
     std::vector<MatrixXD> dummy;
     this->tf_->run({states,
-                    gradients,
-                    lr}, {"trainUsingCritic/gradnorm"},
+                    gradients}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
     return averageQ;
   }

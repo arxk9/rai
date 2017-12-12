@@ -33,12 +33,10 @@ class RecurrentVfunction(bc.SpecializedFunction):
 
         # solvers
         with tf.name_scope('trainUsingTargetValue'):
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            core.square_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
+            core.square_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=max_grad_norm)
 
         with tf.name_scope('trainUsingTargetValue_huber'):
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            core.huber_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
+            core.huber_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=max_grad_norm)
 
         with tf.name_scope('trainUsingTRValue'):
             # Clipping-based trust region loss (https://github.com/openai/baselines/blob/master/baselines/pposgd/pposgd_simple.py)
@@ -53,9 +51,8 @@ class RecurrentVfunction(bc.SpecializedFunction):
             TR_loss = .5 * tf.reduce_mean(tf.maximum(vfloss1, vfloss2), name='loss')
 
             #Optimize
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
             grad = tf.gradients(TR_loss, gs.l_param_list, colocate_gradients_with_ops=True)
             grads, gradnorm = tf.clip_by_global_norm(grad, clip_norm=max_grad_norm)
             grads = zip(grads, gs.l_param_list)
-            train = optimizer.apply_gradients(grads, name='solver')
+            train = optimizer.apply_gradients(grads, name='solver', global_step=tf.train.get_global_step())

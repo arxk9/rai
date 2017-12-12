@@ -215,8 +215,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   virtual void setStdev(const Action &Stdev) {
-    std::vector<MatrixXD> dummy;
-    this->tf_->run({{"Stdev_placeholder", Stdev}}, {}, {"assignStdev"}, dummy);
+    this->tf_->run({{"Stdev_placeholder", Stdev}}, {}, {"assignStdev"});
   }
 
   virtual void getStdev(Action &Stdev) {
@@ -243,19 +242,12 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
 
   void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
-    MatrixXD lr(1,1);
-    lr(0) = this->learningRate_;
-
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", lr}}, {},
+    this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
     std::vector<MatrixXD> dummy;
-    MatrixXD lr(1,1);
-    lr(0) = learningrate;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", lr}}, {},
+    this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
 };

@@ -47,12 +47,24 @@ class TensorFlowNeuralNetwork {
     std::vector<std::pair<std::string, tensorflow::Tensor> > namedInputTensorFlowTensors;
     namedEigenMatricesToNamedTFTensors(inputs, namedInputTensorFlowTensors);
     std::vector<tensorflow::Tensor> outputTensorFlowTensors;
-    std::vector<std::string> outputTensorNamesModified = outputTensorNames;
 
-    auto status = session->Run(namedInputTensorFlowTensors, outputTensorNamesModified, targetNodeNames,
+    auto status = session->Run(namedInputTensorFlowTensors, outputTensorNames, targetNodeNames,
                                &outputTensorFlowTensors);
     LOG_IF(FATAL, !status.ok()) << status.ToString();
     tfTensorsToEigenMatrices(outputTensorFlowTensors, outputs);
+  }
+  //mat no output (just run a node)
+  inline void run(const std::vector<std::pair<std::string, MatrixXD>> &inputs,
+                  const std::vector<std::string> &outputTensorNames,
+                  const  std::vector<std::string> &targetNodeNames) {
+
+    std::vector<std::pair<std::string, tensorflow::Tensor> > namedInputTensorFlowTensors;
+    namedEigenMatricesToNamedTFTensors(inputs, namedInputTensorFlowTensors);
+    std::vector<tensorflow::Tensor> outputTensorFlowTensors;
+
+    auto status = session->Run(namedInputTensorFlowTensors, outputTensorNames, targetNodeNames,
+                               &outputTensorFlowTensors);
+    LOG_IF(FATAL, !status.ok()) << status.ToString();
   }
 
 //  //tensor to tensor
@@ -108,6 +120,16 @@ class TensorFlowNeuralNetwork {
     tfTensorsToEigenMatrices(outputTensorFlowTensors, outputs);
   }
 
+  //tensor no output (just run a node)
+  inline void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
+                  const std::vector<std::string> &outputTensorNames,
+                  const  std::vector<std::string> &targetNodeNames) {
+
+    std::vector<tensorflow::Tensor> outputTensorFlowTensors;
+    std::vector<std::string> targetNodeNamesModified = targetNodeNames;
+    auto status = session->Run(inputs, outputTensorNames, targetNodeNamesModified, &outputTensorFlowTensors);
+    LOG_IF(FATAL, !status.ok()) << status.ToString();
+  }
 
   void runTargetNodes(const std::vector<std::pair<std::string, MatrixXD>> &inputs,
                       const std::vector<std::string> &targetNodeNames) {
@@ -319,7 +341,7 @@ class TensorFlowNeuralNetwork {
     auto status = this->session->Run({{"AP_placeholder", APvec_[0]}}, {}, {"assignAP"}, nullptr);
     LOG_IF(FATAL, !status.ok()) << status.ToString();
   }
-  Dtype getGlobalStep(){
+  int getGlobalStep(){
     std::vector<tensorflow::Tensor> globalStep;
     auto status = this->session->Run({}, {"global_step"}, {}, &globalStep);
     LOG_IF(FATAL, !status.ok()) << status.ToString();

@@ -57,20 +57,10 @@ class StochasticPolicy(pc.Policy):
             tf.assign(max_grad_norm, tf.reshape(tf.slice(PPO_params_placeholder, [0, 3], [1, 1]), []), name='max_norm_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
-        initial_lr = self.testlr
-        print(initial_lr)
 
         with tf.name_scope('trainUsingGrad'):
             gradient_from_critic = tf.placeholder(dtype, shape=[1, None], name='Inputgradient')
-            train_using_critic_learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'),
-                                                          shape=[])
-
-
-            decayrate = tf.Variable(tf.constant(0.9, dtype=dtype))
-            global_step = tf.train.get_global_step()
-            decaylr = tf.train.exponential_decay(initial_lr, global_step, 5, decayrate)
-
-            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=decaylr)
+            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
             split_parameter_gradients = tf.split(gradient_from_critic,
                                                  [reduce(mul, param.get_shape().as_list(), 1) for param in
                                                   gs.a_param_list], 1)
@@ -80,7 +70,7 @@ class StochasticPolicy(pc.Policy):
 
             manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
             train_using_gradients = train_using_grad_optimizer.apply_gradients(
-                manipulated_parameter_gradients_and_parameters, name='applyGradients')
+                manipulated_parameter_gradients_and_parameters, name='applyGradients', global_step=tf.train.get_global_step())
 
         util = Utils.Utils(dtype)
 

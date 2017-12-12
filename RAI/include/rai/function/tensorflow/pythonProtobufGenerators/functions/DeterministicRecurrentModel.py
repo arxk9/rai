@@ -26,7 +26,7 @@ class DeterministicRecurrentModel(bc.SpecializedFunction):
 
         # solvers
         with tf.name_scope('trainUsingTargetQValue'):
-            core.square_loss_opt(dtype, nextState_target, nextState, tf.train.AdamOptimizer)
+            core.square_loss_opt(dtype, nextState_target, nextState, tf.train.AdamOptimizer(learning_rate=self.learningRate))
 
         with tf.name_scope('trainUsingTargetQValue_huber'):
-            core.huber_loss_opt(dtype, nextState_target, nextState, tf.train.AdamOptimizer)
+            core.huber_loss_opt(dtype, nextState_target, nextState, tf.train.AdamOptimizer(learning_rate=self.learningRate))

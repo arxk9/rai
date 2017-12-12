@@ -142,7 +142,7 @@ def huber_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None)
         grads, variables = zip(*grad)
         grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
         grad = zip(grads, variables)
-    train = optimizer.apply_gradients(grad, name='solver')
+    train = optimizer.apply_gradients(grad, name='solver', global_step=tf.train.get_global_step())
 
 def infimum_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
     loss = infimum_loss(target, value, extraCost, name='loss')
@@ -151,7 +151,7 @@ def infimum_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = Non
         grads, variables = zip(*grad)
         grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
         grad = zip(grads, variables)
-    train = optimizer.apply_gradients(grad, name='solver')
+    train = optimizer.apply_gradients(grad, name='solver', global_step=tf.train.get_global_step())
 
 def square_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None):
     loss = tf.reduce_mean(tf.square(target - value), name='loss') + extraCost
@@ -160,4 +160,4 @@ def square_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None
         grads, variables = zip(*grad)
         grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
         grad = zip(grads, variables)
-    train = optimizer.apply_gradients(grad, name='solver')
+    train = optimizer.apply_gradients(grad, name='solver', global_step=tf.train.get_global_step())

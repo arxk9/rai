@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Define Function approximations //////////
   Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
   Policy_TensorFlow policy("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-
+  policy.setLearningRateDecay(0.99,50);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
@@ -129,12 +129,14 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
   for (int iterationNumber = 1; iterationNumber <= 101; iterationNumber++) {
+    LOG(INFO) << iterationNumber << "th Iteration";
+    LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    LOG(INFO) << iterationNumber << "th Iteration";
+
     algorithm.runOneLoop(6000);
 
     if (iterationNumber % loggingInterval == 0) {
