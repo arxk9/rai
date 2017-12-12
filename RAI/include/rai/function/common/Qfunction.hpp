@@ -39,10 +39,15 @@ public:
   Qfunction(){};
   virtual ~Qfunction(){};
 
-  virtual void forward(State& state, Action& action, Dtype& value) = 0;
-  virtual void forward(StateBatch& states, ActionBatch& actions, ValueBatch &values) = 0;
-  virtual Dtype performOneSolverIter(StateBatch& states, ActionBatch& actions, ValueBatch &values) = 0;
-  virtual Dtype performOneSolverIter_infimum(StateBatch &states, ActionBatch &actions, ValueBatch &values, Dtype linSlope) {};
+  virtual Dtype performOneSolverIter(StateBatch& states, ActionBatch& actions, ValueBatch &values){
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  }
+
+  virtual Dtype performOneSolverIter_infimum(StateBatch &states, ActionBatch &actions, ValueBatch &values, Dtype linSlope) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  }
 };
 
 }} // namespaces

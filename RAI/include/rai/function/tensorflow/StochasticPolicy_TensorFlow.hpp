@@ -235,20 +235,10 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::vector<MatrixXD> dummy;
     this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
-
-  virtual void forward(State &state, Action &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->forward({{"state", state}},
-                       {"action"}, vectorOfOutputs);
-
-    action = vectorOfOutputs[0];
-  }
-
-  virtual void forward(StateBatch &state, ActionBatch &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->forward({{"state", state}},
-                       {"action"}, vectorOfOutputs);
-    action = vectorOfOutputs[0];
+  virtual void forward(Tensor2D &states, Tensor2D &actions) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual void forward(Tensor3D &states, Tensor3D &actions) {

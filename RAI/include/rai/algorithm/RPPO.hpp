@@ -162,12 +162,11 @@ class RPPO {
     Dtype KL = 0;
     Dtype loss;
 
-    /// Append predicted value to Dataset_ for trust region update
-    vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0]);
-
     Utils::timer->startTimer("Data Processing");
-    if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_,stateFull_);
+    if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_, stateFull_);
     Utils::timer->stopTimer("Data Processing");
+
+    vfunction_->forward(Dataset_.states, Dataset_.extraTensor2D[0], Dataset_.hiddenStates);
 
     policy_->getStdev(stdev_t);
     for (int i = 0; i < n_epoch_; i++) {

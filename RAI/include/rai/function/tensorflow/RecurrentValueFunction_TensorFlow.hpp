@@ -75,22 +75,6 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
     h.copyDataFrom(vectorOfOutputs[1]);
   }
 
-  virtual void forward(Tensor3D &states, Tensor2D &values) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-
-    if (h.cols() != states.batches()) {
-      h.resize(hdim, states.batches());
-    }
-    h.setZero();
-//    }
-
-    this->tf_->run({states,  h, len}, {"value", "h_state"}, {}, vectorOfOutputs);
-//    h.copyDataFrom(vectorOfOutputs[1]);
-    values.copyDataFrom(vectorOfOutputs[0]);
-//    LOG(INFO) << h.eMat();
-  }
-
   virtual void test(Tensor3D &states, Tensor2D &values) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D len({states.batches()}, states.dim(1), "length");
@@ -100,12 +84,10 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
       h.resize(hdim, states.batches());
     }
     h.setZero();
-//    }
 
     this->tf_->run({states,  h, len}, {"test", "h_state"}, {}, vectorOfOutputs);
 //    h.copyDataFrom(vectorOfOutputs[1]);
     values.copyDataFrom(vectorOfOutputs[0]);
-//    LOG(INFO) << h.eMat();
   }
 
 

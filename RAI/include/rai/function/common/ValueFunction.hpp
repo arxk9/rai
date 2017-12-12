@@ -45,6 +45,11 @@ public:
     return Dtype(0);
   };
 
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values, Tensor1D &lengths) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  };
+
   virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &targetOutputs, ValueBatch &old_prediction) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);

@@ -108,9 +108,9 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 20;
-  int iteration = 5000;
+  int iteration = 200;
   Dtype lr = policy.getLearningRate();
-  Dtype lr_lowerbound =  0.1 * lr;
+  Dtype lr_lowerbound =  0 ;
 
   for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     }
     LOG(INFO) << "Learning rate:"<<lr;
 
-    algorithm.runOneLoop(20000);
+    algorithm.runOneLoop(10000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

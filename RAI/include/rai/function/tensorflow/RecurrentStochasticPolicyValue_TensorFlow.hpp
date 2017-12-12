@@ -45,7 +45,6 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
   using Pfunction_tensorflow::setLP;
   using Pfunction_tensorflow::setAP;
 
-  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
@@ -191,29 +190,6 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
     h.copyDataFrom(vectorOfOutputs[1]);
   }
 
-  ///value forward
-  virtual void forward(Tensor3D &states, Tensor2D &values) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
-
-    this->tf_->run({states,  hiddenState, len}, {"value",}, {}, vectorOfOutputs);
-    values.copyDataFrom(vectorOfOutputs[0]);
-  }
-
-  ///policy forward
-  virtual void forward(Tensor3D &states, Tensor3D &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()},  states.dim(1), "length");
-    if (h.cols() != states.batches()) {
-      h.resize(hdim, states.batches());
-      h.setZero();
-    }
-    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    h.copyDataFrom(vectorOfOutputs[1]);
-    actions.copyDataFrom(vectorOfOutputs[0]);
-  }
-
   virtual void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
@@ -221,18 +197,10 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
 
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) { return 0; }
-
-  virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
-    std::vector<MatrixXD> dummy;
-    VectorXD inputrate(1);
-    inputrate(0) = learningrate;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", inputrate}}, {},
-                   {"trainUsingGrad/applyGradients"}, dummy);
+  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
+    LOG(FATAL) << "Not implemented";
+    return 0;
   }
-
-
 };
 }//namespace FuncApprox
 }//namespace rai

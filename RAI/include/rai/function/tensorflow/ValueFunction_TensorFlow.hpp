@@ -56,6 +56,12 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     values = vectorOfOutputs[0];
   }
 
+  virtual void forward(Tensor2D &states, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states}, {"value"}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+
   virtual void forward(Tensor3D &states, Tensor2D &values) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"value"}, vectorOfOutputs);

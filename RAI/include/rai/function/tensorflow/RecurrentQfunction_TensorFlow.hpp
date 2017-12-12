@@ -71,27 +71,10 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
       h.resize(hdim, states.cols());
     }
       h.setZero();
-//    }
 
     this->tf_->run({stateT, actionT, h, len}, {"QValue", "h_state"}, {}, vectorOfOutputs);
     std::memcpy(values.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * values.size());
     h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
-  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor3D &values) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-
-    if (h.cols() != states.batches()) {
-      h.resize(hdim, states.batches());
-    }
-      h.setZero();
-//    }
-
-    this->tf_->run({states, actions, h, len}, {"QValue", "h_state"}, {}, vectorOfOutputs);
-//    h.copyDataFrom(vectorOfOutputs[1]);
-    values.copyDataFrom(vectorOfOutputs[0]);
-//    LOG(INFO) << h.eMat();
   }
 
   virtual void test(Tensor3D &states, Tensor3D &actions) {

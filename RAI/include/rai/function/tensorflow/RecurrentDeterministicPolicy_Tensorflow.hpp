@@ -91,27 +91,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     h.copyDataFrom(vectorOfOutputs[1]);
   }
 
-  virtual void forward(Tensor3D &states, Tensor3D &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-
-    if (h.cols() != states.batches()) {
-      h.resize(hdim, states.batches());
-      h.setZero();
-    }
-
-    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    h.copyDataFrom(vectorOfOutputs[1]);
-    actions.copyDataFrom(vectorOfOutputs[0]);
-  }
-  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &hiddenstates) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-
-    this->tf_->run({states, hiddenstates, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    actions.copyDataFrom(vectorOfOutputs[0]);
-  }
-
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions) {
     std::vector<MatrixXD> vectorOfOutputs;
     actions = "targetAction";
