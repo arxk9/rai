@@ -45,6 +45,25 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
 
   ~RecurrentValueFunction_TensorFlow() {};
 
+  virtual void forward(Tensor3D &states, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
+
+    this->tf_->run({states,  hiddenState, len}, {"value",}, {}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+
+  virtual void forward(Tensor3D &states, Tensor2D &values, Tensor3D &hiddenStates) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
+    hiddenState = hiddenStates.col(0);
+
+    this->tf_->run({states,  hiddenState, len}, {"value", "h_state"}, {}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+
   virtual void test(Tensor3D &states, Tensor2D &values) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D len({states.batches()}, states.dim(1), "length");
