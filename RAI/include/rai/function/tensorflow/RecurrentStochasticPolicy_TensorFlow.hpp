@@ -131,43 +131,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     std::vector<MatrixXD> dummy;
     this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
-
-  virtual void forward(State &state, Action &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    MatrixXD h_, length;
-    length.resize(1,1);
-    if (h.cols() != 1) {
-      h_.resize(hdim, 1);
-      h.setZero();
-    }
-    h_ = h.eMat();
-
-    this->tf_->forward({{"state", state},
-                        {"length", length},
-                        {"h_init", h_}},
-                       {"action",  "h_state"}, vectorOfOutputs);
-    action = vectorOfOutputs[0];
-    std::memcpy(action.data(), vectorOfOutputs[0].data(), sizeof(Dtype) * action.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
-  virtual void forward(StateBatch &states, ActionBatch &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
-    Tensor1D len({states.cols()}, 1, "length");
-    stateT.copyDataFrom(states);
-
-    if (h.cols() != states.cols()) {
-      h.resize(hdim, states.cols());
-      h.setZero();
-    }
-
-    this->tf_->run({stateT, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    std::memcpy(actions.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * actions.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) { return 0; }
+  
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
     std::vector<MatrixXD> dummy;
     VectorXD inputrate(1);

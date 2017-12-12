@@ -163,59 +163,6 @@ class PO_PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
     return result;
   }
 
-  void plotPolicyAndValueFunction(rai::FuncApprox::Policy<Dtype, StateDim, ActionDim> &policy,
-                                  rai::FuncApprox::Qfunction<Dtype, StateDim, ActionDim> &qFunction,
-                                  int nPlotPoints = 50, int figureNumberForValueFunction = 0,
-                                  int figureNumberForPolicy = 1) {
-    VectorXD phiValues = VectorXD::LinSpaced(nPlotPoints, -M_PI, M_PI);
-    VectorXD phiDotValues = VectorXD::LinSpaced(nPlotPoints, -8, 8);
-
-    MatrixXD XX = phiValues.replicate(1, phiDotValues.size());
-    MatrixXD YY = phiDotValues.transpose().replicate(phiValues.size(), 1);
-    MatrixXD sampledValueFunction(nPlotPoints, nPlotPoints);
-    MatrixXD sampledPolicy(nPlotPoints, nPlotPoints);
-
-    State state;
-    Action action;
-    Dtype value;
-    for (int phiIdx = 0; phiIdx < phiValues.size(); ++phiIdx) {
-      for (int phiDotIdx = 0; phiDotIdx < phiDotValues.size(); ++phiDotIdx) {
-        Dtype phi = phiValues(phiIdx);
-        Dtype phiDot = phiDotValues(phiDotIdx);
-        state << cos(phi), sin(phi), phiDot;
-        policy.forward(state, action);
-        sampledPolicy(phiIdx, phiDotIdx) = action(0, 0);
-        qFunction.forward(state, action, value);
-        sampledValueFunction(phiIdx, phiDotIdx) = value;
-      }
-    }
-
-    Utils::Graph::FigProp3D valueFunctionFigure;
-    valueFunctionFigure.xlabel = "phi";
-    valueFunctionFigure.ylabel = "phidot";
-    valueFunctionFigure.title = "value function";
-    valueFunctionFigure.displayType = Utils::Graph::DisplayType3D::heatMap3D;
-    Utils::graph->drawHeatMap(2, valueFunctionFigure, XX.data(), YY.data(), sampledValueFunction.data(),
-                              nPlotPoints, nPlotPoints, "");
-    graph->drawFigure(2);
-
-    Utils::Graph::FigProp3D policyFigure;
-    policyFigure.xlabel = "phi";
-    policyFigure.ylabel = "phidot";
-    policyFigure.title = "policy";
-    policyFigure.displayType = Utils::Graph::DisplayType3D::heatMap3D;
-    Utils::graph->drawHeatMap(3, policyFigure, XX.data(), YY.data(), sampledPolicy.data(),
-                              nPlotPoints, nPlotPoints, "");
-    graph->drawFigure(3);
-  }
-
-
-  virtual void plotValueFunctionQFunctionPolicy(rai::FuncApprox::Policy<Dtype, StateDim, ActionDim> &policy,
-                                                rai::FuncApprox::Qfunction<Dtype,
-                                                                           StateDim,
-                                                                           ActionDim> &qFunction) {
-    plotPolicyAndValueFunction(policy, qFunction, 50, 1, 2);
-  };
   void startRecordingVideo(std::string dir, std::string fileName) {
     mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     visualizer_.getGraphics()->savingSnapshots(dir, fileName);

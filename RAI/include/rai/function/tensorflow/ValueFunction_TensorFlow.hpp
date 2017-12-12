@@ -40,22 +40,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
 
   ~ValueFunction_TensorFlow() {};
 
-  virtual void forward(State &state, Dtype &value) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", state},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"value"}, {}, vectorOfOutputs);
-    value = vectorOfOutputs[0](0);
-  }
-
-  virtual void forward(StateBatch &states, ValueBatch &values) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"value"}, {}, vectorOfOutputs);
-    values = vectorOfOutputs[0];
-  }
-
   virtual void forward(Tensor2D &states, Tensor2D &values) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     this->tf_->forward({states}, {"value"}, vectorOfOutputs);
@@ -68,16 +52,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     values.copyDataFrom(vectorOfOutputs[0]);
   }
 
-  virtual Dtype performOneSolverIter(StateBatch &states, ValueBatch &values) {
-    std::vector<MatrixXD> loss, dummy;
-    this->tf_->run({{"state", states},
-                    {"targetValue", values},
-                    {"trainUsingTargetValue/learningRate", this->learningRate_},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"trainUsingTargetValue/loss"},
-                   {"trainUsingTargetValue/solver"}, loss);
-    return loss[0](0);
-  }
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
     std::vector<MatrixXD> loss;
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
@@ -88,18 +62,6 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
                    {"trainUsingTargetValue/solver"}, loss);
     return loss[0](0);
   }
-  virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
-    std::vector<MatrixXD> loss, dummy;
-    this->tf_->run({{"state", states},
-                    {"targetValue", values},
-                    {"predictedValue", old_values},
-                    {"trainUsingTRValue/learningRate", this->learningRate_},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"trainUsingTRValue/loss"},
-                   {"trainUsingTRValue/solver"}, loss);
-    return loss[0](0);
-  }
-
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
     std::vector<MatrixXD> loss;
     Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");

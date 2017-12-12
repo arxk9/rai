@@ -45,36 +45,6 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
 
   ~RecurrentValueFunction_TensorFlow() {};
 
-  virtual void forward(State &state, Dtype &value) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    MatrixXD h_, length;
-    length.resize(1,1);
-    h_.resize(hdim,1);
-    h_.setZero();
-
-    this->tf_->run({{"state", state},
-                    {"length", length},
-                    {"h_init", h_}},
-                   {"value"}, {}, vectorOfOutputs);
-    value = vectorOfOutputs[0](0);
-  }
-  virtual void forward(StateBatch &states, ValueBatch &values) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
-    Tensor1D len({states.cols()}, 1, "length");
-    stateT.copyDataFrom(states);
-
-    if (h.cols() != states.cols()) {
-      h.resize(hdim, states.cols());
-    }
-    h.setZero();
-//    }
-
-    this->tf_->run({stateT,  h, len}, {"value", "h_state"}, {}, vectorOfOutputs);
-    std::memcpy(values.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * values.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
   virtual void test(Tensor3D &states, Tensor2D &values) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D len({states.batches()}, states.dim(1), "length");
@@ -103,18 +73,6 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
                     lr},
                    {"trainUsingTargetValue/loss"},
                    {"trainUsingTargetValue/solver"}, loss);
-    return loss[0](0);
-  }
-
-  virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
-    std::vector<MatrixXD> loss, dummy;
-    this->tf_->run({{"state", states},
-                    {"targetValue", values},
-                    {"predictedValue", old_values},
-                    {"trainUsingTRValue/learningRate", this->learningRate_},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"trainUsingTRValue/loss"},
-                   {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
 

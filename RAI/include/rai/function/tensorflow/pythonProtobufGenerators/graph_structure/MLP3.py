@@ -19,8 +19,11 @@ class MLP3(bc.GraphStructure):
         nonlin = getattr(tf.nn, nonlin_str)
 
         # network
-        self.input1 = tf.placeholder(dtype, shape=[None, dimension[0]], name=fn.input_names[0])
-        self.input2 = tf.placeholder(dtype, shape=[None, dimension[1]], name=fn.input_names[1])
+        input_placeholder1 = tf.placeholder(dtype, name=fn.input_names[0])
+        input_placeholder2 = tf.placeholder(dtype, name=fn.input_names[1])
+        self.input1 = tf.reshape(input_placeholder1, [-1, dimension[0]]) # reshape must be done
+        self.input2 = tf.reshape(input_placeholder2, [-1, dimension[1]]) # reshape must be done
+
         top = tf.concat([self.input1, self.input2], axis=1)
         layer_n = 0
 

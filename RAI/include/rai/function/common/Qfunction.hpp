@@ -35,19 +35,28 @@ public:
   typedef Eigen::Matrix<Dtype, stateDimension, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDimension, 1> Action;
   typedef Eigen::Matrix<Dtype, actionDimension, Eigen::Dynamic> ActionBatch;
+  typedef Eigen::Matrix<Dtype, actionDimension, Eigen::Dynamic> JacobianQwrtActionBatch;
 
   Qfunction(){};
   virtual ~Qfunction(){};
 
-  virtual Dtype performOneSolverIter(StateBatch& states, ActionBatch& actions, ValueBatch &values){
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions, Tensor2D &values) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   }
 
-  virtual Dtype performOneSolverIter_infimum(StateBatch &states, ActionBatch &actions, ValueBatch &values, Dtype linSlope) {
+  virtual Dtype performOneSolverIter_infimum(Tensor3D &states, Tensor3D &actions, Tensor2D &values, Dtype linSlope) {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   }
+
+  virtual Dtype getGradient_AvgOf_Q_wrt_action(Tensor3D &states, Tensor3D &actions,
+                                       JacobianQwrtActionBatch &gradients) const {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  }
+
+
 };
 
 }} // namespaces

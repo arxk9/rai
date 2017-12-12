@@ -131,9 +131,9 @@ int main(int argc, char *argv[]) {
       figurePropertiesSVGradient("angle", "angular velocity", "value", "Qfunction training data");
   rai::Utils::Graph::FigPropPieChart propChart;
 
-  StateBatch state_plot(3, 2601);
-  ActionBatch action_plot(1, 2601);
-  CostBatch value_plot(1, 2601);
+  rai::Tensor<Dtype,2> state_plot({3, 2601}, "state");
+  rai::Tensor<Dtype,2> action_plot({1, 2601}, "sampledAction");
+  rai::Tensor<Dtype,2> value_plot({1, 2601}, "value");
   MatrixXD minimal_X_extended(1, 2601);
   MatrixXD minimal_Y_extended(1, 2601);
 
@@ -145,14 +145,14 @@ int main(int argc, char *argv[]) {
     for (int j = 0; j < 51; j++) {
       minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
       minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
-      state_plot(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
-      state_plot(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
-      state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
+      state_plot.eMat()(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
+      state_plot.eMat()(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
+      state_plot.eMat()(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
     }
   }
-  constexpr int loggingInterval = 10;
 
   ////////////////////////// Learning /////////////////////////////////
+  constexpr int loggingInterval = 10;
   for (int iterationNumber = 0; iterationNumber < 21; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {

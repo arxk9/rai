@@ -145,10 +145,16 @@ class DDPG {
   }
 
   void updateQfunctionAndPolicy() {
-    StateBatch state_t(StateDim, batSize_), state_tp1(StateDim, batSize_);
-    ActionBatch action_t(ActionDim, batSize_), action_tp1(ActionDim, batSize_);
-    ValueBatch cost_t(batSize_), value_tp1(batSize_), value_t(batSize_);
-    ScalarBatch termType(batSize_);
+    ///RAI convention : dim[-1] = batchNum, dim[-2] = sequence length.
+    rai::Tensor<Dtype,3> state_t({StateDim, 1, batSize_}, "state");
+    rai::Tensor<Dtype,3> state_tp1({StateDim, 1, batSize_}, "state");
+    rai::Tensor<Dtype,3> action_t({ActionDim, 1, batSize_}, "sampledAction");
+    rai::Tensor<Dtype,3> action_tp1({ActionDim, 1, batSize_}, "sampledAction");
+    rai::Tensor<Dtype,2> value_t({1, batSize_}, "targetQValue");
+    rai::Tensor<Dtype,2> value_tp1({1, batSize_}, "targetQValue");
+    rai::Tensor<Dtype,2> cost_t({1, batSize_}, "costs");
+    rai::Tensor<Dtype,1> termType({batSize_}, "termtypes");
+
     Dtype termValue = task_[0]->termValue();
     Dtype disFtr = task_[0]->discountFtr();
 
@@ -159,11 +165,11 @@ class DDPG {
     policy_target_->forward(state_tp1, action_tp1);
     qfunction_target_->forward(state_tp1, action_tp1, value_tp1);
     for (unsigned tupleID = 0; tupleID < batSize_; tupleID++)
-      if (TerminationType(termType(tupleID)) == TerminationType::terminalState)
-        value_tp1(tupleID) = termValue;
+      if (TerminationType(termType[tupleID]) == TerminationType::terminalState)
+        value_tp1[tupleID] = termValue;
 
     for (unsigned tupleID = 0; tupleID < batSize_; tupleID++)
-      value_t(tupleID) = cost_t(tupleID) + disFtr * value_tp1(tupleID);
+      value_t[tupleID] = cost_t[tupleID] + disFtr * value_tp1[tupleID];
     qfunction_->performOneSolverIter(state_t, action_t, value_t);
     Utils::timer->stopTimer("Qfunction update");
 
