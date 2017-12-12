@@ -319,6 +319,12 @@ class TensorFlowNeuralNetwork {
     auto status = this->session->Run({{"AP_placeholder", APvec_[0]}}, {}, {"assignAP"}, nullptr);
     LOG_IF(FATAL, !status.ok()) << status.ToString();
   }
+  Dtype getGlobalStep(){
+    std::vector<tensorflow::Tensor> globalStep;
+    auto status = this->session->Run({}, {"global_step"}, {}, &globalStep);
+    LOG_IF(FATAL, !status.ok()) << status.ToString();
+    return globalStep[0].scalar<int>()();
+  }
 
   tensorflow::Session *session;
   std::vector<std::string> namesOfAllParameters;

@@ -8,6 +8,8 @@ class ParameterizedFunction:
         # make one long vector of params
         all_param = tf.reshape(tf.concat([[tf.reshape(param, [-1])] for param in gs.a_param_list], name='AP', axis=1), [-1, 1])
         learnable_param = tf.reshape(tf.concat([[tf.reshape(param, [-1])] for param in gs.l_param_list], name='LP', axis=1), [-1, 1])
+        global_step = tf.Variable(0, name='global_step', trainable=False)
+        self.learningRate = tf.Variable(tf.constant(0.01, dtype=dtype), name='learningRate')
 
         # getting number of params
         numberOfAP = tf.identity(tf.constant(value=[sum([reduce(mul, param.get_shape().as_list(), 1) for param in gs.a_param_list])], dtype=tf.int32), name='numberOfAP')

@@ -142,6 +142,9 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   virtual void setAP(Parameter &param) {
     tf_->setAP(param);
   }
+  virtual Dtype getGlobalStep(){
+    return tf_->getGlobalStep();
+  }
 
   virtual void copyLPFrom(PfunctionBase const *const refFcn) {
     Pfunction_tensorflow const *pReferenceFunction = castToThisClass(refFcn);

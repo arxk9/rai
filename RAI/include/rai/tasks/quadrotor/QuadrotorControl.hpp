@@ -34,7 +34,9 @@ class QuadrotorControl : public Task<Dtype,
  public:
   using TaskBase = Task<Dtype, StateDim, ActionDim, CommandDim>;
   using State = typename TaskBase::State;
+  using StateBatch = typename TaskBase::StateBatch;
   using Action = typename TaskBase::Action;
+  using ActionBatch = typename TaskBase::ActionBatch;
   using Command = typename TaskBase::Command;
   using MatrixXD = Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic>;
   using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;

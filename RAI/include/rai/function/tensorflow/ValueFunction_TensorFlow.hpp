@@ -77,7 +77,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
     std::vector<MatrixXD> loss, dummy;
     auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
     MatrixXD lr(1,1);
-    lr(0) = learningRate_;
+    lr(0) = this->learningRate_;
 
     this->tf_->run({{"state", states},
                     {"targetValue", values},
