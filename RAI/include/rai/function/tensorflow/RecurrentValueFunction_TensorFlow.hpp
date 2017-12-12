@@ -63,7 +63,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
 
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values, Tensor1D & lengths) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetValue/learningRate");
     Tensor2D hiddenState({hiddenStateDim(), states.batches()},0, "h_init");
 
     this->tf_->run({states,
@@ -78,7 +78,7 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
 
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Tensor1D & lengths) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingTRValue/learningRate");
     Tensor2D hiddenState({hiddenStateDim(), states.batches()},0, "h_init");
 
     this->tf_->run({states,

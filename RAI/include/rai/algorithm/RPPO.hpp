@@ -42,10 +42,8 @@ class RPPO {
  public:
 
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
-  typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, 1, 1> Value;
-  typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> Covariance;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;

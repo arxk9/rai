@@ -20,7 +20,6 @@ class PerformanceTester {
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> ActionBatch;
 
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using Task_ = Task::Task<Dtype, StateDim, ActionDim, 0>;

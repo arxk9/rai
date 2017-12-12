@@ -18,9 +18,7 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
   using Qfunction_tensorflow = Qfunction_TensorFlow<Dtype, stateDim, actionDim>;
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   typedef typename PolicyBase::State State;
-  typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
@@ -63,7 +61,7 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingCritic/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingCritic/learningRate");
 
 
     std::vector<MatrixXD> dummy;

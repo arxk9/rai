@@ -57,9 +57,11 @@ class DeterministicModel_TensorFlow : public virtual DeterministicModel<Dtype, i
 
   virtual Dtype performOneSolverIter(InputBatch &inputs, OutputBatch &outputs) {
     std::vector<MatrixXD> loss, dummy;
+    MatrixXD lr(1,1);
+    lr(0) = learningRate_;
     this->tf_->run({{"input", inputs},
                     {"targetOutput", outputs},
-                    {"squareLoss/learningRate", this->learningRate_}}, {"squareLoss/loss"},
+                    {"squareLoss/learningRate", lr}}, {"squareLoss/loss"},
                    {"squareLoss/solver"}, loss);
     return loss[0](0);
   }

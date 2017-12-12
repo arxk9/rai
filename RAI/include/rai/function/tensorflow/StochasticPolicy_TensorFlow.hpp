@@ -27,7 +27,6 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
 
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
@@ -50,12 +49,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
           "StochasticPolicy", computeMode, graphName, graphParam, learningRate) {
   }
 
-  virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states}}, {"action", "stdev"}, {}, vectorOfOutputs);
-    means = vectorOfOutputs[0];
-    stdev = vectorOfOutputs[1].col(0);
-  }
+
   ///TRPO
   //batch
   virtual void TRPOpg(Dataset &batch,
@@ -249,13 +243,15 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
 
   void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
+    MatrixXD lr(1,1);
+    lr(0) = learningRate_;
+
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", this->learningRate_}}, {},
+                    {"trainUsingGrad/learningRate", lr}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
     std::vector<MatrixXD> dummy;
-    VectorXD inputrate(1);
     inputrate(0) = learningrate;
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
                     {"trainUsingGrad/learningRate", inputrate}}, {},

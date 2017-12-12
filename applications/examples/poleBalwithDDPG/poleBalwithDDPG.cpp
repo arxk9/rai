@@ -50,10 +50,7 @@ using rai::Task::CommandDim;
 using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
-using StateBatch = Task::StateBatch;
 using Action = Task::Action;
-using ActionBatch = Task::ActionBatch;
-using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 
@@ -139,7 +136,6 @@ int main(int argc, char *argv[]) {
 
   MatrixXD minimal_X_sampled(1, 2601);
   MatrixXD minimal_Y_sampled(1, 2601);
-  ActionBatch action_sampled(1, 2601);
 
   for (int i = 0; i < 51; i++) {
     for (int j = 0; j < 51; j++) {

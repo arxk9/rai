@@ -41,17 +41,15 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
    * In order to get a network that is initialized the same and, you also have to set the TensorFlow random seed when
    * when generating the net (due to the weights being initialized randomly).
    */
-  ParameterizedFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) {
+  ParameterizedFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) : learningRate_(learningRate){
     tf_ = new TensorFlowNeuralNetwork<Dtype>(pathToGraphDefProtobuf, 0);
-    learningRate_ = MatrixXD(1, 1);
-    learningRate_ << learningRate;
   }
 
   ParameterizedFunction_TensorFlow(std::string functionName,
                                    std::string computeMode,
                                    std::string graphName,
                                    std::string graphParam,
-                                   Dtype learningRate = 1e-3) {
+                                   Dtype learningRate = 1e-3) : learningRate_(learningRate) {
     LOG(INFO) << "use pregenerated files if you want to save time creating graph file";
     LOG_IF(FATAL, RAI_LOG_PATH.empty()) << "CALL RAI INIT FIRST";
 
@@ -67,7 +65,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
     cmnd += RAI_LOG_PATH + " " + computeMode + " " + functionName + " " + graphName + " " + graphParam;
 
     system(cmnd.c_str());
-    learningRate_ = MatrixXD::Constant(1, 1, learningRate);
     tf_ = new TensorFlowNeuralNetwork<Dtype>(RAI_LOG_PATH + "/" + functionName + "_" + graphName + ".pb", 0);
   }
 
@@ -181,11 +178,11 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 
   virtual void setLearningRate(Dtype learningRate) {
-    learningRate_(0, 0) = learningRate;
+    learningRate_= learningRate;
   }
 
   virtual Dtype getLearningRate() {
-    return learningRate_(0, 0);
+    return learningRate_;
   }
 
   virtual void setCheckNumerics(bool checkNumerics) {
@@ -227,7 +224,7 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;
 
   TensorFlowNeuralNetwork<Dtype> *tf_;
-  MatrixXD learningRate_;
+  Dtype learningRate_;
 
   const MatrixXD notUpdateBN = (MatrixXD(1, 1) << 0).finished();
   const MatrixXD updateBN = (MatrixXD(1, 1) << 1).finished();

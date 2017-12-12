@@ -32,9 +32,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
 
   typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
   typedef typename PolicyBase::State State;
-  typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
 
@@ -53,13 +51,6 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                                        Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("testfunction", computeMode, graphName, graphParam, learningRate) {
 
-  }
-
-  void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states}}, {"action", "stdev"}, {}, vectorOfOutputs);
-    means = vectorOfOutputs[0];
-    stdev = vectorOfOutputs[1].col(0);
   }
 
   ///PPO
@@ -131,7 +122,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     std::vector<MatrixXD> dummy;
     this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
-  
+
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
     std::vector<MatrixXD> dummy;
     VectorXD inputrate(1);

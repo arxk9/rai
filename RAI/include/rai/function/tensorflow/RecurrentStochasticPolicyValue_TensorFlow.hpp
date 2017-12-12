@@ -46,9 +46,7 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
   using Pfunction_tensorflow::setAP;
 
   typedef typename PolicyBase::State State;
-  typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Tensor1D Tensor1D;
@@ -66,13 +64,6 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                                        Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("RecurrentStochasticPolicyValue", computeMode, graphName, graphParam, learningRate) {
 
-  }
-
-  void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states}}, {"action", "stdev"}, {}, vectorOfOutputs);
-    means = vectorOfOutputs[0];
-    stdev = vectorOfOutputs[1].col(0);
   }
 
   ///PPO
@@ -157,14 +148,11 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
 
   virtual void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
+    MatrixXD lr(1,1);
+    lr(0) = learningRate_;
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", this->learningRate_}}, {},
+                    {"trainUsingGrad/learningRate", lr}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
-  }
-
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-    LOG(FATAL) << "Not implemented";
-    return 0;
   }
 };
 }//namespace FuncApprox

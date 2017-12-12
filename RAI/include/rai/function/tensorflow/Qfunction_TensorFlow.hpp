@@ -15,9 +15,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   using QfunctionBase = Qfunction<Dtype, stateDim, actionDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim + actionDim, 1>;
   typedef typename QfunctionBase::State State;
-  typedef typename QfunctionBase::StateBatch StateBatch;
   typedef typename QfunctionBase::Action Action;
-  typedef typename QfunctionBase::ActionBatch ActionBatch;
   typedef typename QfunctionBase::Jacobian Jacobian;
   typedef typename QfunctionBase::Value Value;
   typedef typename QfunctionBase::ValueBatch ValueBatch;
@@ -53,7 +51,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
 
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions, Tensor2D &values) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue/learningRate");
     this->tf_->run({states,
                     actions,
                     values,
@@ -66,7 +64,7 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   virtual Dtype performOneSolverIter_infimum(Tensor3D &states, Tensor3D &actions, Tensor2D &values, Dtype linSlope) {
     std::vector<MatrixXD> loss;
     Tensor1D slope({1}, linSlope, "trainUsingTargetQValue_infimum/learningRate");
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue_infimum/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetQValue_infimum/learningRate");
 
     this->tf_->run({states,
                     actions,

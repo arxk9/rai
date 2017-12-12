@@ -22,9 +22,7 @@ public:
   using Dataset = rai::Algorithm::LearningData<Dtype,stateDimension, actionDimension>;
 
   typedef typename FunctionBase::Input StateAction;
-  typedef typename FunctionBase::InputBatch StateActionBatch;
   typedef typename FunctionBase::Output Value;
-  typedef typename FunctionBase::OutputBatch ValueBatch;
   typedef typename FunctionBase::Gradient Gradient;
   typedef typename FunctionBase::Jacobian Jacobian;
   typedef typename FunctionBase::Tensor1D Tensor1D;
@@ -32,10 +30,7 @@ public:
   typedef typename FunctionBase::Tensor3D Tensor3D;
 
   typedef Eigen::Matrix<Dtype, stateDimension, 1> State;
-  typedef Eigen::Matrix<Dtype, stateDimension, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDimension, 1> Action;
-  typedef Eigen::Matrix<Dtype, actionDimension, Eigen::Dynamic> ActionBatch;
-  typedef Eigen::Matrix<Dtype, actionDimension, Eigen::Dynamic> JacobianQwrtActionBatch;
 
   Qfunction(){};
   virtual ~Qfunction(){};
@@ -51,7 +46,7 @@ public:
   }
 
   virtual Dtype getGradient_AvgOf_Q_wrt_action(Tensor3D &states, Tensor3D &actions,
-                                       JacobianQwrtActionBatch &gradients) const {
+                                       Tensor3D &gradients) const {
     LOG(FATAL) << "NOT IMPLEMENTED";
     return Dtype(0);
   }

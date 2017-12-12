@@ -33,11 +33,11 @@ class ReplayMemorySARS {
 
   ReplayMemorySARS(unsigned capacity) :
       size_(0), memoryIdx_(0) {
-    state_t_ = new Tensor3D({stateDimension, 1, capacity},"state");
-    state_tp1_ = new Tensor3D({stateDimension, 1, capacity},"state");
+    state_t_ = new Tensor3D({stateDimension, 1, capacity}, "state");
+    state_tp1_ = new Tensor3D({stateDimension, 1, capacity}, "state");
     action_t_ = new Tensor3D({actionDimension, 1, capacity}, "action");
-    cost_ = new Tensor2D({1, capacity},"costs");
-    terminationFlag_ = new Tensor1D({capacity},"termtypes");
+    cost_ = new Tensor2D({1, capacity}, "costs");
+    terminationFlag_ = new Tensor1D({capacity}, "termtypes");
     capacity_ = capacity;
   }
 
@@ -151,11 +151,11 @@ class ReplayMemorySARS {
     delete cost_;
     delete terminationFlag_;
 
-    state_t_ = new Tensor3D({stateDimension, 1, newMemorySize},"state");
-    state_tp1_ = new Tensor3D({stateDimension, 1, newMemorySize},"state");
+    state_t_ = new Tensor3D({stateDimension, 1, newMemorySize}, "state");
+    state_tp1_ = new Tensor3D({stateDimension, 1, newMemorySize}, "state");
     action_t_ = new Tensor3D({actionDimension, 1, newMemorySize}, "sampledAction");
-    cost_ = new Tensor2D({1, newMemorySize},"costs");
-    terminationFlag_ = new Tensor1D({newMemorySize},"termtypes");
+    cost_ = new Tensor2D({1, newMemorySize}, "costs");
+    terminationFlag_ = new Tensor1D({newMemorySize}, "termtypes");
 
     size_ = 0;
     memoryIdx_ = 0;
@@ -201,23 +201,23 @@ class ReplayMemorySARS {
     return closest_dist;
   }
 
-  inline Tensor3D* getState_t() {
+  inline Tensor3D *getState_t() {
     return state_t_;
   }
 
-  inline Tensor3D* getState_tp1() {
+  inline Tensor3D *getState_tp1() {
     return state_tp1_;
   }
 
-  inline Tensor3D* getAction_t() {
+  inline Tensor3D *getAction_t() {
     return action_t_;
   }
 
-  inline Tensor2D* getCost_() {
+  inline Tensor2D *getCost_() {
     return cost_;
   }
 
-  inline Tensor1D* getTeminationFlag() {
+  inline Tensor1D *getTeminationFlag() {
     return terminationFlag_;
   }
 
@@ -234,9 +234,9 @@ class ReplayMemorySARS {
     std::cout << "--------------Replay memory printout" << std::endl;
     std::cout << "--------------------------------------------------------" << std::endl;
     std::cout << "state_t_" << std::endl << state_t_->batchBlock(0, size_) << std::endl;
-    std::cout << "action_t_" << std::endl << action_t_->batchBlock(0,size_) << std::endl;
+    std::cout << "action_t_" << std::endl << action_t_->batchBlock(0, size_) << std::endl;
     std::cout << "cost_" << std::endl << cost_->eMat().leftCols(size_) << std::endl;
-    std::cout << "terminationFlag_" << std::endl << terminationFlag_->block(0,size_) << std::endl;
+    std::cout << "terminationFlag_" << std::endl << terminationFlag_->block(0, size_) << std::endl;
     std::cout << "--------------------------------------------------------" << std::endl;
     std::cout << "--------------------------------------------------------" << std::endl;
   }

@@ -54,7 +54,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
 
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingTargetValue/learningRate");
     this->tf_->run({states,
                     values,
                     lr},
@@ -64,7 +64,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   }
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingTRValue/learningRate");
     this->tf_->run({states,
                     values,
                     old_values,
@@ -76,10 +76,13 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
   virtual Dtype performOneSolverIter_infimum(StateBatch &states, ValueBatch &values, Dtype linSlope) {
     std::vector<MatrixXD> loss, dummy;
     auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
+    MatrixXD lr(1,1);
+    lr(0) = learningRate_;
+
     this->tf_->run({{"state", states},
                     {"targetValue", values},
                     {"trainUsingTargetValue_inifimum/linSlope", slope},
-                    {"trainUsingTargetValue_inifimum/learningRate", this->learningRate_},
+                    {"trainUsingTargetValue_inifimum/learningRate", lr},
                     {"updateBNparams", this->notUpdateBN}},
                    {"trainUsingTargetValue_inifimum/loss"},
                    {"trainUsingTargetValue_inifimum/solver"}, loss);
@@ -103,7 +106,7 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
 
   virtual Dtype test(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Eigen::Matrix<Dtype,-1,-1> &testout) {
     std::vector<MatrixXD> test;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
+    Tensor1D lr({1}, this->learningRate_, "trainUsingTRValue/learningRate");
     this->tf_->run({states,
                     values,
                     old_values,

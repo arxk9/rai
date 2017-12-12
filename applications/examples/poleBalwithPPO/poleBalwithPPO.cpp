@@ -34,10 +34,7 @@ using rai::Task::StateDim;
 using rai::Task::CommandDim;
 using Task = rai::Task::PoleBalancing<Dtype>;
 using State = Task::State;
-using StateBatch = Task::StateBatch;
 using Action = Task::Action;
-using ActionBatch = Task::ActionBatch;
-using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
@@ -115,7 +112,6 @@ int main(int argc, char *argv[]) {
 
   MatrixXD minimal_X_sampled(1, 2601);
   MatrixXD minimal_Y_sampled(1, 2601);
-  ActionBatch action_sampled(1, 2601);
   MatrixXD arrowTip(1, 2601);
   MatrixXD zeros2601(1, 5601);
   zeros2601.setZero();

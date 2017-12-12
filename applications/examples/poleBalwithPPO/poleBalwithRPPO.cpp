@@ -38,10 +38,7 @@ using Task = rai::Task::PO_PoleBalancing<Dtype>;
 //using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
-using StateBatch = Task::StateBatch;
 using Action = Task::Action;
-using ActionBatch = Task::ActionBatch;
-using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
@@ -124,7 +121,7 @@ int main(int argc, char *argv[]) {
     }
     LOG(INFO) << "Learning rate:"<<lr;
 
-    algorithm.runOneLoop(10000);
+    algorithm.runOneLoop(15000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

@@ -36,7 +36,6 @@ class CommonFunc {
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, StateDim, -1> StateBatch;
-  typedef Eigen::Matrix<Dtype, ActionDim, -1> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, -1> ValueBatch;
   typedef Eigen::Matrix<Dtype, CommandDim, 1> Command;
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> VectorXD;
