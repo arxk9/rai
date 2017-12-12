@@ -1,15 +1,15 @@
 //
-// Created by jhwangbo on 10/08/17.
+// Created by joonho on 12/10/17.
 //
 
 
-#include <rai/RAI_core>
+#include "rai/RAI_core"
 
 // Eigen
 #include <Eigen/Dense>
 
 // task
-#include "rai/tasks/quadrotor/QuadrotorControl.hpp"
+#include "rai/tasks/slungload/slungloadControl.hpp"
 
 // noise model
 #include "rai/noiseModel/NormalDistributionNoise.hpp"
@@ -18,9 +18,10 @@
 #include "rai/function/tensorflow/RecurrentStochasticPolicyValue_TensorFlow.hpp"
 
 // algorithm
-#include <rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp>
 #include "rai/algorithm/RPPO.hpp"
 
+// acquisitor
+#include "rai/experienceAcquisitor/TrajectoryAcquisitor_Parallel.hpp"
 using namespace std;
 using namespace boost;
 
@@ -31,22 +32,13 @@ using Dtype = double;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-using Task = rai::Task::QuadrotorControl<Dtype>;
-
-using State = Task::State;
-using StateBatch = Task::StateBatch;
-using Action = Task::Action;
-using ActionBatch = Task::ActionBatch;
-using CostBatch = Task::CostBatch;
-using VectorXD = Task::VectorXD;
-using MatrixXD = Task::MatrixXD;
-using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
-
-using Acquisitor_ = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
+using Task = rai::Task::slungloadControl<Dtype>;
 using Noise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
+using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
 
-#define nThread 10
+using Acquisitor = rai::ExpAcq::TrajectoryAcquisitor_Parallel<Dtype, StateDim, ActionDim>;
+#define nThread 1
 
 int main(int argc, char *argv[]) {
 
@@ -61,21 +53,24 @@ int main(int argc, char *argv[]) {
     task.setControlUpdate_dt(0.01);
     task.setDiscountFactor(0.99);
     task.setTimeLimitPerEpisode(5.0);
+    task.setValueAtTerminalState(1.5);
     taskVector.push_back(&task);
   }
 
+  ////////////////////////// Define Function approximations //////////
+  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 24 128 / 128 64 4", 0.0025);
+
   ////////////////////////// Define Noise Model //////////////////////
-  NoiseCovariance covariance = NoiseCovariance::Identity() ;
+  Dtype Stdev = 1;
+
+  NoiseCovariance covariance = NoiseCovariance::Identity() * Stdev;
   std::vector<Noise> noiseVec(nThread, Noise(covariance));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
     noiseVector.push_back(&noise);
 
-  ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 18 128 / 64 4", 0.0025);
-
-  ////////////////////////// Acquisitor
-  Acquisitor_ acquisitor;
+  ////////////////////////// Acquisitor //////////////////////
+  Acquisitor acquisitor;
 
   ////////////////////////// Algorithm ////////////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
@@ -100,7 +95,7 @@ int main(int argc, char *argv[]) {
   figurePropertieskl.ylabel = "gradNorm";
 
   rai::Utils::Graph::FigPropPieChart propChart;
-
+  rai::Utils::logger->addVariableToLog(1, "process time", "");
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
   int iteration = 151;
@@ -119,7 +114,7 @@ int main(int argc, char *argv[]) {
     }
     LOG(INFO) << "Learning rate:"<<lr;
 
-    algorithm.runOneLoop(20000);
+    algorithm.runOneLoop(10000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
@@ -161,5 +156,4 @@ int main(int argc, char *argv[]) {
   graph->drawPieChartWith_RAI_Timer(0, timer->getTimedItems(), propChart);
   graph->drawFigure(0, rai::Utils::Graph::OutputFormat::pdf);
   graph->waitForEnter();
-
 }
