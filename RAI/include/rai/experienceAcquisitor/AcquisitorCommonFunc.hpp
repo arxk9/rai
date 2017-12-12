@@ -36,7 +36,6 @@ class CommonFunc {
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, StateDim, -1> StateBatch;
-  typedef Eigen::Matrix<Dtype, ActionDim, -1> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, -1> ValueBatch;
   typedef Eigen::Matrix<Dtype, CommandDim, 1> Command;
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> VectorXD;
@@ -133,7 +132,7 @@ class CommonFunc {
     for (auto &noise_ : noise)
       noise_->initializeNoise();
     StateTensor states("state");
-    ActionTensor actions("action");
+    ActionTensor actions("sampledAction");
 
     Result stat;
     int stepCount = 0;
@@ -318,7 +317,7 @@ class CommonFunc {
     LOG_IF(FATAL, threadN != noises.size()) << "# Noise: " << noises.size() << ", # Thread: " << threadN << " mismatch";
 
     StateTensor states({StateDim, 1, threadN}, "state");
-    ActionTensor actions({ActionDim, 1, threadN}, "action");
+    ActionTensor actions({ActionDim, 1, threadN}, "sampledAction");
 
     State tempState;
     unsigned colId = 0;

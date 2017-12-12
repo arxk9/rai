@@ -38,10 +38,7 @@ using Task = rai::Task::PO_PoleBalancing<Dtype>;
 //using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
-using StateBatch = Task::StateBatch;
 using Action = Task::Action;
-using ActionBatch = Task::ActionBatch;
-using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
@@ -78,6 +75,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Define Function approximations //////////
   PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 64 32 1", 0.0025);
+  policy.setLearningRateDecay(0.9,10);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
@@ -108,23 +106,17 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 20;
-  int iteration = 5000;
-  Dtype lr = policy.getLearningRate();
-  Dtype lr_lowerbound =  0.1 * lr;
-
+  int iteration = 200;
   for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
-
-    lr = (1-(Dtype)iterationNumber/iteration) * (lr-lr_lowerbound) + lr_lowerbound; ///linear decay
-    policy.setLearningRate(lr);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    LOG(INFO) << "Learning rate:"<<lr;
+    LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
 
-    algorithm.runOneLoop(20000);
+    algorithm.runOneLoop(15000);
 
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);

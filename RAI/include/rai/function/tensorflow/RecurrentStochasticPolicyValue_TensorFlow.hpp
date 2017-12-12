@@ -31,6 +31,8 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
 /// To avoid ambiguity
   using Pfunction_tensorflow::getLearningRate;
   using Pfunction_tensorflow::setLearningRate;
+  using Pfunction_tensorflow::setLearningRateDecay;
+
   using Pfunction_tensorflow::dumpParam;
   using Pfunction_tensorflow::loadParam;
   using Pfunction_tensorflow::copyStructureFrom;
@@ -45,11 +47,8 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
   using Pfunction_tensorflow::setLP;
   using Pfunction_tensorflow::setAP;
 
-  typedef Eigen::Map<Eigen::Matrix<Dtype, -1, -1>> EigenMat;
   typedef typename PolicyBase::State State;
-  typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Tensor1D Tensor1D;
@@ -67,13 +66,6 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                                        Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("RecurrentStochasticPolicyValue", computeMode, graphName, graphParam, learningRate) {
 
-  }
-
-  void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states}}, {"action", "stdev"}, {}, vectorOfOutputs);
-    means = vectorOfOutputs[0];
-    stdev = vectorOfOutputs[1].col(0);
   }
 
   ///PPO
@@ -156,83 +148,11 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
     this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
 
-  virtual void forward(State &state, Action &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    MatrixXD h_, length;
-    length.resize(1,1);
-    if (h.cols() != 1) {
-      h_.resize(hdim, 1);
-      h.setZero();
-    }
-    h_ = h.eMat();
-
-    this->tf_->forward({{"state", state},
-                        {"length", length},
-                        {"h_init", h_}},
-                       {"action",  "h_state"}, vectorOfOutputs);
-    action = vectorOfOutputs[0];
-    std::memcpy(action.data(), vectorOfOutputs[0].data(), sizeof(Dtype) * action.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
-  virtual void forward(StateBatch &states, ActionBatch &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
-    Tensor1D len({states.cols()}, 1, "length");
-    stateT.copyDataFrom(states);
-
-    if (h.cols() != states.cols()) {
-      h.resize(hdim, states.cols());
-      h.setZero();
-    }
-
-    this->tf_->run({stateT, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    std::memcpy(actions.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * actions.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
-  ///value forward
-  virtual void forward(Tensor3D &states, Tensor2D &values) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
-
-    this->tf_->run({states,  hiddenState, len}, {"value",}, {}, vectorOfOutputs);
-    values.copyDataFrom(vectorOfOutputs[0]);
-  }
-
-  ///policy forward
-  virtual void forward(Tensor3D &states, Tensor3D &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()},  states.dim(1), "length");
-    if (h.cols() != states.batches()) {
-      h.resize(hdim, states.batches());
-      h.setZero();
-    }
-    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    h.copyDataFrom(vectorOfOutputs[1]);
-    actions.copyDataFrom(vectorOfOutputs[0]);
-  }
-
   virtual void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", this->learningRate_}}, {},
+    this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
-
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) { return 0; }
-
-  virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
-    std::vector<MatrixXD> dummy;
-    VectorXD inputrate(1);
-    inputrate(0) = learningrate;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", inputrate}}, {},
-                   {"trainUsingGrad/applyGradients"}, dummy);
-  }
-
-
 };
 }//namespace FuncApprox
 }//namespace rai

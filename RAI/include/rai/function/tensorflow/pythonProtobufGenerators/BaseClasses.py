@@ -42,6 +42,24 @@ class ParameterizedFunction:
         interpolateAP_op = tf.group(*interpolate_ap_op_list, name='interpolateAP')
         interpolateLP_op = tf.group(*interpolate_lp_op_list, name='interpolateLP')
 
+        # variables for train option
+        global_step = tf.Variable(0, name='global_step', trainable=False)
+
+        with tf.variable_scope("trainingOptions", reuse=tf.AUTO_REUSE):
+            self.initial_lr = tf.Variable(tf.constant(0.001, dtype=dtype), name='InitLR')
+            self.decayRate_lr = tf.Variable(tf.constant(1, dtype=dtype), name='DecayRateLR') #default = no decay
+            self.decayStep_lr = tf.Variable(tf.constant(1, dtype=tf.int32), name='DecayStepLR')
+            self.learningRate = tf.train.exponential_decay(self.initial_lr,
+                                                           tf.train.get_global_step(),
+                                                           self.decayStep_lr,
+                                                           self.decayRate_lr,
+                                                           name='LR')
+            param_assign_placeholder = tf.placeholder(dtype=dtype, shape=[1, 1], name='param_assign_placeholder')
+            param_assign_placeholder_int = tf.placeholder(dtype=tf.int32, shape=[1, 1], name='param_assign_placeholder_int')
+
+        tf.assign(self.initial_lr, tf.reshape(param_assign_placeholder, []), name='InitLR_assign')
+        tf.assign(self.decayRate_lr, tf.reshape(param_assign_placeholder, []), name='DecayRateLR_assign')
+        tf.assign(self.decayStep_lr, tf.reshape(param_assign_placeholder_int, []), name='DecayStepLR_assign')
 
 # this class contains various methods used for learning
 class SpecializedFunction(ParameterizedFunction):

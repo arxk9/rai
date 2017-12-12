@@ -32,9 +32,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   using Pfunction_tensorflow::hdim;
 
   typedef typename PolicyBase::State State;
-  typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
@@ -56,71 +54,14 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
           "RecurrentDeterministicPolicy", computeMode, graphName, graphParam, learningRate) {
   }
 
-  virtual void forward(State &state, Action &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    MatrixXD h_, length;
-    length.resize(1, 1);
-    if (h.cols() != 1) {
-      h_.resize(hdim, 1);
-      h.setZero();
-    }
-    h_ = h.eMat();
-
-    this->tf_->forward({{"state", state},
-                        {"length", length},
-                        {"h_init", h_}},
-                       {"action"}, vectorOfOutputs);
-    action = vectorOfOutputs[0];
-    std::memcpy(action.data(), vectorOfOutputs[0].data(), sizeof(Dtype) * action.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
-  virtual void forward(StateBatch &states, ActionBatch &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
-    Tensor1D len({states.cols()}, 1, "length");
-    stateT.copyDataFrom(states);
-
-    if (h.cols() != states.cols()) {
-      h.resize(hdim, states.cols());
-      h.setZero();
-    }
-
-    this->tf_->run({stateT, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    std::memcpy(actions.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * actions.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
-  virtual void forward(Tensor3D &states, Tensor3D &actions) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-
-    if (h.cols() != states.batches()) {
-      h.resize(hdim, states.batches());
-      h.setZero();
-    }
-
-    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    h.copyDataFrom(vectorOfOutputs[1]);
-    actions.copyDataFrom(vectorOfOutputs[0]);
-  }
-  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &hiddenstates) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor1D len({states.batches()}, states.dim(1), "length");
-
-    this->tf_->run({states, hiddenstates, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-    actions.copyDataFrom(vectorOfOutputs[0]);
-  }
-
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions) {
     std::vector<MatrixXD> vectorOfOutputs;
     actions = "targetAction";
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetQValue/learningRate");
 
     if (h.cols() != minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
     h = minibatch->hiddenStates.col(0);
 
-    this->tf_->run({minibatch->states, minibatch->lengths, actions, h, lr},
+    this->tf_->run({minibatch->states, minibatch->lengths, actions, h},
                    {"trainUsingTargetAction/loss"},
                    {"trainUsingTargetAction/solver"}, vectorOfOutputs);
 
@@ -130,7 +71,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
   Dtype backwardUsingCritic(Qfunction_tensorflow *qFunction, Dataset *minibatch) {
     std::vector<MatrixXD> dummy;
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingCritic/learningRate");
     Tensor2D hiddenState({hdim, minibatch->batchNum}, "h_init");
     hiddenState = minibatch->hiddenStates.col(0);
 
@@ -141,7 +81,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     forward(minibatch->states, minibatch->actions, hiddenState);
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(minibatch, gradients);
 
-    this->tf_->run({minibatch->states, minibatch->lengths, hiddenState, gradients, lr}, {"trainUsingCritic/gradnorm"},
+    this->tf_->run({minibatch->states, minibatch->lengths, hiddenState, gradients}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
     return averageQ;
   }

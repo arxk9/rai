@@ -33,10 +33,7 @@ using rai::Task::StateDim;
 using rai::Task::CommandDim;
 using Task = rai::Task::PoleBalancing<Dtype>;
 using State = Task::State;
-using StateBatch = Task::StateBatch;
 using Action = Task::Action;
-using ActionBatch = Task::ActionBatch;
-using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using Policy_TensorFlow = rai::FuncApprox::StochasticPolicy_TensorFlow<Dtype, StateDim, ActionDim>;
@@ -96,15 +93,14 @@ int main(int argc, char *argv[]) {
   rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Choose the computation mode //////////////
-  StateBatch state_plot(3, 2601);
-  ActionBatch action_plot(1, 2601);
-  CostBatch value_plot(1, 2601);
+  rai::Tensor<Dtype,2> state_plot({3, 2601}, "state");
+  rai::Tensor<Dtype,2> action_plot({1, 2601}, "action");
+  rai::Tensor<Dtype,2> value_plot({1, 2601}, "value");
   MatrixXD minimal_X_extended(1, 2601);
   MatrixXD minimal_Y_extended(1, 2601);
 
   MatrixXD minimal_X_sampled(1, 2601);
   MatrixXD minimal_Y_sampled(1, 2601);
-  ActionBatch action_sampled(1, 2601);
   MatrixXD arrowTip(1, 2601);
   MatrixXD zeros2601(1, 5601);
   zeros2601.setZero();
@@ -113,15 +109,13 @@ int main(int argc, char *argv[]) {
     for (int j = 0; j < 51; j++) {
       minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
       minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
-      state_plot(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
-      state_plot(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
-      state_plot(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
+      state_plot.eMat()(0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
+      state_plot.eMat()(1, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
+      state_plot.eMat()(2, i * 51 + j) = minimal_Y_extended(i * 51 + j);
     }
   }
-
-  constexpr int loggingInterval = 50;
   ////////////////////////// Learning /////////////////////////////////
-
+  constexpr int loggingInterval = 50;
   for (int iterationNumber = 0; iterationNumber < 51; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0) {

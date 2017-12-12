@@ -62,9 +62,7 @@ class RecurrentStochasticPolicyValue(pc.Policy):
 
         with tf.name_scope('trainUsingGrad'):
             gradient_from_critic = tf.placeholder(dtype, shape=[1, None], name='Inputgradient')
-            train_using_critic_learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'),
-                                                          shape=[])
-            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate, epsilon=1e-5)
+            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate, epsilon=1e-5)
             # train_using_grad_optimizer = tf.train.RMSPropOptimizer(learning_rate=train_using_critic_learning_rate)
 
             split_parameter_gradients = tf.split(gradient_from_critic,
@@ -76,7 +74,7 @@ class RecurrentStochasticPolicyValue(pc.Policy):
 
             manipulated_parameter_gradients_and_parameters = zip(manipulated_parameter_gradients, gs.l_param_list)
             train_using_gradients = train_using_grad_optimizer.apply_gradients(
-                manipulated_parameter_gradients_and_parameters, name='applyGradients')
+                manipulated_parameter_gradients_and_parameters, name='applyGradients', global_step=tf.train.get_global_step())
         util = Utils.Utils(dtype)
 
         with tf.name_scope('Algo'):

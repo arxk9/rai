@@ -15,15 +15,15 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   using QfunctionBase = Qfunction<Dtype, stateDim, actionDim>;
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, stateDim + actionDim, 1>;
   typedef typename QfunctionBase::State State;
-  typedef typename QfunctionBase::StateBatch StateBatch;
   typedef typename QfunctionBase::Action Action;
-  typedef typename QfunctionBase::ActionBatch ActionBatch;
   typedef typename QfunctionBase::Jacobian Jacobian;
   typedef typename QfunctionBase::Value Value;
   typedef typename QfunctionBase::ValueBatch ValueBatch;
   typedef typename QfunctionBase::Dataset Dataset;
 
-  typedef Eigen::Matrix<Dtype, actionDim, Eigen::Dynamic> JacobianQwrtActionBatch;
+  typedef typename QfunctionBase::Tensor1D Tensor1D;
+  typedef typename QfunctionBase::Tensor2D Tensor2D;
+  typedef typename QfunctionBase::Tensor3D Tensor3D;
 
   Qfunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(pathToGraphDefProtobuf, learningRate) {
@@ -37,68 +37,49 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
           "Qfunction", computeMode, graphName, graphParam, learningRate) {
   }
 
-  virtual void forward(State &state, Action &action, Dtype &value) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", state},
-                    {"sampledAction", action},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"QValue"}, {}, vectorOfOutputs);
-    value = vectorOfOutputs[0](0);
+  virtual void forward(Tensor2D &states,Tensor2D &actions, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states, actions}, {"QValue"}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
   }
 
-  virtual void forward(StateBatch &states, ActionBatch &actions, ValueBatch &values) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states},
-                    {"sampledAction", actions},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"QValue"}, {}, vectorOfOutputs);
-    values = vectorOfOutputs[0];
+  virtual void forward(Tensor3D &states,Tensor3D &actions, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states, actions}, {"QValue"}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
   }
 
-  Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions, ValueBatch &values) {
-    std::vector<MatrixXD> outputs, dummy;
-    this->tf_->run({{"state", states},
-                    {"sampledAction", actions},
-                    {"targetQValue", values},
-                    {"trainUsingTargetQValue/learningRate", this->learningRate_},
-                    {"updateBNparams",
-                     this->notUpdateBN}}, {"trainUsingTargetQValue/loss"},
-                   {"trainUsingTargetQValue/solver"}, outputs);
-    this->tf_->run({{"state", states},
-                    {"sampledAction", actions},
-                    {"updateBNparams",
-                     this->updateBN}}, {},
-                   {"QValue"}, dummy);
-    return outputs[0](0);
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions, Tensor2D &values) {
+    std::vector<MatrixXD> loss;
+    this->tf_->run({states,
+                    actions,
+                    values},
+                    {"trainUsingTargetQValue/loss"},
+                   {"trainUsingTargetQValue/solver"}, loss);
+    return loss[0](0);
   }
 
-  Dtype performOneSolverIter_infimum(StateBatch &states, ActionBatch &actions, ValueBatch &values, Dtype linSlope) {
-    std::vector<MatrixXD> outputs, dummy;
-    auto slope = Eigen::Matrix<Dtype, 1, 1>::Constant(linSlope);
-    this->tf_->run({{"state", states},
-                    {"sampledAction", actions},
-                    {"targetQValue", values},
-                    {"trainUsingTargetQValue_infimum/linSlope", slope},
-                    {"trainUsingTargetQValue_infimum/learningRate", this->learningRate_},
-                    {"updateBNparams",
-                     this->notUpdateBN}}, {"trainUsingTargetQValue_infimum/loss"},
-                   {"trainUsingTargetQValue_infimum/solver"}, outputs);
-    this->tf_->run({{"state", states},
-                    {"sampledAction", actions},
-                    {"updateBNparams",
-                     this->updateBN}}, {},
-                   {"QValue"}, dummy);
-    return outputs[0](0);
+  virtual Dtype performOneSolverIter_infimum(Tensor3D &states, Tensor3D &actions, Tensor2D &values, Dtype linSlope) {
+    std::vector<MatrixXD> loss;
+    Tensor1D slope({1}, linSlope, "trainUsingTargetQValue_infimum/learningRate");
+
+    this->tf_->run({states,
+                    actions,
+                    values,
+                    slope}, {"trainUsingTargetQValue_infimum/loss"},
+                   {"trainUsingTargetQValue_infimum/solver"}, loss);
+
+    return loss[0](0);
   }
 
-  Dtype getGradient_AvgOf_Q_wrt_action(StateBatch &states, ActionBatch &actions,
-                                       JacobianQwrtActionBatch &gradients) const {
+  virtual Dtype getGradient_AvgOf_Q_wrt_action(Tensor3D &states, Tensor3D &actions,
+                                       Tensor3D &gradients) const {
+    gradients.resize(actionDim, actions.cols(), actions.batches());
     std::vector<MatrixXD> outputs;
-    this->tf_->run({{"state", states},
-                    {"sampledAction", actions},
-                    {"updateBNparams", this->notUpdateBN}},
+    this->tf_->run({states,
+                    actions},
                    {"gradient_AvgOf_Q_wrt_action", "average_Q_value"}, {}, outputs);
-    gradients = outputs[0];
+    gradients.copyDataFrom(outputs[0]);
     return outputs[1](0);
   }
 

@@ -24,15 +24,17 @@ template<typename Dtype, int stateDimension>
 class ReplayMemoryS {
 
   typedef Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic> MatrixXD;
-  typedef Eigen::Matrix<Dtype, stateDimension, Eigen::Dynamic> StateBatch;
-  typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ScalarBatch;
   typedef Eigen::Matrix<Dtype, stateDimension, 1> State;
+
+  typedef rai::Tensor<Dtype, 1> Tensor1D;
+  typedef rai::Tensor<Dtype, 2> Tensor2D;
+  typedef rai::Tensor<Dtype, 3> Tensor3D;
 
  public:
 
   ReplayMemoryS(int memorySize) :
       numberOfStoredTuples_(0), memoryIdx_(0) {
-    state_t_ = new StateBatch(stateDimension, memorySize);
+    state_t_ = new Tensor3D({stateDimension, 1, memorySize}, "state");
     memorySize_ = memorySize;
   }
 
@@ -41,14 +43,14 @@ class ReplayMemoryS {
   }
 
   void saveState(State &state_t) {
-    state_t_->col(memoryIdx_) = state_t;
+    state_t_->batch(memoryIdx_) = state_t;
     memoryIdx_ = (memoryIdx_ + 1) % memorySize_;
     numberOfStoredTuples_++;
     numberOfStoredTuples_ = std::min(numberOfStoredTuples_, memorySize_);
   }
 
-  void sampleRandomBatch(StateBatch &state_t_batch) {
-    int batchSize = state_t_batch.cols();
+  void sampleRandomBatch(Tensor3D &state_t_batch) {
+    int batchSize = state_t_batch.batches();
     LOG_IF(FATAL, numberOfStoredTuples_ < batchSize * 1.2) <<
                                                            "You don't have enough memories in the storage! accumulate more memories before you update your Q-function";
     unsigned int memoryIdx[batchSize];
@@ -65,7 +67,7 @@ class ReplayMemoryS {
 
     ///// saving memory to the batch
     for (int i = 0; i < batchSize; i++) {
-      state_t_batch.col(i) = state_t_->col(memoryIdx[i]);
+      state_t_batch.batch(i) = state_t_->batch(memoryIdx[i]);
     }
   }
 
@@ -88,13 +90,14 @@ class ReplayMemoryS {
 
     ///// saving memory to the batch
     for (int i = 0; i < batchSize; i++) {
-      State state = state_t_->col(memoryIdx[i]);
+      State state = state_t_->batch(memoryIdx[i]);
+      batchMemory.saveState(state);
     }
   }
 
   void clearTheMemoryAndSetNewBatchSize(int newMemorySize) {
     delete state_t_;
-    state_t_ = new StateBatch(newMemorySize);
+    state_t_ = new Tensor3D({stateDimension, 1, newMemorySize}, "state");
     numberOfStoredTuples_ = 0;
     memoryIdx_ = 0;
     memorySize_ = newMemorySize;
@@ -105,7 +108,7 @@ class ReplayMemoryS {
                                                   Dtype threshold) {
     bool saved = true;
     for (int memoryID = 0; memoryID < numberOfStoredTuples_; memoryID++) {
-      auto diff_state = state_t_->col(memoryID) - state_t;
+      auto diff_state = state_t_->batch(memoryID) - state_t;
       auto dist = sqrt(diff_state.cwiseProduct(diff_state).dot(stateMetricInverse));
 
       if (dist < threshold) {
@@ -118,7 +121,7 @@ class ReplayMemoryS {
       saveState(state_t);
   }
 
-  StateBatch *getState_t() {
+  inline Tensor3D *getState_t() {
     return state_t_;
   }
 
@@ -131,7 +134,7 @@ class ReplayMemoryS {
   }
 
  private:
-  StateBatch *state_t_;
+  Tensor3D *state_t_;
   int numberOfStoredTuples_;
   int memoryIdx_;
   int memorySize_;

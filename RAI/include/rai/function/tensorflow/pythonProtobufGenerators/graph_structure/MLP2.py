@@ -21,8 +21,10 @@ class MLP2(bc.GraphStructure):
         nonlin = getattr(tf.nn, nonlin_str)
 
         # network
-        self.input1 = tf.placeholder(dtype, shape=[None, dimension[0]], name=fn.input_names[0])
-        self.input2 = tf.placeholder(dtype, shape=[None, dimension[1]], name=fn.input_names[1])
+        input_placeholder1= tf.placeholder(dtype, name=fn.input_names[0])
+        input_placeholder2 = tf.placeholder(dtype, name=fn.input_names[1])
+        self.input1 = tf.reshape(input_placeholder1, [-1, dimension[0]]) # reshape must be done
+        self.input2 = tf.reshape(input_placeholder2, [-1, dimension[1]]) # reshape must be done
 
         with tf.name_scope('hidden_layer0'):
             top = fully_connected(activation_fn=nonlin, inputs=self.input1, num_outputs=dimension[2], weights_initializer=tf.contrib.layers.xavier_initializer(), trainable=True)

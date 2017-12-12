@@ -20,9 +20,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   using PolicyBase = Policy<Dtype, stateDim, actionDim>;
 
   typedef typename PolicyBase::State State;
-  typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::Jacobian JacobianWRTstate;
@@ -31,8 +29,6 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Tensor2D Tensor2D;
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename PolicyBase::Dataset Dataset;
-
-  virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) = 0;
 
   ///TRPO
   virtual void TRPOpg(Dataset &minibatch,
@@ -86,15 +82,7 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
     LOG(FATAL) << "Not implemented";
   }
 
-  virtual void forward(State &state, Action &action) =0;
-  virtual void forward(Tensor3D &states, Tensor3D &actions) =0;
-  virtual void forward(StateBatch &state, ActionBatch &action) = 0;
-
-  virtual void forward(Tensor3D &states, Tensor2D &values) {
-    LOG(FATAL) << "Not implemented";
-  };
-
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions) {
     LOG(FATAL) << "Not implemented";
     return 0;
   }
