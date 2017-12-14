@@ -54,13 +54,11 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
     values.copyDataFrom(vectorOfOutputs[0]);
   }
 
-  virtual void forward(Tensor3D &states, Tensor2D &values, Tensor3D &hiddenStates) {
+  virtual void forward(Tensor3D &states, Tensor2D &values, Tensor2D &hiddenStates) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D len({states.batches()}, states.dim(1), "length");
-    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
-    hiddenState = hiddenStates.col(0);
 
-    this->tf_->run({states,  hiddenState, len}, {"value", "h_state"}, {}, vectorOfOutputs);
+    this->tf_->run({states,  hiddenStates, len}, {"value"}, {}, vectorOfOutputs);
     values.copyDataFrom(vectorOfOutputs[0]);
   }
 
@@ -106,6 +104,24 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
+
+  virtual void setClipRate(const Dtype param_in){
+    std::vector<MatrixXD> dummy;
+    VectorXD input(1);
+    input << param_in;
+    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_param_assign"}, dummy);
+
+  }
+
+  virtual void setClipRangeDecay(const Dtype decayRate){
+    std::vector<MatrixXD> dummy;
+    VectorXD input(1);
+    input << decayRate;
+    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_decayrate_assign"}, dummy);
+
+  }
+
+
 };
 } // namespace FuncApprox
 } // namespace rai

@@ -42,7 +42,7 @@ class StochasticPolicy(pc.Policy):
         kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff')
         ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff')
         clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
-        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), name='max_grad_norm')
+        clip_param_decay_rate = tf.Variable(tf.constant(1, dtype=dtype), name='clip_param_decay_rate')
 
         PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 4], name='PPO_params_placeholder')
 
@@ -54,7 +54,7 @@ class StochasticPolicy(pc.Policy):
         param_assign_op_list += [
             tf.assign(clip_param, tf.reshape(tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), []), name='clip_param_assign')]
         param_assign_op_list += [
-            tf.assign(max_grad_norm, tf.reshape(tf.slice(PPO_params_placeholder, [0, 3], [1, 1]), []), name='max_norm_assign')]
+            tf.assign(clip_param_decay_rate, tf.reshape(tf.slice(PPO_params_placeholder, [0, 3], [1, 1]), []), name='clip_decayrate_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
@@ -103,10 +103,14 @@ class StochasticPolicy(pc.Policy):
                 err = tf.identity(out2, name='Cgerror')
 
             with tf.name_scope('PPO'):
+                clip_range = tf.train.exponential_decay(clip_param,
+                                                        tf.train.get_global_step(),
+                                                        self.decayStep_lr,
+                                                        clip_param_decay_rate,
+                                                        name='clip_range')
                 # PPO's pessimistic surrogate (L^CLIP)
                 surr1 = tf.multiply(ratio, advantage)  # negative, smaller the better
-
-                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param), advantage)
+                surr2 = tf.multiply(tf.clip_by_value(ratio, 1.0 - clip_range, 1.0 + clip_range), advantage)
                 PPO_loss = tf.reduce_mean(tf.maximum(surr1, surr2))
 
                 # KL divergence
@@ -116,14 +120,5 @@ class StochasticPolicy(pc.Policy):
                 Total_loss = PPO_loss - tf.multiply(ent_coeff, mean_ent)
                 Total_loss2 = PPO_loss - tf.multiply(ent_coeff, mean_ent) + tf.multiply(kl_coeff, kl_mean)
 
-                policy_gradient = tf.identity(util.flatgrad(Total_loss, gs.l_param_list, max_grad_norm), name='Pg')  # flatgrad
-                policy_gradient2 = tf.identity(util.flatgrad(Total_loss2, gs.l_param_list, max_grad_norm), name='Pg2')  # flatgrad
-                #
-                # # From modular-rl
-                # if (kl_mean > 2 * kl_thres) is not None:
-                #     kl_loss = tf.reduce_mean(kl_coeff * kl_ + 1000 * tf.square(kl_mean - kl_thres))
-                # else:
-                #     kl_loss = tf.reduce_mean(kl_coeff * kl_)
-                #
-                # loss = tf.identity((surr + kl_loss), name='loss')
-                # policy_gradient = tf.identity(util.flatgrad(loss, gs.l_param_list), name='Pg')  # flatgrad
+                policy_gradient = tf.identity(util.flatgrad(Total_loss, gs.l_param_list, self.max_grad_norm), name='Pg')  # flatgrad
+                policy_gradient2 = tf.identity(util.flatgrad(Total_loss2, gs.l_param_list, self.max_grad_norm), name='Pg2')  # flatgrad

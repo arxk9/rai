@@ -62,9 +62,7 @@ int main(int argc, char *argv[]) {
   }
 
   ////////////////////////// Define Noise Model //////////////////////
-  Dtype Stdev = 1;
-
-  NoiseCovariance covariance = NoiseCovariance::Identity() * Stdev;
+  NoiseCovariance covariance = NoiseCovariance::Identity();
   std::vector<Noise> noiseVec(nThread, Noise(covariance));
   std::vector<Noise *> noiseVector;
   for (auto &noise : noiseVec)
@@ -77,7 +75,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
-  ////////////////////////// Algorithm ////////////////////////////////
+  ////////////////////////// Algorithm and Hyperparameters /////////////////////////
   rai::Algorithm::TRPO_gae<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 1, 0.0, false);
   algorithm.setVisualizationLevel(0);

@@ -16,7 +16,12 @@ class Vfunction(bc.SpecializedFunction):
         value = tf.identity(gs.output, name=self.output_names[0])
 
         clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
-        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), name='max_grad_norm')
+        clip_param_decay_rate = tf.Variable(tf.constant(1, dtype=dtype), name='clip_param_decay_rate')
+        clip_range = tf.train.exponential_decay(clip_param,
+                                                tf.train.get_global_step(),
+                                                self.decayStep_lr,
+                                                clip_param_decay_rate,
+                                                name='clip_range')
 
         # new placeholders
         value_target = tf.placeholder(dtype, shape=[None, 1], name='targetValue')
@@ -27,28 +32,19 @@ class Vfunction(bc.SpecializedFunction):
         # Assign ops.
         param_assign_placeholder = tf.placeholder(dtype=dtype, shape=[1, 1], name='param_assign_placeholder')
         tf.assign(clip_param, tf.reshape(param_assign_placeholder, []), name='clip_param_assign')
-        tf.assign(max_grad_norm, tf.reshape(param_assign_placeholder, []), name='grad_param_assign')
+        tf.assign(clip_param_decay_rate, tf.reshape(param_assign_placeholder, []), name='clip_decayrate_assign')
 
         # gradients
         jac_V_wrt_State = tf.identity(tf.gradients(tf.reduce_mean(value), state)[0], name='gradient_AvgOf_V_wrt_State')
 
         # solvers
         with tf.name_scope('trainUsingTargetValue'):
-            core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=max_grad_norm)
+            core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=self.max_grad_norm)
 
         with tf.name_scope('trainUsingTargetValue_huber'):
-            core.huber_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=max_grad_norm)
+            core.huber_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=self.max_grad_norm)
 
         with tf.name_scope('trainUsingTRValue'):
-            # Clipping-based trust region loss (https://github.com/openai/baselines/blob/master/baselines/pposgd/pposgd_simple.py)
-            vpredclipped = value_pred + tf.clip_by_value(value - value_pred, tf.negative(clip_param), clip_param)
-            vfloss1 = tf.square(value - value_target)
-            vfloss2 = tf.square(vpredclipped - value_target)
-            TR_loss = .5 * tf.reduce_mean(tf.maximum(vfloss1, vfloss2), name='loss')
-
-            #Optimize
-            optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
-            grad = tf.gradients(TR_loss, gs.l_param_list, colocate_gradients_with_ops=True)
-            grads, gradnorm = tf.clip_by_global_norm(grad, clip_norm=max_grad_norm)
-            grads = zip(grads, gs.l_param_list)
-            train = optimizer.apply_gradients(grads, name='solver', global_step=tf.train.get_global_step())
+            core.square_loss_trust_region_opt(dtype, value_target, value, value_pred,
+                                             tf.train.AdamOptimizer(learning_rate=self.learningRate),
+                                             clipRange=clip_range, maxnorm=self.max_grad_norm)

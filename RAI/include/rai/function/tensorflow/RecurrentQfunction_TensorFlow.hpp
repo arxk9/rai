@@ -89,14 +89,13 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
     return vectorOfOutputs[0](0);
   };
 
-  virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &values){
+  virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor2D &values){
     std::vector<MatrixXD> vectorOfOutputs;
     values = "targetQValue";
+    Tensor2D hiddenState({hdim, minibatch->batchNum}, "h_init");
+    hiddenState = minibatch->hiddenStates.col(0);
 
-    if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
-    h.setZero();
-
-    this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, h},
+    this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, hiddenState},
                     {"trainUsingTargetQValue/loss"},
                    {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
 
@@ -104,7 +103,7 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
   };
 
 
-  virtual Dtype test(Dataset *minibatch, Tensor3D &values){
+  virtual Dtype test(Dataset *minibatch, Tensor2D &values){
     std::vector<MatrixXD> vectorOfOutputs;
     values = "targetQValue";
     if(h.cols()!= minibatch->batchNum) h.resize(hdim, minibatch->batchNum);
@@ -123,14 +122,15 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
 
   Dtype getGradient_AvgOf_Q_wrt_action(Dataset *minibatch, Tensor3D &gradients) const
   {
+    gradients.resize(minibatch->actions.dim());
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor2D hiddenState({hdim, minibatch->batchNum}, "h_init");
     hiddenState = minibatch->hiddenStates.col(0);
 
     this->tf_->run({minibatch->states,
-                    minibatch->actions, minibatch->lengths,hiddenState},
+                    minibatch->actions, minibatch->lengths, hiddenState},
                    {"gradient_AvgOf_Q_wrt_action", "average_Q_value"}, {}, vectorOfOutputs);
-    gradients = (vectorOfOutputs[0]);
+    gradients.copyDataFrom(vectorOfOutputs[0]);
     return vectorOfOutputs[1].scalar<Dtype>()();
   }
 };

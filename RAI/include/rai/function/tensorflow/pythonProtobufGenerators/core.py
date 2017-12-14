@@ -161,3 +161,16 @@ def square_loss_opt(dtype, target, value, optimizer, extraCost=0, maxnorm = None
         grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
         grad = zip(grads, variables)
     train = optimizer.apply_gradients(grad, name='solver', global_step=tf.train.get_global_step())
+
+def square_loss_trust_region_opt(dtype, target, value, value_prev, optimizer, clipRange = 0.2, extraCost = 0, maxnorm = None):
+    # Clipping-based trust region loss (https://github.com/openai/baselines/blob/master/baselines/pposgd/pposgd_simple.py)
+    clipped_value = value_prev + tf.clip_by_value(value - value_prev , -clipRange, clipRange)
+    loss1 = tf.square(value - target)
+    loss2 = tf.square(clipped_value - target)
+    TR_loss = .5 * tf.reduce_mean(tf.maximum(loss1, loss2), name='loss') + extraCost
+    grad = optimizer.compute_gradients(TR_loss, colocate_gradients_with_ops=True)
+    if maxnorm is not None:
+        grads, variables = zip(*grad)
+        grads, gradnorm = tf.clip_by_global_norm(grads, clip_norm=maxnorm)
+        grad = zip(grads, variables)
+    train = optimizer.apply_gradients(grad, name='solver', global_step=tf.train.get_global_step())

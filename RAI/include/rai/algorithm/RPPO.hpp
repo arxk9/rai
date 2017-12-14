@@ -71,7 +71,7 @@ class RPPO {
        int segLen = 0,
        int stride = 1,
        bool keepHiddenState = true,
-       Dtype maxGradNorm = 0.5,
+       Dtype clipRangeDecay = 0.99,
        Dtype noiseCov = 1,
        Dtype vCoeff = 0.5,
        Dtype entCoeff = 0.01,
@@ -91,7 +91,7 @@ class RPPO {
       stride_(stride),
       stateFull_(keepHiddenState),
       covIn_(noiseCov),
-      maxGradNorm_(maxGradNorm),
+      clipRangeDecay_(clipRangeDecay),
       clipCoeff_(clipCoeff),
       entCoeff_(entCoeff), vCoeff_(vCoeff), Dataset_(true, true) {
 
@@ -108,7 +108,7 @@ class RPPO {
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
     algoParams.resize(4);
-    algoParams << vCoeff_, entCoeff_, clipCoeff_, maxGradNorm_;
+    algoParams << vCoeff_, entCoeff_, clipCoeff_, clipRangeDecay_;
     policy_->setParams(algoParams);
 
     timeLimit = task_[0]->timeLimit();
@@ -226,10 +226,10 @@ class RPPO {
   int stride_;
   int segLen_;
   Dtype covIn_;
-  Dtype maxGradNorm_;
   Dtype clipCoeff_;
   Dtype entCoeff_;
   Dtype vCoeff_;
+  Dtype clipRangeDecay_;
   double timeLimit;
   int updateN;
   bool stateFull_;

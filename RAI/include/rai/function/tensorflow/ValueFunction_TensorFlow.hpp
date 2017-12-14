@@ -89,11 +89,12 @@ class ValueFunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow
 
   }
 
-  virtual void setMaxGradNorm(const Dtype Threshold){
+  virtual void setClipRangeDecay(const Dtype decayRate){
     std::vector<MatrixXD> dummy;
     VectorXD input(1);
-    input << Threshold;
-    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"grad_param_assign"}, dummy);
+    input << decayRate;
+    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_decayrate_assign"}, dummy);
+
   }
 
   virtual Dtype test(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Eigen::Matrix<Dtype,-1,-1> &testout) {

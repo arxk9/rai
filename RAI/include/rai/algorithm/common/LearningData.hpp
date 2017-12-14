@@ -222,7 +222,6 @@ class LearningData {
     Tensor3D actions_t(actions);
     Tensor3D actionNoises_t(actionNoises);
     Tensor3D hiddenStates_t(hiddenStates);
-//  Tensor2D costs;
 
     Tensor2D values_t(values);
     Tensor2D advantages_t(advantages);
@@ -329,6 +328,7 @@ class LearningData {
   void resize(int hdim, int maxlen, int batches) {
     ///For recurrent functions.
     ///Keep first dimension.
+    this->hDim = hdim;
 
     maxLen = maxlen;
     batchNum = batches;

@@ -233,7 +233,6 @@ class ReplayMemoryHistory {
         }
       }
     }
-
     /// resize
     DataOut.resize(hdim_,maxlen_, batchSize);
 
@@ -241,6 +240,7 @@ class ReplayMemoryHistory {
     for (unsigned i = 0; i < batchSize; i++) {
       DataOut.states.batch(i) = stateTensor_->batch(memoryIdx[i]);
       DataOut.actions.batch(i) = actionTensor_->batch(memoryIdx[i]);
+      DataOut.hiddenStates.batch(i) = hiddenStateTensor_->batch(memoryIdx[i]);
       DataOut.costs.col(i) = costTensor_->col(memoryIdx[i]);
       DataOut.lengths[i] = len_->at(i);
       DataOut.termtypes[i] = termtypes_->at(i);
@@ -263,6 +263,7 @@ class ReplayMemoryHistory {
     delete costTensor_;
     delete len_;
     delete termtypes_;
+    delete hiddenStateTensor_;
     if (distInfo_) {
       delete actionNoiseTensor_;
       delete stdevs_;
@@ -277,6 +278,8 @@ class ReplayMemoryHistory {
       stdevs_ = new Tensor2D({actionDimension, capacity_}, 0);
     }
     termtypes_ = new Tensor1D({capacity_}, 0);
+    hiddenStateTensor_ = new Tensor3D;
+
   }
 
   unsigned getCapacity() {

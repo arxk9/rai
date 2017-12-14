@@ -40,9 +40,8 @@ class RecurrentStochasticPolicy(pc.Policy):
         kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff')
         ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff')
         clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
-        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), dtype, name='max_grad_norm')
 
-        PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 4], name='PPO_params_placeholder')
+        PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 3], name='PPO_params_placeholder')
 
         param_assign_op_list = []
         param_assign_op_list += [
@@ -51,8 +50,6 @@ class RecurrentStochasticPolicy(pc.Policy):
             tf.assign(ent_coeff, tf.reshape(tf.slice(PPO_params_placeholder, [0, 1], [1, 1]), []), name='ent_coeff_assign')]
         param_assign_op_list += [
             tf.assign(clip_param, tf.reshape(tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), []), name='clip_param_assign')]
-        param_assign_op_list += [
-            tf.assign(max_grad_norm, tf.reshape(tf.slice(PPO_params_placeholder, [0, 3], [1, 1]), []), name='max_norm_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
@@ -94,5 +91,5 @@ class RecurrentStochasticPolicy(pc.Policy):
                 Total_loss = PPO_loss - tf.multiply(ent_coeff, meanent)
                 Total_loss2 = PPO_loss - tf.multiply(ent_coeff, meanent) + tf.multiply(kl_coeff, tf.reduce_mean(kl_))
 
-                policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list), axis=0), name='Pg')  # flatgrad
-                policy_gradient2 = tf.identity(tf.expand_dims(util.flatgrad(Total_loss2, gs.l_param_list), axis=0), name='Pg2')  # flatgrad
+                policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list, self.max_grad_norm), axis=0), name='Pg')  # flatgrad
+                policy_gradient2 = tf.identity(tf.expand_dims(util.flatgrad(Total_loss2, gs.l_param_list, self.max_grad_norm), axis=0), name='Pg2')  # flatgrad

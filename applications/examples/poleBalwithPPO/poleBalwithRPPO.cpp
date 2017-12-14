@@ -35,7 +35,6 @@ using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
 using Task = rai::Task::PO_PoleBalancing<Dtype>;
-//using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
 using Action = Task::Action;
@@ -74,16 +73,17 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 64 32 1", 0.0025);
-  policy.setLearningRateDecay(0.9,10);
+  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 32 1", 0.002);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
-  ////////////////////////// Algorithm ////////////////////////////////
+  ////////////////////////// Algorithm and Hyperparameters /////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1, true, 0.3);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1, true, 0.99);
 
+  policy.setLearningRateDecay(0.99,10);
+  policy.setMaxGradientNorm(0.3);
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
@@ -105,20 +105,21 @@ int main(int argc, char *argv[]) {
   rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 20;
+  constexpr int loggingInterval = 50;
   int iteration = 200;
   for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
 
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
     LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
+    LOG(INFO) << "Number of updates:"<<policy.getGlobalStep();
 
-    algorithm.runOneLoop(15000);
+    algorithm.runOneLoop(10000);
 
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
 

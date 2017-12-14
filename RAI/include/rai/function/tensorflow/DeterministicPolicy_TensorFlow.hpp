@@ -62,7 +62,6 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     Tensor3D gradients("trainUsingCritic/gradientFromCritic");
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
 
-
     std::vector<MatrixXD> dummy;
     this->tf_->run({states,
                     gradients}, {"trainUsingCritic/gradnorm"},

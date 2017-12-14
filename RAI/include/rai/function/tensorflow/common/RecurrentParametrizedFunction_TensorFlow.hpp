@@ -42,12 +42,9 @@ class RecurrentParameterizedFunction_TensorFlow : public ParameterizedFunction_T
                                                              learningRate) , h("h_init") {
     hdim = this->getHiddenStatesize();
     h.resize(hdim, 0);
-
   }
 
-  virtual bool isRecurrent() {
-    return true;
-  }
+  virtual bool isRecurrent() {return true;}
 
   virtual void reset(int n) {
     //n:index
@@ -72,74 +69,12 @@ class RecurrentParameterizedFunction_TensorFlow : public ParameterizedFunction_T
   virtual void getHiddenStates(Tensor2D &h_out){
     h_out = h;
   }
+
   virtual typename EigenMat::ColXpr getHiddenState(int Id){
     return h.col(Id);
   }
 
   int hiddenStateDim() { return hdim; }
-
-//  ///value forward
-//  virtual void forward(Tensor3D &states, Tensor2D &values) {
-//    std::vector<tensorflow::Tensor> vectorOfOutputs;
-//    Tensor1D len({states.batches()}, states.dim(1), "length");
-//    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
-//
-//    this->tf_->run({states,  hiddenState, len}, {"value",}, {}, vectorOfOutputs);
-//    values.copyDataFrom(vectorOfOutputs[0]);
-//  }
-//  virtual void forward(Tensor3D &states, Tensor2D &values, Tensor3D &hiddenStates) {
-//    std::vector<tensorflow::Tensor> vectorOfOutputs;
-//    Tensor1D len({states.batches()}, states.dim(1), "length");
-//    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
-//    hiddenState = hiddenStates.col(0);
-//
-//    this->tf_->run({states,  hiddenState, len}, {"value", "h_state"}, {}, vectorOfOutputs);
-//    values.copyDataFrom(vectorOfOutputs[0]);
-//  }
-//
-//  ///Qvalue forward
-//  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &values) {
-//    std::vector<tensorflow::Tensor> vectorOfOutputs;
-//    Tensor1D len({states.batches()}, states.dim(1), "length");
-//    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
-//
-//    this->tf_->run({states, actions, hiddenState, len}, {"QValue", "h_state"}, {}, vectorOfOutputs);
-//    values.copyDataFrom(vectorOfOutputs[0]);
-//  }
-//  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &values, Tensor3D &hiddenStates) {
-//    std::vector<tensorflow::Tensor> vectorOfOutputs;
-//    Tensor1D len({states.batches()}, states.dim(1), "length");
-//    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
-//    hiddenState = hiddenStates.col(0);
-//
-//    this->tf_->run({states, actions, hiddenState, len}, {"QValue", "h_state"}, {}, vectorOfOutputs);
-//    values.copyDataFrom(vectorOfOutputs[0]);
-//  }
-//
-//  ///policy forward
-//  virtual void forward(Tensor3D &states, Tensor3D &actions) {
-//    std::vector<tensorflow::Tensor> vectorOfOutputs;
-//    Tensor1D len({states.batches()},  states.dim(1), "length");
-//    if (h.cols() != states.batches()) {
-//      h.resize(hdim, states.batches());
-//      h.setZero();
-//    }
-//    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-//    h.copyDataFrom(vectorOfOutputs[1]);
-//    actions.copyDataFrom(vectorOfOutputs[0]);
-//  }
-//
-//  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor3D &hiddenStates) {
-//    std::vector<tensorflow::Tensor> vectorOfOutputs;
-//    Tensor1D len({states.batches()},  states.dim(1), "length");
-//    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
-//    hiddenState = hiddenStates.col(0);
-//
-//    this->tf_->run({states, hiddenState, len}, {"action", "h_state"}, {}, vectorOfOutputs);
-//    h.copyDataFrom(vectorOfOutputs[1]);
-//    actions.copyDataFrom(vectorOfOutputs[0]);
-//  }
-
 
  protected:
   int hdim = 0;

@@ -14,11 +14,7 @@ class RecurrentDeterministicPolicy(pc.Policy):
         mask = tf.sequence_mask(gs.seq_length, name='mask')
         action_masked = tf.boolean_mask(action, mask)
 
-        # variables
-        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), dtype, name='max_grad_norm')
-
         # new placeholders
-        gradNorm_placeholder = tf.placeholder(dtype, [1,1], name='gradNorm_placeholder')
         action_target = tf.placeholder(dtype, shape=[None, None, action_dim], name='targetAction')
 
         # gradients
@@ -30,16 +26,13 @@ class RecurrentDeterministicPolicy(pc.Policy):
             tf.stack([tf.gradients(action[:, :, idx], state) for idx in range(action_dim)], axis=3)[0, 0, :, :],
             name='jac_Action_wrt_State')
 
-        # Operations
-        gradNorm_assign_ops = tf.assign(max_grad_norm, tf.reshape(gradNorm_placeholder,[]), name='max_norm_assign')
-
         with tf.name_scope('trainUsingCritic'):
             gradient_from_critic = tf.placeholder(dtype, shape=[None, None, action_dim], name='gradientFromCritic')
             gradient_from_critic_masked = tf.boolean_mask(gradient_from_critic, mask)
             train_using_critic_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
             grads = tf.gradients(action_masked, gs.l_param_list, gradient_from_critic_masked)
-            grads, grad_norm = tf.clip_by_global_norm(grads, clip_norm=max_grad_norm)
+            grads, grad_norm = tf.clip_by_global_norm(grads, clip_norm=self.max_grad_norm)
             tf.identity(grad_norm, name="gradnorm")
             manipulated_parameter_gradients_and_parameters = zip(grads, gs.l_param_list)
             train_using_critic_apply_gradients = train_using_critic_optimizer.apply_gradients(
-                manipulated_parameter_gradients_and_parameters, name='applyGradients')
+                manipulated_parameter_gradients_and_parameters, name='applyGradients', global_step=tf.train.get_global_step())

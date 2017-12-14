@@ -29,10 +29,11 @@ public:
 
   ValueFunction(){};
   virtual ~ValueFunction(){};
-  virtual void setMaxGradNorm(const Dtype Threshold){
+
+  virtual void setClipRate(const Dtype param_in){
     LOG(FATAL) << "NOT IMPLEMENTED";
   }
-  virtual void setClipRate(const Dtype param_in){
+  virtual void setClipRangeDecay(const Dtype decayRate){
     LOG(FATAL) << "NOT IMPLEMENTED";
   }
 

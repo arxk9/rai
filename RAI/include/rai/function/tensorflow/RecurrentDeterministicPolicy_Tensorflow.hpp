@@ -53,6 +53,25 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
       Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow(
           "RecurrentDeterministicPolicy", computeMode, graphName, graphParam, learningRate) {
   }
+  virtual void forward(Tensor3D &states, Tensor3D &actions) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()},  states.dim(1), "length");
+    if (h.cols() != states.batches()) {
+      h.resize(hdim, states.batches());
+      h.setZero();
+    }
+    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
+    h.copyDataFrom(vectorOfOutputs[1]);
+    actions.copyDataFrom(vectorOfOutputs[0]);
+  }
+
+  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &hiddenStates) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()},  states.dim(1), "length");
+
+    this->tf_->run({states, hiddenStates, len}, {"action"}, {}, vectorOfOutputs);
+    actions.copyDataFrom(vectorOfOutputs[0]);
+  }
 
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions) {
     std::vector<MatrixXD> vectorOfOutputs;
@@ -76,8 +95,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
 
     auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
-    gradients.resize(minibatch->actions.dim());
-
     forward(minibatch->states, minibatch->actions, hiddenState);
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(minibatch, gradients);
 

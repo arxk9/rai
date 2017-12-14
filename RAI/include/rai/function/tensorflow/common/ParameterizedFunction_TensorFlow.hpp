@@ -190,6 +190,11 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
     tf_->run({dr, ds}, {}, {"DecayRateLR_assign", "DecayStepLR_assign"});
   }
 
+  virtual void setMaxGradientNorm(Dtype GradNorm){
+    Tensor1D lr({1}, GradNorm, "trainingOptions/param_assign_placeholder");
+    tf_->run({lr}, {}, {"max_norm_assign"});
+  }
+
   virtual Dtype getLearningRate() {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     tf_->run({}, {"trainingOptions/LR"}, {}, vectorOfOutputs);

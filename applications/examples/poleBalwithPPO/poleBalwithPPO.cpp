@@ -75,14 +75,18 @@ int main(int argc, char *argv[]) {
   ////////////////////////// Define Function approximations //////////
   Vfunction_TensorFlow Vfunction("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
   Policy_TensorFlow policy("cpu", "MLP", "relu 1e-3 3 32 32 1", 0.001);
-  policy.setLearningRateDecay(0.99,50);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
-  ////////////////////////// Algorithm ////////////////////////////////
+  ////////////////////////// Algorithm and Hyperparameters /////////////////////////
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 4, 4, true);
+
+  policy.setLearningRateDecay(0.99,30);
+  policy.setMaxGradientNorm(0.3);
+  Vfunction.setLearningRateDecay(0.99,30);
+  Vfunction.setMaxGradientNorm(0.3);
 
   algorithm.setVisualizationLevel(0);
 
