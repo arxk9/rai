@@ -46,6 +46,7 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
   using Pfunction_tensorflow::getAP;
   using Pfunction_tensorflow::setLP;
   using Pfunction_tensorflow::setAP;
+  using Pfunction_tensorflow::forward;
 
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::Action Action;
@@ -66,6 +67,47 @@ class RecurrentStochasticPolicyValue_Tensorflow : public virtual StochasticPolic
                                        Dtype learningRate = 1e-3) :
       Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("RecurrentStochasticPolicyValue", computeMode, graphName, graphParam, learningRate) {
 
+  }
+  virtual void forward(Tensor3D &states, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
+
+    this->tf_->run({states,  hiddenState, len}, {"value",}, {}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+
+  virtual void forward(Tensor3D &states, Tensor2D &values, Tensor3D &hiddenStates) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
+    hiddenState = hiddenStates.col(0);
+
+    this->tf_->run({states,  hiddenState, len}, {"value", "h_state"}, {}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+
+  virtual void forward(Tensor3D &states, Tensor3D &actions) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()},  states.dim(1), "length");
+    if (h.cols() != states.batches()) {
+      h.resize(hdim, states.batches());
+      h.setZero();
+    }
+    this->tf_->run({states, h, len}, {"action", "h_state"}, {}, vectorOfOutputs);
+    h.copyDataFrom(vectorOfOutputs[1]);
+    actions.copyDataFrom(vectorOfOutputs[0]);
+  }
+
+  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor3D &hiddenStates) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()},  states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
+    hiddenState = hiddenStates.col(0);
+
+    this->tf_->run({states, hiddenState, len}, {"action", "h_state"}, {}, vectorOfOutputs);
+    h.copyDataFrom(vectorOfOutputs[1]);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   ///PPO

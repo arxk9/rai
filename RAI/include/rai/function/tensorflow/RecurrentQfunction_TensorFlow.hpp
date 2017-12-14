@@ -25,7 +25,6 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
   typedef typename QfunctionBase::Action Action;
   typedef typename QfunctionBase::Jacobian Jacobian;
   typedef typename QfunctionBase::Value Value;
-  typedef typename QfunctionBase::ValueBatch ValueBatch;
   typedef typename QfunctionBase::Tensor1D Tensor1D;
   typedef typename QfunctionBase::Tensor2D Tensor2D;
   typedef typename QfunctionBase::Tensor3D Tensor3D;
@@ -42,7 +41,23 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
       Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow(
           "RecurrentQfunction", computeMode, graphName, graphParam, learningRate) {
   }
+  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &values) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
 
+    this->tf_->run({states, actions, hiddenState, len}, {"QValue", "h_state"}, {}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
+  virtual void forward(Tensor3D &states, Tensor3D &actions, Tensor2D &values, Tensor3D &hiddenStates) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()}, "h_init");
+    hiddenState = hiddenStates.col(0);
+
+    this->tf_->run({states, actions, hiddenState, len}, {"QValue", "h_state"}, {}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
+  }
   virtual void test(Tensor3D &states, Tensor3D &actions) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D len({states.batches()}, states.dim(1), "length");
