@@ -98,7 +98,11 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
     this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, hiddenState},
                     {"trainUsingTargetQValue/loss"},
                    {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
-//    LOG(INFO) << vectorOfOutputs[1];
+//   LOG(INFO) << vectorOfOutputs[1];
+//    LOG(INFO) << vectorOfOutputs[1].rows();
+//    LOG(INFO) << vectorOfOutputs[1].cols();
+//    LOG(INFO)<< minibatch->lengths[0] << ", "<< minibatch->lengths[1];
+
     return vectorOfOutputs[0](0);
   };
 

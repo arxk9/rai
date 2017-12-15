@@ -96,7 +96,6 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
     auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
     forward(minibatch->states, minibatch->actions, hiddenState);
-
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(minibatch, gradients);
 
     this->tf_->run({minibatch->states, minibatch->lengths, hiddenState, gradients}, {"trainUsingCritic/gradnorm"},

@@ -71,7 +71,7 @@ class RecurrentStochasticPolicy(pc.Policy):
         util = Utils.Utils(dtype)
 
         with tf.name_scope('Algo'):
-            mask = tf.sequence_mask(gs.seq_length, name='mask')
+            mask = tf.sequence_mask(gs.seq_length, maxlen=tf.shape(gs.input)[1], name='mask')
             logp_n = tf.boolean_mask(util.log_likelihood(action, action_stdev, old_action_sampled), mask)
             logp_old = tf.boolean_mask(util.log_likelihood(old_action_noise, old_stdv), mask)
             advantage = tf.boolean_mask(advantage_in, mask)

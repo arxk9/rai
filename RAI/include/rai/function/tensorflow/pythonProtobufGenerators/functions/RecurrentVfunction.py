@@ -12,7 +12,6 @@ class RecurrentVfunction(bc.SpecializedFunction):
         # variables
         value = tf.squeeze(gs.output, axis=2, name=self.output_names[0])
 
-        state_dim = gs.input.shape[1]
         state = gs.input
 
         clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
@@ -25,7 +24,7 @@ class RecurrentVfunction(bc.SpecializedFunction):
         # new placeholders
         value_target = tf.placeholder(dtype, shape=[None, None], name='targetValue')
         value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
-        mask = tf.sequence_mask(gs.seq_length, name='mask')
+        mask = tf.sequence_mask(gs.seq_length, maxlen=tf.shape(gs.input)[1], name='mask')
         value_target_masked = tf.boolean_mask(value_target, mask)
         value_pred_masked = tf.boolean_mask(value_pred, mask)
         value_masked = tf.boolean_mask(value, mask)

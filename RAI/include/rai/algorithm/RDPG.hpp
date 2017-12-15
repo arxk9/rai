@@ -197,15 +197,23 @@ class RDPG {
       /// (i.e. we have no info about the transition after the last state (s_n, a_n, r_n) -> (s_{n+1}))
     }
 
-    if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_, stateFull_);
+    if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_, true);
     Utils::timer->stopTimer("Data Processing");
+//
+//    std::cout << "??" << std::endl;
+//    std::cout << Dataset_.values.col(0).transpose()<< std::endl;
+//    std::cout << Dataset_.values.col(1).transpose()<< std::endl;
+//
+//    std::cout << Dataset_.values.col(Dataset_.batchNum-1).transpose()<< std::endl;
+//    std::cout << Dataset_.values.rows()<< std::endl;
+//    std::cout << Dataset_.lengths[0]<< std::endl;
 
     Dtype Qloss;
     Utils::timer->startTimer("Qfunction update");
     Qloss = qfunction_->performOneSolverIter(&Dataset_, Dataset_.values);
     Utils::timer->stopTimer("Qfunction update");
-    Utils::logger->appendData("Qloss", qfunction_->getGlobalStep(), Qloss);
 
+    Utils::logger->appendData("Qloss", qfunction_->getGlobalStep(), Qloss);
     Dtype gradnorm;
     Utils::timer->startTimer("Policy update");
     gradnorm = policy_->backwardUsingCritic(qfunction_, &Dataset_);
@@ -238,7 +246,6 @@ class RDPG {
   unsigned n_newEpisodesPerIter_;
   int stride_;
   int segLen_;
-  bool stateFull_;
 
   /////////////////////////// plotting
   int iterNumber_ = 0;
