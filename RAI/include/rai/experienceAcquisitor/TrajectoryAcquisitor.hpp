@@ -25,7 +25,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
   using State = Eigen::Matrix<Dtype, StateDim, 1>;
   using Action = Eigen::Matrix<Dtype, ActionDim, 1>;
   using StateBatch = Eigen::Matrix<Dtype, StateDim, -1>;
-  using ActionBatch = Eigen::Matrix<Dtype, ActionDim, -1>;
   using ReplayMemory_ = Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
   using ValueFunc_ = FuncApprox::ValueFunction<Dtype, StateDim>;
   using ValueBatch = Eigen::Matrix<Dtype, 1, Eigen::Dynamic>;

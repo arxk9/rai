@@ -12,16 +12,19 @@ class RecurrentVfunction(bc.SpecializedFunction):
         # variables
         value = tf.squeeze(gs.output, axis=2, name=self.output_names[0])
 
-        state_dim = gs.input.shape[1]
         state = gs.input
 
         clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
-        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), name='max_grad_norm')
-
+        clip_param_decay_rate = tf.Variable(tf.constant(1, dtype=dtype), name='clip_param_decay_rate')
+        clip_range = tf.train.exponential_decay(clip_param,
+                                                tf.train.get_global_step(),
+                                                self.decayStep_lr,
+                                                clip_param_decay_rate,
+                                                name='clip_range')
         # new placeholders
         value_target = tf.placeholder(dtype, shape=[None, None], name='targetValue')
         value_pred = tf.placeholder(dtype, shape=[None, None], name='predictedValue')
-        mask = tf.sequence_mask(gs.seq_length, name='mask')
+        mask = tf.sequence_mask(gs.seq_length, maxlen=tf.shape(gs.input)[1], name='mask')
         value_target_masked = tf.boolean_mask(value_target, mask)
         value_pred_masked = tf.boolean_mask(value_pred, mask)
         value_masked = tf.boolean_mask(value, mask)
@@ -29,33 +32,16 @@ class RecurrentVfunction(bc.SpecializedFunction):
         # Assign ops.
         param_assign_placeholder = tf.placeholder(dtype, shape=[1, 1], name='param_assign_placeholder')
         tf.assign(clip_param, tf.reshape(param_assign_placeholder, []), name='clip_param_assign')
-        tf.assign(max_grad_norm, tf.reshape(param_assign_placeholder, []), name='grad_param_assign')
+        tf.assign(clip_param_decay_rate, tf.reshape(param_assign_placeholder, []), name='clip_decayrate_assign')
 
         # solvers
         with tf.name_scope('trainUsingTargetValue'):
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            core.square_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
+            core.square_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=self.max_grad_norm)
 
         with tf.name_scope('trainUsingTargetValue_huber'):
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            core.huber_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=learning_rate), maxnorm=max_grad_norm)
+            core.huber_loss_opt(dtype, value_target_masked, value_masked, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=self.max_grad_norm)
 
         with tf.name_scope('trainUsingTRValue'):
-            # Clipping-based trust region loss (https://github.com/openai/baselines/blob/master/baselines/pposgd/pposgd_simple.py)
-            # core.square_loss_opt(dtype, value_target, value, tf.train.AdamOptimizer)
-
-            vfloss1 = tf.square(value_masked - value_target_masked)
-            clip_rate = clip_param[0]
-
-            vpredclipped = value_pred_masked + tf.clip_by_value(value_masked - value_pred_masked , -clip_rate, clip_rate)
-            vfloss2 = tf.square(vpredclipped - value_target_masked)
-
-            TR_loss = .5 * tf.reduce_mean(tf.maximum(vfloss1, vfloss2), name='loss')
-
-            #Optimize
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-            grad = tf.gradients(TR_loss, gs.l_param_list, colocate_gradients_with_ops=True)
-            grads, gradnorm = tf.clip_by_global_norm(grad, clip_norm=max_grad_norm)
-            grads = zip(grads, gs.l_param_list)
-            train = optimizer.apply_gradients(grads, name='solver')
+            core.square_loss_trust_region_opt(dtype, value_target_masked, value_masked, value_pred_masked,
+                                             tf.train.AdamOptimizer(learning_rate=self.learningRate),
+                                             clipRange=clip_range, maxnorm=self.max_grad_norm)

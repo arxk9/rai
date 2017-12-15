@@ -35,13 +35,9 @@ using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
 using Task = rai::Task::PO_PoleBalancing<Dtype>;
-//using Task = rai::Task::PoleBalancing<Dtype>;
 
 using State = Task::State;
-using StateBatch = Task::StateBatch;
 using Action = Task::Action;
-using ActionBatch = Task::ActionBatch;
-using CostBatch = Task::CostBatch;
 using VectorXD = Task::VectorXD;
 using MatrixXD = Task::MatrixXD;
 using PolicyValue_TensorFlow = rai::FuncApprox::RecurrentStochasticPolicyValue_Tensorflow<Dtype, StateDim, ActionDim>;
@@ -64,7 +60,7 @@ int main(int argc, char *argv[]) {
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.9);
-    task.setRealTimeFactor(2);
+    task.setRealTimeFactor(1.5);
     task.setTimeLimitPerEpisode(25);
     taskVector.push_back(&task);
   }
@@ -77,15 +73,17 @@ int main(int argc, char *argv[]) {
     noiseVector.push_back(&noise);
 
   ////////////////////////// Define Function approximations //////////
-  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 64 32 1", 0.0025);
+  PolicyValue_TensorFlow policy("gpu,0", "LSTM_merged", "relu 1e-3 2 64 / 32 1", 0.002);
 
   ////////////////////////// Acquisitor
   Acquisitor_ acquisitor;
 
-  ////////////////////////// Algorithm ////////////////////////////////
+  ////////////////////////// Algorithm and Hyperparameters /////////////////////////
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
-      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1, true, 0.3);
+      algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1, true, 0.99);
 
+  policy.setLearningRateDecay(0.99,30);
+  policy.setMaxGradientNorm(0.25);
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
@@ -100,33 +98,28 @@ int main(int argc, char *argv[]) {
   figurePropertieskl.ylabel = "KlD";
 
   rai::Utils::Graph::FigProp2D figurePropertiesgnorm;
-  figurePropertieskl.title = "Number of Steps Taken vs gradNorm";
-  figurePropertieskl.xlabel = "N. Steps Taken";
-  figurePropertieskl.ylabel = "gradNorm";
+  figurePropertiesgnorm.title = "Number of Steps Taken vs gradNorm";
+  figurePropertiesgnorm.xlabel = "N. Steps Taken";
+  figurePropertiesgnorm.ylabel = "gradNorm";
 
   rai::Utils::Graph::FigPropPieChart propChart;
 
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 20;
-  int iteration = 5000;
-  Dtype lr = policy.getLearningRate();
-  Dtype lr_lowerbound =  0.1 * lr;
-
+  constexpr int loggingInterval = 50;
+  constexpr int iteration = 200;
   for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
+    LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
+    LOG(INFO) << "Number of updates:"<<policy.getGlobalStep();
 
-    lr = (1-(Dtype)iterationNumber/iteration) * (lr-lr_lowerbound) + lr_lowerbound; ///linear decay
-    policy.setLearningRate(lr);
-
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    LOG(INFO) << "Learning rate:"<<lr;
 
-    algorithm.runOneLoop(20000);
+    algorithm.runOneLoop(15000);
 
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
 

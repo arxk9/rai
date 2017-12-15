@@ -26,9 +26,7 @@ class PoleBalancing1D : public Task<Dtype, StateDim, ActionDim, CommandDim> {
 public:
   using TaskBase = Task<Dtype, StateDim, ActionDim, CommandDim>;
   typedef typename TaskBase::Action Action;
-  typedef typename TaskBase::ActionBatch ActionBatch;
   typedef typename TaskBase::State State;
-  typedef typename TaskBase::StateBatch StateBatch;
   typedef typename TaskBase::Command Command;
   typedef typename TaskBase::VectorXD VectorXD;
   typedef typename TaskBase::MatrixXD MatrixXD;

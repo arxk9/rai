@@ -27,7 +27,6 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   typedef typename PolicyBase::State State;
   typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
 
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
@@ -50,12 +49,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
           "StochasticPolicy", computeMode, graphName, graphParam, learningRate) {
   }
 
-  virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->run({{"state", states}}, {"action", "stdev"}, {}, vectorOfOutputs);
-    means = vectorOfOutputs[0];
-    stdev = vectorOfOutputs[1].col(0);
-  }
+
   ///TRPO
   //batch
   virtual void TRPOpg(Dataset &batch,
@@ -221,8 +215,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
   }
 
   virtual void setStdev(const Action &Stdev) {
-    std::vector<MatrixXD> dummy;
-    this->tf_->run({{"Stdev_placeholder", Stdev}}, {}, {"assignStdev"}, dummy);
+    this->tf_->run({{"Stdev_placeholder", Stdev}}, {}, {"assignStdev"});
   }
 
   virtual void getStdev(Action &Stdev) {
@@ -235,20 +228,10 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     std::vector<MatrixXD> dummy;
     this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
-
-  virtual void forward(State &state, Action &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->forward({{"state", state}},
-                       {"action"}, vectorOfOutputs);
-
-    action = vectorOfOutputs[0];
-  }
-
-  virtual void forward(StateBatch &state, ActionBatch &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->forward({{"state", state}},
-                       {"action"}, vectorOfOutputs);
-    action = vectorOfOutputs[0];
+  virtual void forward(Tensor2D &states, Tensor2D &actions) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
@@ -257,42 +240,16 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-    std::vector<MatrixXD> loss, dummy;
-    this->tf_->run({{"state", states},
-                    {"targetAction", actions},
-                    {"trainUsingTargetAction/learningRate", this->learningRate_}}, {"trainUsingTargetAction/loss"},
-                   {"trainUsingTargetAction/solver"}, loss);
-    this->tf_->run({{"state", states}}, {},
-                   {"action"}, dummy);
-    return loss[0](0);
-  }
   void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", this->learningRate_}}, {},
+    this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
   virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
     std::vector<MatrixXD> dummy;
-    VectorXD inputrate(1);
-    inputrate(0) = learningrate;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", inputrate}}, {},
+    this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
-  virtual void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
-    std::vector<MatrixXD> temp;
-    this->tf_->run({{"state", state}}, {"jac_Action_wrt_Param"}, {}, temp);
-    jacobian = temp[0];
-  }
-
-  virtual void getJacobianAction_WRT_State(State &state, JacobianWRTstate &jacobian) {
-    std::vector<MatrixXD> temp;
-    this->tf_->run({{"state", state}}, {"jac_Action_wrt_State"}, {}, temp);
-    jacobian = temp[0];
-  }
-
 };
 }//namespace FuncApprox
 }//namespace rai

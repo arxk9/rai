@@ -17,6 +17,9 @@
 #include <rai/algorithm/common/LearningData.hpp>
 #include "rai/memory/Trajectory.hpp"
 
+/// This memory saves full trajectory (o_1, a_1, r_1,...,o_{n-1}, a_{n-1}, r_{n-1}, o_n, a_n, r_n)
+/// usage: RDPG uses (o_1, a_1, r_1,...,o_{n-1}, a_{n-1}, r_{n-1}, o_n)
+
 namespace rai {
 namespace Memory {
 
@@ -171,8 +174,8 @@ class ReplayMemoryHistory {
     unsigned maxlen = 0;
 
     for (auto &tra : trajectorySet) {
-      dataN_ += tra.size() - 1;
-      if (maxlen < tra.stateTraj.size() - 1) maxlen = unsigned(tra.stateTraj.size()) - 1;
+      dataN_ += tra.size();
+      if (maxlen < tra.stateTraj.size() - 1) maxlen = unsigned(tra.stateTraj.size());
     }
     if(hdim_ == 0) hdim_ = trajectorySet[0].hiddenStateTraj[0].rows();
 
@@ -187,11 +190,11 @@ class ReplayMemoryHistory {
 
     for (int i = 0; i < trajectorySet.size(); i++) {
       ///partially fill batch
-      int len = trajectorySet[i].size() - 1;
-      stateTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].stateTraj,1);
-      actionTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionTraj,1);
-      if (distInfo_) actionNoiseTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionNoiseTraj,1);
-      hiddenStateTensor_->partiallyFillBatch(i, trajectorySet[i].hiddenStateTraj, 1);
+      int len = trajectorySet[i].size() ;
+      stateTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].stateTraj);
+      actionTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionTraj);
+      if (distInfo_) actionNoiseTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionNoiseTraj);
+      hiddenStateTensor_->partiallyFillBatch(i, trajectorySet[i].hiddenStateTraj);
 
       for (int timeID = 0; timeID < len; timeID++) {
           costTensor_->eMat()(timeID, i) = trajectorySet[i].costTraj[timeID];
@@ -233,7 +236,6 @@ class ReplayMemoryHistory {
         }
       }
     }
-
     /// resize
     DataOut.resize(hdim_,maxlen_, batchSize);
 
@@ -241,6 +243,7 @@ class ReplayMemoryHistory {
     for (unsigned i = 0; i < batchSize; i++) {
       DataOut.states.batch(i) = stateTensor_->batch(memoryIdx[i]);
       DataOut.actions.batch(i) = actionTensor_->batch(memoryIdx[i]);
+      DataOut.hiddenStates.batch(i) = hiddenStateTensor_->batch(memoryIdx[i]);
       DataOut.costs.col(i) = costTensor_->col(memoryIdx[i]);
       DataOut.lengths[i] = len_->at(i);
       DataOut.termtypes[i] = termtypes_->at(i);
@@ -263,6 +266,7 @@ class ReplayMemoryHistory {
     delete costTensor_;
     delete len_;
     delete termtypes_;
+    delete hiddenStateTensor_;
     if (distInfo_) {
       delete actionNoiseTensor_;
       delete stdevs_;
@@ -277,6 +281,8 @@ class ReplayMemoryHistory {
       stdevs_ = new Tensor2D({actionDimension, capacity_}, 0);
     }
     termtypes_ = new Tensor1D({capacity_}, 0);
+    hiddenStateTensor_ = new Tensor3D;
+
   }
 
   unsigned getCapacity() {

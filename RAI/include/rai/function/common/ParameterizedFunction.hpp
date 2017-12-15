@@ -62,11 +62,27 @@ class ParameterizedFunction {
   virtual void forward(Tensor2D &intputs, Tensor2D &outputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
+
+  virtual void forward(Tensor2D &intputs1, Tensor2D &intputs2, Tensor2D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
+
   virtual void forward(Tensor3D &intputs, Tensor2D &outputs) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
 
   virtual void forward(Tensor3D &intputs, Tensor3D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
+  virtual void forward(Tensor3D &intputs1, Tensor3D &intputs2, Tensor2D &outputs) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
+
+  virtual void forward(Tensor3D &intputs, Tensor2D &outputs, Tensor3D &hiddenStates) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+  };
+
+  virtual void forward(Tensor3D &intputs, Tensor3D &outputs, Tensor3D &hiddenStates) {
     LOG(FATAL) << "NOT IMPLEMENTED";
   };
 

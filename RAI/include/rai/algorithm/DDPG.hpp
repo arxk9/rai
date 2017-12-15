@@ -45,11 +45,7 @@ class DDPG {
  public:
 
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
-  typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> ActionBatch;
-  typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
-  typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ScalarBatch;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
 
@@ -70,7 +66,7 @@ class DDPG {
        Acquisitor_ *acquisitor,
        ReplayMemory_ *memory,
        unsigned n_epoch,
-       unsigned n_newSamplePerEpoch,
+       unsigned n_newSamplePerIter,
        unsigned batchSize,
        unsigned testingTrajN,  // how many trajectories to use to test the policy
        Dtype tau = 1e-3) :
@@ -83,7 +79,7 @@ class DDPG {
       memorySARS_(memory),
       batSize_(batchSize),
       n_epoch_(n_epoch),
-      n_newSamplePerEpoch_(n_newSamplePerEpoch),
+      n_newSamplePerIter_(n_newSamplePerIter),
       tau_(tau),
       testingTrajN_(testingTrajN),
       task_(task) {
@@ -124,7 +120,7 @@ class DDPG {
     for (auto &noise : noise_)
       noise->initializeNoise();
     /////////////////////////////////////////////////////////////////////////
-    for (unsigned i = 0; i < numOfSteps / n_newSamplePerEpoch_; i++)
+    for (unsigned i = 0; i < numOfSteps / n_newSamplePerIter_; i++)
         learnForOneCycle();
   }
 
@@ -135,7 +131,7 @@ class DDPG {
   void learnForOneCycle() {
     Utils::timer->startTimer("Simulation");
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
-    acquisitor_->acquire(task_, policy_, noise_, memorySARS_, n_newSamplePerEpoch_);
+    acquisitor_->acquire(task_, policy_, noise_, memorySARS_, n_newSamplePerIter_);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
     Utils::timer->stopTimer("Simulation");
     Utils::timer->startTimer("Qfunction and Policy update");
@@ -145,10 +141,16 @@ class DDPG {
   }
 
   void updateQfunctionAndPolicy() {
-    StateBatch state_t(StateDim, batSize_), state_tp1(StateDim, batSize_);
-    ActionBatch action_t(ActionDim, batSize_), action_tp1(ActionDim, batSize_);
-    ValueBatch cost_t(batSize_), value_tp1(batSize_), value_t(batSize_);
-    ScalarBatch termType(batSize_);
+    ///RAI convention : dim[-1] = batchNum, dim[-2] = sequence length.
+    rai::Tensor<Dtype,3> state_t({StateDim, 1, batSize_}, "state");
+    rai::Tensor<Dtype,3> state_tp1({StateDim, 1, batSize_}, "state");
+    rai::Tensor<Dtype,3> action_t({ActionDim, 1, batSize_}, "sampledAction");
+    rai::Tensor<Dtype,3> action_tp1({ActionDim, 1, batSize_}, "sampledAction");
+    rai::Tensor<Dtype,2> value_t({1, batSize_}, "targetQValue");
+    rai::Tensor<Dtype,2> value_tp1({1, batSize_}, "targetQValue");
+    rai::Tensor<Dtype,2> cost_t({1, batSize_}, "costs");
+    rai::Tensor<Dtype,1> termType({batSize_}, "termtypes");
+
     Dtype termValue = task_[0]->termValue();
     Dtype disFtr = task_[0]->discountFtr();
 
@@ -159,11 +161,11 @@ class DDPG {
     policy_target_->forward(state_tp1, action_tp1);
     qfunction_target_->forward(state_tp1, action_tp1, value_tp1);
     for (unsigned tupleID = 0; tupleID < batSize_; tupleID++)
-      if (TerminationType(termType(tupleID)) == TerminationType::terminalState)
-        value_tp1(tupleID) = termValue;
+      if (TerminationType(termType[tupleID]) == TerminationType::terminalState)
+        value_tp1[tupleID] = termValue;
 
     for (unsigned tupleID = 0; tupleID < batSize_; tupleID++)
-      value_t(tupleID) = cost_t(tupleID) + disFtr * value_tp1(tupleID);
+      value_t[tupleID] = cost_t[tupleID] + disFtr * value_tp1[tupleID];
     qfunction_->performOneSolverIter(state_t, action_t, value_t);
     Utils::timer->stopTimer("Qfunction update");
 
@@ -186,7 +188,7 @@ class DDPG {
   std::vector<Noise_ *> noise_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
   unsigned n_epoch_;
-  unsigned n_newSamplePerEpoch_;
+  unsigned n_newSamplePerIter_;
   unsigned batSize_;
   Dtype tau_;
 

@@ -45,50 +45,21 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
 
   ~RecurrentValueFunction_TensorFlow() {};
 
-  virtual void forward(State &state, Dtype &value) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    MatrixXD h_, length;
-    length.resize(1,1);
-    h_.resize(hdim,1);
-    h_.setZero();
-
-    this->tf_->run({{"state", state},
-                    {"length", length},
-                    {"h_init", h_}},
-                   {"value"}, {}, vectorOfOutputs);
-    value = vectorOfOutputs[0](0);
-  }
-  virtual void forward(StateBatch &states, ValueBatch &values) {
-    std::vector<tensorflow::Tensor> vectorOfOutputs;
-    Tensor3D stateT({stateDim, 1, states.cols()}, "state");
-    Tensor1D len({states.cols()}, 1, "length");
-    stateT.copyDataFrom(states);
-
-    if (h.cols() != states.cols()) {
-      h.resize(hdim, states.cols());
-    }
-    h.setZero();
-//    }
-
-    this->tf_->run({stateT,  h, len}, {"value", "h_state"}, {}, vectorOfOutputs);
-    std::memcpy(values.data(), vectorOfOutputs[0].flat<Dtype>().data(), sizeof(Dtype) * values.size());
-    h.copyDataFrom(vectorOfOutputs[1]);
-  }
-
   virtual void forward(Tensor3D &states, Tensor2D &values) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D len({states.batches()}, states.dim(1), "length");
+    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
 
-    if (h.cols() != states.batches()) {
-      h.resize(hdim, states.batches());
-    }
-    h.setZero();
-//    }
-
-    this->tf_->run({states,  h, len}, {"value", "h_state"}, {}, vectorOfOutputs);
-//    h.copyDataFrom(vectorOfOutputs[1]);
+    this->tf_->run({states,  hiddenState, len}, {"value",}, {}, vectorOfOutputs);
     values.copyDataFrom(vectorOfOutputs[0]);
-//    LOG(INFO) << h.eMat();
+  }
+
+  virtual void forward(Tensor3D &states, Tensor2D &values, Tensor2D &hiddenStates) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    Tensor1D len({states.batches()}, states.dim(1), "length");
+
+    this->tf_->run({states,  hiddenStates, len}, {"value"}, {}, vectorOfOutputs);
+    values.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual void test(Tensor3D &states, Tensor2D &values) {
@@ -100,57 +71,57 @@ class RecurrentValueFunction_TensorFlow : public virtual ValueFunction<Dtype, st
       h.resize(hdim, states.batches());
     }
     h.setZero();
-//    }
 
     this->tf_->run({states,  h, len}, {"test", "h_state"}, {}, vectorOfOutputs);
 //    h.copyDataFrom(vectorOfOutputs[1]);
     values.copyDataFrom(vectorOfOutputs[0]);
-//    LOG(INFO) << h.eMat();
   }
 
 
   virtual Dtype performOneSolverIter(Tensor3D &states, Tensor2D &values, Tensor1D & lengths) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTargetValue/learningRate");
     Tensor2D hiddenState({hiddenStateDim(), states.batches()},0, "h_init");
 
     this->tf_->run({states,
                     values,
                     lengths,
-                    hiddenState,
-                    lr},
+                    hiddenState},
                    {"trainUsingTargetValue/loss"},
                    {"trainUsingTargetValue/solver"}, loss);
     return loss[0](0);
   }
 
-  virtual Dtype performOneSolverIter_trustregion(StateBatch &states, ValueBatch &values, ValueBatch &old_values) {
-    std::vector<MatrixXD> loss, dummy;
-    this->tf_->run({{"state", states},
-                    {"targetValue", values},
-                    {"predictedValue", old_values},
-                    {"trainUsingTRValue/learningRate", this->learningRate_},
-                    {"updateBNparams", this->notUpdateBN}},
-                   {"trainUsingTRValue/loss"},
-                   {"trainUsingTRValue/solver"}, loss);
-    return loss[0](0);
-  }
-
   virtual Dtype performOneSolverIter_trustregion(Tensor3D &states, Tensor2D &values, Tensor2D &old_values, Tensor1D & lengths) {
     std::vector<MatrixXD> loss;
-    Tensor1D lr({1}, this->learningRate_(0), "trainUsingTRValue/learningRate");
     Tensor2D hiddenState({hiddenStateDim(), states.batches()},0, "h_init");
 
     this->tf_->run({states,
                     values,
                     old_values,
                     lengths,
-                    hiddenState,
-                    lr},
+                    hiddenState},
                    {"trainUsingTRValue/loss"},
                    {"trainUsingTRValue/solver"}, loss);
     return loss[0](0);
   }
+
+  virtual void setClipRate(const Dtype param_in){
+    std::vector<MatrixXD> dummy;
+    VectorXD input(1);
+    input << param_in;
+    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_param_assign"}, dummy);
+
+  }
+
+  virtual void setClipRangeDecay(const Dtype decayRate){
+    std::vector<MatrixXD> dummy;
+    VectorXD input(1);
+    input << decayRate;
+    this->tf_->run({{"param_assign_placeholder", input}}, {}, {"clip_decayrate_assign"}, dummy);
+
+  }
+
+
 };
 } // namespace FuncApprox
 } // namespace rai

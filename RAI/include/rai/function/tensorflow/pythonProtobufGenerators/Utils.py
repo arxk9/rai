@@ -39,7 +39,7 @@ class Utils:
         return tf.reduce_sum(tf.divide(numerator, denominator) + tf.log(stdev2 / stdev1), axis=-1)
 
     def CG_tf(self, eval, b, IterN=100, tol=1e-15, damping=0.1):
-        # Not applicable to recurrent network
+        # Not applicable to recurrent network(dynamic rnn)
         def cond(i, p, r, x, rdotr):
             return tf.logical_and(tf.less(tol, rdotr), tf.less(i, IterN))
 

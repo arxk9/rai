@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
   /////////////////////// Plotting properties ////////////////////////
   rai::Utils::Graph::FigProp2D
-      figurePropertiesEVP("process time", "Performance", "vs Performance");
+      figurePropertiesEVP("process time (min.)", "Performance", "process time vs Performance");
 
   rai::Utils::Graph::FigPropPieChart propChart;
   rai::Utils::logger->addVariableToLog(1, "process time", "");

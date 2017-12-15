@@ -368,6 +368,8 @@ class TensorBase {
       dtype_ = tensorflow::DataType::DT_FLOAT;
     else if (typeid(Dtype) == typeid(double))
       dtype_ = tensorflow::DataType::DT_DOUBLE;
+    else if (typeid(Dtype) == typeid(int))
+      dtype_ = tensorflow::DataType::DT_INT32;
   }
 
   tensorflow::DataType dtype_;

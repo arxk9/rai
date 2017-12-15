@@ -12,7 +12,6 @@
 #include "raiCommon/enumeration.hpp"
 #include "rai/function/common/ValueFunction.hpp"
 
-
 namespace rai {
 namespace Memory {
 
@@ -23,9 +22,6 @@ class Trajectory {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, stateDim, 1> State;
   typedef Eigen::Matrix<Dtype, actionDim, 1> Action;
-  typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
-  typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
-  typedef Eigen::Matrix<Dtype, 1, -1> CostBatch;
   typedef Eigen::Matrix<Dtype, -1, 1> HiddenState;
 
   using Vfunction_ = FuncApprox::ValueFunction<Dtype, stateDim>;
@@ -34,7 +30,7 @@ class Trajectory {
   ~Trajectory() {}
 
   //////////////////////////// core methods /////////////////////////////////
-  void pushBackHiddenState(HiddenState &hiddenState){
+  void pushBackHiddenState(HiddenState &hiddenState) {
     hiddenStateTraj.push_back(hiddenState);
   }
 
@@ -104,12 +100,12 @@ class Trajectory {
     terminalValue_ = Dtype(0);
   }
 
-  Tensor<Dtype,3> &getStateMat() {
+  Tensor<Dtype, 3> &getStateMat() {
     updateMatrix();
     return states;
   }
 
-  Tensor<Dtype,2> &getActionMat() {
+  Tensor<Dtype, 2> &getActionMat() {
     updateMatrix();
     return actions;
   }
@@ -141,18 +137,18 @@ class Trajectory {
 
   Dtype getAverageValue() {
     Dtype sum = Dtype(0);
-    for (auto& elem : valueTraj)
+    for (auto &elem : valueTraj)
       sum += elem;
     return sum / valueTraj.size();
   }
 
-  CostBatch& getGAE(Vfunction_ *vfunction,
-                    Dtype gamma,
-                    Dtype lambda,
-                    Dtype terminalCost) {
+  rai::Tensor<Dtype, 1> &getGAE(Vfunction_ *vfunction,
+                                Dtype gamma,
+                                Dtype lambda,
+                                Dtype terminalCost) {
     if (gaeUpdated) return advantage;
     updateBellmanErr(vfunction, gamma, terminalCost);
-    advantage.resize(1, size() - 1);
+    advantage.resize(size() - 1);
     advantage[size() - 2] = bellmanErr[size() - 2];
     Dtype fctr = gamma * lambda;
     for (int timeID = size() - 3; timeID > -1; timeID--) {
@@ -164,7 +160,7 @@ class Trajectory {
 
   void updateBellmanErr(Vfunction_ *baseline, Dtype discFtr, Dtype termCost) {
     updateMatrix();
-    values.resize(1,size());
+    values.resize(1, size());
     bellmanErr.resize(size() - 1);
     baseline->forward(states, values);
     if (termType == TerminationType::terminalState)
@@ -173,7 +169,7 @@ class Trajectory {
       bellmanErr[i] = values[i + 1] * discFtr + costTraj[i] - values[i];
   }
 
-  void printOutTraj(){
+  void printOutTraj() {
     updateMatrix();
     std::cout << "--------------------------------------------------------" << std::endl;
     std::cout << "--------------Trajectory printout, size " << size() << std::endl;
@@ -185,7 +181,7 @@ class Trajectory {
   }
 
   /// prepend a section of other trajectory to this trajectory
-  void prependAsectionOfTraj (Trajectory& otherTraj, unsigned startingId, unsigned endId) {
+  void prependAsectionOfTraj(Trajectory &otherTraj, unsigned startingId, unsigned endId) {
     std::vector<Action> actionTraj_cpy = actionTraj;
     std::vector<State> stateTraj_cpy = stateTraj;
     std::vector<Action> actionNoiseTraj_cpy = actionNoiseTraj;
@@ -200,12 +196,18 @@ class Trajectory {
     actionNoiseTraj.clear();
     costTraj.clear();
 
-    actionTraj.insert(actionTraj.begin(), otherTraj.actionTraj.begin() + startingId, otherTraj.actionTraj.begin() + endId + 1);
-    stateTraj.insert(stateTraj.begin(), otherTraj.stateTraj.begin() + startingId, otherTraj.stateTraj.begin() + endId + 1);
-    actionNoiseTraj.insert(actionNoiseTraj.begin(), otherTraj.actionNoiseTraj.begin() + startingId, otherTraj.actionNoiseTraj.begin() + endId + 1);
+    actionTraj.insert(actionTraj.begin(),
+                      otherTraj.actionTraj.begin() + startingId,
+                      otherTraj.actionTraj.begin() + endId + 1);
+    stateTraj.insert(stateTraj.begin(),
+                     otherTraj.stateTraj.begin() + startingId,
+                     otherTraj.stateTraj.begin() + endId + 1);
+    actionNoiseTraj.insert(actionNoiseTraj.begin(),
+                           otherTraj.actionNoiseTraj.begin() + startingId,
+                           otherTraj.actionNoiseTraj.begin() + endId + 1);
     costTraj.insert(costTraj.begin(), otherTraj.costTraj.begin() + startingId, otherTraj.costTraj.begin() + endId + 1);
 
-    actionTraj.insert(actionTraj.end() , actionTraj_cpy.begin(), actionTraj_cpy.end());
+    actionTraj.insert(actionTraj.end(), actionTraj_cpy.begin(), actionTraj_cpy.end());
     stateTraj.insert(stateTraj.end(), stateTraj_cpy.begin(), stateTraj_cpy.end());
     actionNoiseTraj.insert(actionNoiseTraj.end(), actionNoiseTraj_cpy.begin(), actionNoiseTraj_cpy.end());
     costTraj.insert(costTraj.end(), costTraj_cpy.begin(), costTraj_cpy.end());
@@ -222,7 +224,7 @@ class Trajectory {
   std::vector<Dtype> costTraj, accumCostTraj;
   std::vector<Dtype> valueTraj;
   TerminationType termType = TerminationType::not_terminated;
-  CostBatch advantage;
+  rai::Tensor<Dtype, 1> advantage;
   Dtype terminalValue_ = Dtype(0);
   Dtype discountFct_ = Dtype(0);
 
@@ -239,9 +241,9 @@ class Trajectory {
     }
     matrixUpdated = true;
   }
-  Tensor<Dtype,3> states;
-  Tensor<Dtype,2> actions, values;
-  Tensor<Dtype,1> bellmanErr;
+  Tensor<Dtype, 3> states;
+  Tensor<Dtype, 2> actions, values;
+  Tensor<Dtype, 1> bellmanErr;
 
   bool matrixUpdated = false;
   bool gaeUpdated = false;

@@ -22,9 +22,7 @@ public:
   using Dataset = rai::Algorithm::LearningData<Dtype,stateDimension, actionDimension>;
 
   typedef typename FunctionBase::Input StateAction;
-  typedef typename FunctionBase::InputBatch StateActionBatch;
   typedef typename FunctionBase::Output Value;
-  typedef typename FunctionBase::OutputBatch ValueBatch;
   typedef typename FunctionBase::Gradient Gradient;
   typedef typename FunctionBase::Jacobian Jacobian;
   typedef typename FunctionBase::Tensor1D Tensor1D;
@@ -32,17 +30,28 @@ public:
   typedef typename FunctionBase::Tensor3D Tensor3D;
 
   typedef Eigen::Matrix<Dtype, stateDimension, 1> State;
-  typedef Eigen::Matrix<Dtype, stateDimension, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDimension, 1> Action;
-  typedef Eigen::Matrix<Dtype, actionDimension, Eigen::Dynamic> ActionBatch;
 
   Qfunction(){};
   virtual ~Qfunction(){};
 
-  virtual void forward(State& state, Action& action, Dtype& value) = 0;
-  virtual void forward(StateBatch& states, ActionBatch& actions, ValueBatch &values) = 0;
-  virtual Dtype performOneSolverIter(StateBatch& states, ActionBatch& actions, ValueBatch &values) = 0;
-  virtual Dtype performOneSolverIter_infimum(StateBatch &states, ActionBatch &actions, ValueBatch &values, Dtype linSlope) {};
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions, Tensor2D &values) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  }
+
+  virtual Dtype performOneSolverIter_infimum(Tensor3D &states, Tensor3D &actions, Tensor2D &values, Dtype linSlope) {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  }
+
+  virtual Dtype getGradient_AvgOf_Q_wrt_action(Tensor3D &states, Tensor3D &actions,
+                                       Tensor3D &gradients) const {
+    LOG(FATAL) << "NOT IMPLEMENTED";
+    return Dtype(0);
+  }
+
+
 };
 
 }} // namespaces

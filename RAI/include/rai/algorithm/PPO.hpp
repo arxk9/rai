@@ -41,10 +41,8 @@ class PPO {
 
  public:
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
-  typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, 1, 1> Value;
-  typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, ActionDim> Covariance;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
@@ -70,9 +68,9 @@ class PPO {
       int n_epoch = 5,
       int n_minibatch = 0,
       bool KL_adapt = true,
+      Dtype clipRangeDecay = 1, //no decay
       Dtype noiseCov = 1,
       Dtype KLThres = 0.01,
-      Dtype maxGradNorm = 0.1,
       Dtype entCoeff = 0.01,
       Dtype clipCoeff = 0.2,
       Dtype KL_coeff = 1) :
@@ -89,7 +87,7 @@ class PPO {
       n_epoch_(n_epoch),
       n_minibatch_(n_minibatch),
       covIn(noiseCov),
-      maxGradNorm_(maxGradNorm),
+      clipRangeDecay_(clipRangeDecay),
       KLThres_(KLThres),
       KLCoeff_(KL_coeff),
       clipCoeff_(clipCoeff),
@@ -107,11 +105,10 @@ class PPO {
     parameter_.setZero(policy_->getLPSize());
     policy_->getLP(parameter_);
     algoParams.resize(4);
-    algoParams << KLCoeff_, entCoeff_, clipCoeff_, maxGradNorm_;
+    algoParams << KLCoeff_, entCoeff_, clipCoeff_, clipRangeDecay;
     policy_->setParams(algoParams);
     vfunction_->setClipRate(clipCoeff_);
-    vfunction_->setMaxGradNorm(maxGradNorm_);
-
+    vfunction_->setClipRangeDecay(clipRangeDecay);
     ///update input stdev
     stdev_o.setOnes();
     stdev_o *= std::sqrt(covIn);
@@ -223,11 +220,11 @@ class PPO {
   int n_epoch_;
   int n_minibatch_;
   Dtype covIn;
-  Dtype maxGradNorm_;
   Dtype clipCoeff_;
   Dtype entCoeff_;
   Dtype KLCoeff_;
   Dtype KLThres_;
+  Dtype clipRangeDecay_;
   double timeLimit;
   bool KL_adapt_;
   int updateN;

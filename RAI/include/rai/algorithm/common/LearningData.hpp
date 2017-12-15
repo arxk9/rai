@@ -17,11 +17,8 @@ namespace Algorithm {
 template<typename Dtype, int StateDim, int ActionDim>
 class LearningData {
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
-  typedef Eigen::Matrix<Dtype, StateDim, Eigen::Dynamic> StateBatch;
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
-  typedef Eigen::Matrix<Dtype, ActionDim, Eigen::Dynamic> ActionBatch;
   typedef Eigen::Matrix<Dtype, 1, 1> Value;
-  typedef Eigen::Matrix<Dtype, 1, Eigen::Dynamic> ValueBatch;
   typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
   typedef rai::Tensor<Dtype, 1> Tensor1D;
@@ -225,7 +222,6 @@ class LearningData {
     Tensor3D actions_t(actions);
     Tensor3D actionNoises_t(actionNoises);
     Tensor3D hiddenStates_t(hiddenStates);
-//  Tensor2D costs;
 
     Tensor2D values_t(values);
     Tensor2D advantages_t(advantages);
@@ -309,9 +305,9 @@ class LearningData {
     Utils::timer->startTimer("GAE");
     for (auto &tra : traj) {
       ///compute advantage for each trajectory
-      ValueBatch advTra = tra.getGAE(vf, task->discountFtr(), lambda, task->termValue());
-      temp.block(0, dataID, 1, advTra.cols()) = advTra;
-      dataID += advTra.cols();
+      Tensor1D advs = tra.getGAE(vf, task->discountFtr(), lambda, task->termValue());
+      std::memcpy(temp.data()+dataID,advs.data(),sizeof(Dtype) * advs.size());
+      dataID += advs.size();
     }
 
     if (normalize) rai::Math::MathFunc::normalize(temp);
@@ -332,6 +328,7 @@ class LearningData {
   void resize(int hdim, int maxlen, int batches) {
     ///For recurrent functions.
     ///Keep first dimension.
+    this->hDim = hdim;
 
     maxLen = maxlen;
     batchNum = batches;

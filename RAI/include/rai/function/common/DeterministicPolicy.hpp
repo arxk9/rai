@@ -37,21 +37,11 @@ class DeterministicPolicy : public virtual Policy <Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename PolicyBase::Dataset Dataset;
 
-  virtual void forward(State &state, Action &action) = 0;
-
-  virtual void forward(StateBatch &states, ActionBatch &actions) = 0;
-
-  virtual void forward(Tensor3D &states, Tensor3D &actions) =0;
-
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions){
-    LOG(FATAL) << "NOT IMPLEMENTED";
-    return 0;
-  }
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions){
     LOG(FATAL) << "NOT IMPLEMENTED";
     return 0;
   }
-  virtual Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states){
+  virtual Dtype backwardUsingCritic(Qfunction_ *qFunction, Tensor3D &states){
     LOG(FATAL) << "NOT IMPLEMENTED";
     return 0;
   }

@@ -18,9 +18,7 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
   using Qfunction_tensorflow = Qfunction_TensorFlow<Dtype, stateDim, actionDim>;
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   typedef typename PolicyBase::State State;
-  typedef typename PolicyBase::StateBatch StateBatch;
   typedef typename PolicyBase::Action Action;
-  typedef typename PolicyBase::ActionBatch ActionBatch;
   typedef typename PolicyBase::Gradient Gradient;
   typedef typename PolicyBase::Jacobian Jacobian;
   typedef typename PolicyBase::JacobianWRTparam JacobianWRTparam;
@@ -42,18 +40,10 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
           "DeterministicPolicy", computeMode, graphName, graphParam, learningRate) {
   }
 
-  virtual void forward(State &state, Action &action) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->forward({{"state", state}},
-                       {"action"}, vectorOfOutputs);
-    action = vectorOfOutputs[0];
-  }
-
-  virtual void forward(StateBatch &states, ActionBatch &actions) {
-    std::vector<MatrixXD> vectorOfOutputs;
-    this->tf_->forward({{"state", states}},
-                       {"action"}, vectorOfOutputs);
-    actions = vectorOfOutputs[0];
+  virtual void forward(Tensor2D &states, Tensor2D &actions) {
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    this->tf_->forward({states}, {"action"}, vectorOfOutputs);
+    actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
@@ -62,49 +52,39 @@ class DeterministicPolicy_TensorFlow : public virtual DeterministicPolicy<Dtype,
     actions.copyDataFrom(vectorOfOutputs[0]);
   }
 
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-    std::vector<MatrixXD> loss, dummy;
-    this->tf_->run({{"state", states},
-                    {"targetAction", actions},
-                    {"trainUsingTargetAction/learningRate", this->learningRate_}}, {"trainUsingTargetAction/loss"},
-                   {"trainUsingTargetAction/solver"}, loss);
-    this->tf_->run({{"state", states}}, {},
-                   {"action"}, dummy);
-    return loss[0](0);
-  }
+  virtual Dtype backwardUsingCritic(Qfunction_ *qFunction, Tensor3D &states) {
+    Tensor3D actions("sampledAction");
+    actions.resize(actionDim, states.cols(), states.batches());
 
-  Dtype backwardUsingCritic(Qfunction_ *qFunction, StateBatch &states) {
-    ActionBatch actions;
     forward(states, actions);
     auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
     LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
-    typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
+    Tensor3D gradients("trainUsingCritic/gradientFromCritic");
     Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
+
     std::vector<MatrixXD> dummy;
-    this->tf_->run({{"state", states},
-                    {"trainUsingCritic/gradientFromCritic", gradients},
-                    {"trainUsingCritic/learningRate", this->learningRate_}}, {"trainUsingCritic/gradnorm"},
+    this->tf_->run({states,
+                    gradients}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
-    this->tf_->run({{"state", states}}, {}, {"action"}, dummy);
     return averageQ;
   }
 
-  Dtype getGradQwrtParam(Qfunction_ *qFunction, StateBatch &states, JacoqWRTparam &jaco) {
-    ActionBatch actions;
-    forward(states, actions);
-    auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
-    LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
-    typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
-    Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
-    std::vector<MatrixXD> output;
-    std::vector<MatrixXD> dummy;
-    this->tf_->run({{"state", states},
-                    {"gradQwrtParamMethod/gradientFromCritic", gradients}},
-                   {"gradQwrtParamMethod/gradientQwrtParam"},
-                   {"gradQwrtParamMethod/gradientQwrtParam"}, output);
-    jaco = output[0];
-    return averageQ;
-  }
+//  virtual Dtype getGradQwrtParam(Qfunction_ *qFunction, Tensor3D &states, JacoqWRTparam &jaco) {
+//    ActionBatch actions;
+//    forward(states, actions);
+//    auto pQfunction = dynamic_cast<Qfunction_tensorflow const *>(qFunction);
+//    LOG_IF(FATAL, pQfunction == nullptr) << "You are mixing two different library types" << std::endl;
+//    typename Qfunction_tensorflow::JacobianQwrtActionBatch gradients;
+//    Dtype averageQ = pQfunction->getGradient_AvgOf_Q_wrt_action(states, actions, gradients);
+//    std::vector<MatrixXD> output;
+//    std::vector<MatrixXD> dummy;
+//    this->tf_->run({{"state", states},
+//                    {"gradQwrtParamMethod/gradientFromCritic", gradients}},
+//                   {"gradQwrtParamMethod/gradientQwrtParam"},
+//                   {"gradQwrtParamMethod/gradientQwrtParam"}, output);
+//    jaco = output[0];
+//    return averageQ;
+//  }
 
   void getJacobianAction_WRT_LP(State &state, JacobianWRTparam &jacobian) {
     std::vector<MatrixXD> temp;

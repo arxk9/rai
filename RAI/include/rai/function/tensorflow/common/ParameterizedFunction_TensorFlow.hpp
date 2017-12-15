@@ -43,8 +43,7 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
    */
   ParameterizedFunction_TensorFlow(std::string pathToGraphDefProtobuf, Dtype learningRate = 1e-3) {
     tf_ = new TensorFlowNeuralNetwork<Dtype>(pathToGraphDefProtobuf, 0);
-    learningRate_ = MatrixXD(1, 1);
-    learningRate_ << learningRate;
+    this->setLearningRate(learningRate);
   }
 
   ParameterizedFunction_TensorFlow(std::string functionName,
@@ -67,8 +66,8 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
     cmnd += RAI_LOG_PATH + " " + computeMode + " " + functionName + " " + graphName + " " + graphParam;
 
     system(cmnd.c_str());
-    learningRate_ = MatrixXD::Constant(1, 1, learningRate);
     tf_ = new TensorFlowNeuralNetwork<Dtype>(RAI_LOG_PATH + "/" + functionName + "_" + graphName + ".pb", 0);
+    this->setLearningRate(learningRate);
   }
 
   virtual ~ParameterizedFunction_TensorFlow() {
@@ -171,8 +170,8 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 
   void run(const std::vector<std::pair<std::string, tensorflow::Tensor>> &inputs,
-                                              const std::vector<std::string> &outputTensorNames,
-                                              const std::vector<std::string> &targetNodeNames, std::vector<tensorflow::Tensor> &outputs) {
+           const std::vector<std::string> &outputTensorNames,
+           const std::vector<std::string> &targetNodeNames, std::vector<tensorflow::Tensor> &outputs) {
     tf_->run(inputs, outputTensorNames, targetNodeNames, outputs);
   }
 
@@ -181,13 +180,29 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   }
 
   virtual void setLearningRate(Dtype learningRate) {
-    learningRate_(0, 0) = learningRate;
+    Tensor1D lr({1}, learningRate, "trainingOptions/param_assign_placeholder");
+    tf_->run({lr}, {}, {"InitLR_assign"});
+  }
+
+  virtual void setLearningRateDecay(Dtype decayRate, int decaySteps) {
+    Tensor1D dr({1}, decayRate, "trainingOptions/param_assign_placeholder");
+    rai::Tensor<int, 1> ds({1}, decaySteps, "trainingOptions/param_assign_placeholder_int");
+    tf_->run({dr, ds}, {}, {"DecayRateLR_assign", "DecayStepLR_assign"});
+  }
+
+  virtual void setMaxGradientNorm(Dtype GradNorm){
+    Tensor1D gn({1}, GradNorm, "trainingOptions/param_assign_placeholder");
+    tf_->run({gn}, {}, {"max_norm_assign"});
   }
 
   virtual Dtype getLearningRate() {
-    return learningRate_(0, 0);
+    std::vector<tensorflow::Tensor> vectorOfOutputs;
+    tf_->run({}, {"trainingOptions/LR"}, {}, vectorOfOutputs);
+    return vectorOfOutputs[0].scalar<Dtype>()();
   }
-
+  int getGlobalStep() {
+    return tf_->getGlobalStep();
+  }
   virtual void setCheckNumerics(bool checkNumerics) {
     tf_->setCheckNumerics(checkNumerics);
   }
@@ -227,7 +242,6 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
   using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;
 
   TensorFlowNeuralNetwork<Dtype> *tf_;
-  MatrixXD learningRate_;
 
   const MatrixXD notUpdateBN = (MatrixXD(1, 1) << 0).finished();
   const MatrixXD updateBN = (MatrixXD(1, 1) << 1).finished();

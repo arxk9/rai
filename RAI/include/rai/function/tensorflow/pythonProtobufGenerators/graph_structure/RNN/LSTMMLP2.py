@@ -24,7 +24,8 @@ class LSTMMLP2(bc.GraphStructure):
         self.input1 = tf.placeholder(dtype, shape=[None, None, rnnDim[0]], name=fn.input_names[0])  # [batch, time, statedim]
         self.input2 = tf.placeholder(dtype, shape=[None, None, rnnDim[1]], name=fn.input_names[1])  # [batch, time, actiondim]
 
-        inputconcat = tf.concat([self.input1, self.input2], axis= 2)
+        inputconcat = tf.concat([self.input1, self.input2], axis= 2, name = "inputconcat")
+
 
         length_ = tf.placeholder(dtype, name='length')  # [batch]
         length_ = tf.cast(length_, dtype=tf.int32)
@@ -43,7 +44,12 @@ class LSTMMLP2(bc.GraphStructure):
             state_size.append(cell.state_size.h)
         cell = rnn.MultiRNNCell(cells, state_is_tuple=True)
         hiddenStateDim = tf.identity(tf.constant(value=[recurrent_state_size], dtype=tf.int32), name='h_dim')
-        init_states = tf.split(tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init'), num_or_size_splits=state_size, axis = 1)
+        h_in = tf.placeholder(dtype=dtype, shape=[None, recurrent_state_size], name='h_init')
+        init_states = tf.split(h_in, num_or_size_splits=state_size, axis = 1)
+
+        print(init_states)
+
+
 
         init_state_list = []
         for i in range(len(cells)):
@@ -54,7 +60,7 @@ class LSTMMLP2(bc.GraphStructure):
         LSTMOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
 
         # FCN
-        top = tf.reshape(LSTMOutput,shape=[-1, rnnDim[-1]], name='fcIn')
+        top = tf.reshape(LSTMOutput, shape=[-1, rnnDim[-1]], name='fcIn')
 
         layer_n = 0
         for dim in mlpDim[:-1]:

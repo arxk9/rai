@@ -40,9 +40,8 @@ class RecurrentStochasticPolicy(pc.Policy):
         kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff')
         ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff')
         clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
-        max_grad_norm = tf.Variable(tf.constant(0.5, dtype=dtype), dtype, name='max_grad_norm')
 
-        PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 4], name='PPO_params_placeholder')
+        PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 3], name='PPO_params_placeholder')
 
         param_assign_op_list = []
         param_assign_op_list += [
@@ -51,16 +50,12 @@ class RecurrentStochasticPolicy(pc.Policy):
             tf.assign(ent_coeff, tf.reshape(tf.slice(PPO_params_placeholder, [0, 1], [1, 1]), []), name='ent_coeff_assign')]
         param_assign_op_list += [
             tf.assign(clip_param, tf.reshape(tf.slice(PPO_params_placeholder, [0, 2], [1, 1]), []), name='clip_param_assign')]
-        param_assign_op_list += [
-            tf.assign(max_grad_norm, tf.reshape(tf.slice(PPO_params_placeholder, [0, 3], [1, 1]), []), name='max_norm_assign')]
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
         with tf.name_scope('trainUsingGrad'):
             gradient_from_critic = tf.placeholder(dtype, shape=[1, None], name='Inputgradient')
-            train_using_critic_learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'),
-                                                          shape=[])
-            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=train_using_critic_learning_rate)
+            train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
 
             split_parameter_gradients = tf.split(gradient_from_critic,
                                                  [reduce(mul, param.get_shape().as_list(), 1) for param in
@@ -76,7 +71,7 @@ class RecurrentStochasticPolicy(pc.Policy):
         util = Utils.Utils(dtype)
 
         with tf.name_scope('Algo'):
-            mask = tf.sequence_mask(gs.seq_length, name='mask')
+            mask = tf.sequence_mask(gs.seq_length, maxlen=tf.shape(gs.input)[1], name='mask')
             logp_n = tf.boolean_mask(util.log_likelihood(action, action_stdev, old_action_sampled), mask)
             logp_old = tf.boolean_mask(util.log_likelihood(old_action_noise, old_stdv), mask)
             advantage = tf.boolean_mask(advantage_in, mask)
@@ -96,5 +91,5 @@ class RecurrentStochasticPolicy(pc.Policy):
                 Total_loss = PPO_loss - tf.multiply(ent_coeff, meanent)
                 Total_loss2 = PPO_loss - tf.multiply(ent_coeff, meanent) + tf.multiply(kl_coeff, tf.reduce_mean(kl_))
 
-                policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list), axis=0), name='Pg')  # flatgrad
-                policy_gradient2 = tf.identity(tf.expand_dims(util.flatgrad(Total_loss2, gs.l_param_list), axis=0), name='Pg2')  # flatgrad
+                policy_gradient = tf.identity(tf.expand_dims(util.flatgrad(Total_loss, gs.l_param_list, self.max_grad_norm), axis=0), name='Pg')  # flatgrad
+                policy_gradient2 = tf.identity(tf.expand_dims(util.flatgrad(Total_loss2, gs.l_param_list, self.max_grad_norm), axis=0), name='Pg2')  # flatgrad

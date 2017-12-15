@@ -7,9 +7,15 @@ add_executable(poleBal_DDPG
 add_executable(poleBal_DDPG_simp
         ${RAI_TASK_SRC}
         simplifiedVersion.cpp)
+add_executable(poleBal_RDPG
+        ${RAI_TASK_SRC}
+        poleBalwithRDPG.cpp)
 
 target_include_directories(poleBal_DDPG PUBLIC)
 target_link_libraries(poleBal_DDPG ${RAI_LINK})
 
 target_include_directories(poleBal_DDPG_simp PUBLIC)
 target_link_libraries(poleBal_DDPG_simp ${RAI_LINK})
+
+target_include_directories(poleBal_RDPG PUBLIC)
+target_link_libraries(poleBal_RDPG ${RAI_LINK})

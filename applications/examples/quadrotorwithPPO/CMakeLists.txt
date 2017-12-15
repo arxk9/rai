@@ -1,4 +1,4 @@
-add_subdirectory(${RAI_ROOT}/RAI/src/tasks/quadrotor ${CMAKE_BINARY_DIR}/applications/examples/quadrotorwithPPO/src)
+add_subdirectory(${RAI_ROOT}/RAI/src/tasks/quadrotor ${CMAKE_BINARY_DIR}/applications/examples/quadrotorwithPPO/src/quardotor)
 
 add_executable(quadrotor_PPO
         ${RAI_TASK_SRC}

@@ -24,5 +24,4 @@ class DeterministicModel(bc.SpecializedFunction):
 
         # solvers
         with tf.name_scope('squareLoss'):
-            learning_rate = tf.reshape(tf.placeholder(dtype, shape=[1], name='learningRate'), shape=[])
-            core.square_loss_opt(dtype, output_target, output, tf.train.AdamOptimizer(learning_rate=learning_rate))
+            core.square_loss_opt(dtype, output_target, output, tf.train.AdamOptimizer(learning_rate=self.learningRate))

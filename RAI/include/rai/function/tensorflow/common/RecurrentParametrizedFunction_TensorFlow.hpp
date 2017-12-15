@@ -14,9 +14,9 @@ class RecurrentParameterizedFunction_TensorFlow : public ParameterizedFunction_T
                                                                                                    inputDimension,
                                                                                                    outputDimension> {
  public:
-  typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
-  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
-  typedef Eigen::Matrix<Dtype, -1, -1> testMatrix;
+  typedef Eigen::Matrix<Dtype, Eigen::Dynamic, 1> VectorXD;
+  typedef Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic> MatrixXD;
+  typedef Eigen::Matrix<Dtype, Eigen::Dynamic, Eigen::Dynamic> testMatrix;
 
   using Pfunction_tensorflow = ParameterizedFunction_TensorFlow<Dtype, inputDimension, outputDimension>;
   typedef typename Pfunction_tensorflow::Tensor1D Tensor1D;
@@ -42,12 +42,9 @@ class RecurrentParameterizedFunction_TensorFlow : public ParameterizedFunction_T
                                                              learningRate) , h("h_init") {
     hdim = this->getHiddenStatesize();
     h.resize(hdim, 0);
-
   }
 
-  virtual bool isRecurrent() {
-    return true;
-  }
+  virtual bool isRecurrent() {return true;}
 
   virtual void reset(int n) {
     //n:index
@@ -72,11 +69,13 @@ class RecurrentParameterizedFunction_TensorFlow : public ParameterizedFunction_T
   virtual void getHiddenStates(Tensor2D &h_out){
     h_out = h;
   }
+
   virtual typename EigenMat::ColXpr getHiddenState(int Id){
     return h.col(Id);
   }
 
   int hiddenStateDim() { return hdim; }
+
  protected:
   int hdim = 0;
   Tensor2D h;
