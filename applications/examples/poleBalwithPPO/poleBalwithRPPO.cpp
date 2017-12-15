@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.9);
-    task.setRealTimeFactor(2);
+    task.setRealTimeFactor(1.5);
     task.setTimeLimitPerEpisode(25);
     taskVector.push_back(&task);
   }
@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
   rai::Algorithm::RPPO<Dtype, StateDim, ActionDim>
       algorithm(taskVector,&policy, noiseVector, &acquisitor, 0.95, 0, 0, 1, 5, 5, 50, 1, true, 0.99);
 
-  policy.setLearningRateDecay(0.99,10);
-  policy.setMaxGradientNorm(0.3);
+  policy.setLearningRateDecay(0.99,30);
+  policy.setMaxGradientNorm(0.25);
   algorithm.setVisualizationLevel(0);
 
   /////////////////////// Plotting properties ////////////////////////
@@ -106,18 +106,18 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
-  int iteration = 200;
+  constexpr int iteration = 200;
   for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
+    LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
+    LOG(INFO) << "Number of updates:"<<policy.getGlobalStep();
 
     if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
-    LOG(INFO) << "Number of updates:"<<policy.getGlobalStep();
 
-    algorithm.runOneLoop(10000);
+    algorithm.runOneLoop(15000);
 
     if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(0);

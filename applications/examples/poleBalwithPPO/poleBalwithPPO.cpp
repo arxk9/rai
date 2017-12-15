@@ -83,10 +83,10 @@ int main(int argc, char *argv[]) {
   rai::Algorithm::PPO<Dtype, StateDim, ActionDim>
       algorithm(taskVector, &Vfunction, &policy, noiseVector, &acquisitor, 0.97, 0, 0, 1, 4, 4, true);
 
-  policy.setLearningRateDecay(0.99,30);
-  policy.setMaxGradientNorm(0.3);
-  Vfunction.setLearningRateDecay(0.99,30);
-  Vfunction.setMaxGradientNorm(0.3);
+  policy.setLearningRateDecay(0.99,50);
+  policy.setMaxGradientNorm(0.1);
+  Vfunction.setLearningRateDecay(0.99,50);
+  Vfunction.setMaxGradientNorm(0.1);
 
   algorithm.setVisualizationLevel(0);
 
@@ -132,18 +132,19 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////// Learning /////////////////////////////////
   constexpr int loggingInterval = 50;
-  for (int iterationNumber = 1; iterationNumber <= 101; iterationNumber++) {
+  constexpr int iteration = 100;
+  for (int iterationNumber = 1; iterationNumber <= iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
     LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
 
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
 
     algorithm.runOneLoop(6000);
 
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
       graph->figure(1, figurePropertiesEVP);

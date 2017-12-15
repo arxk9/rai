@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   for (auto &task : taskVec) {
     task.setControlUpdate_dt(0.05);
     task.setDiscountFactor(0.995);
-    task.setRealTimeFactor(2);
+    task.setRealTimeFactor(1.5);
     task.setTimeLimitPerEpisode(25.0);
     taskVector.push_back(&task);
   }
@@ -113,10 +113,11 @@ int main(int argc, char *argv[]) {
     }
   }
   ////////////////////////// Learning /////////////////////////////////
-  constexpr int loggingInterval = 50;
-  for (int iterationNumber = 0; iterationNumber < 51; iterationNumber++) {
+  constexpr int loggingInterval = 25;
+  constexpr int iteration = 50;
+  for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
 
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->enableVideoRecording();
     }
@@ -124,7 +125,7 @@ int main(int argc, char *argv[]) {
     LOG(INFO) << iterationNumber << "th Iteration";
     algorithm.runOneLoop(5000);
 
-    if (iterationNumber % loggingInterval == 0) {
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
       graph->figure(1, figurePropertiesEVP);

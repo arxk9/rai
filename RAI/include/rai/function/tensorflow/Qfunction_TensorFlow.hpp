@@ -18,7 +18,6 @@ class Qfunction_TensorFlow : public virtual ParameterizedFunction_TensorFlow<Dty
   typedef typename QfunctionBase::Action Action;
   typedef typename QfunctionBase::Jacobian Jacobian;
   typedef typename QfunctionBase::Value Value;
-  typedef typename QfunctionBase::ValueBatch ValueBatch;
   typedef typename QfunctionBase::Dataset Dataset;
 
   typedef typename QfunctionBase::Tensor1D Tensor1D;

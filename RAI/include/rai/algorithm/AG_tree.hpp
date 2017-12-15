@@ -88,7 +88,11 @@ class AG_tree {
       initialTrajTailTime_(initialTrajTailTime),
       branchTrajTime_(branchTrajLength),
       learningRate_(learningRate),
-      testingTrajN_(testingTrajN) {
+      testingTrajN_(testingTrajN),
+      stateBatchPtrain_("state"),
+      StateBatchVtrain_("state"),
+      valueBatchVtrain_("targetValue")
+  {
     parameter_.setZero(policy_->getAPSize());
     policy_->getAP(parameter_);
     jaco_.resize(ActionDim, policy_->getAPSize());
@@ -151,14 +155,19 @@ class AG_tree {
     LOG(INFO) << "initial trajectories are computed";
 
     /// update terminal value and value trajectory of the initial trajectories
-    ValueBatch terminalValueOrg(1, numOfInitialTra_), terminalValueBra(1, numOfBranches_);
+    rai::Tensor<Dtype,2> terminalValueOrg({1, numOfInitialTra_}, "value"), terminalValueBra({1, numOfBranches_}, "value");
     StateBatch terminalStateOrg(StateDim, numOfInitialTra_), terminalStateBra(StateDim, numOfBranches_);
+    rai::Tensor<Dtype,3> terminalStateOrgT({StateDim, 1, numOfInitialTra_},"state");
+    rai::Tensor<Dtype,3> terminalStateBraT({StateDim, 1, numOfBranches_},"state");
+
     rai::Op::VectorHelper::collectTerminalStates(initialTraj_, terminalStateOrg);
-    vfunction_->forward(terminalStateOrg, terminalValueOrg);
+
+    terminalStateOrgT.copyDataFrom(terminalStateOrg);
+    vfunction_->forward(terminalStateOrgT, terminalValueOrg);
 
     for (int trajID = 0; trajID < numOfInitialTra_; trajID++)
       if (initialTraj_[trajID].termType == TerminationType::timeout)
-        initialTraj_[trajID].updateValueTrajWithNewTermValue(terminalValueOrg(trajID), dicFtr);
+        initialTraj_[trajID].updateValueTrajWithNewTermValue(terminalValueOrg[trajID], dicFtr);
 
     /// sample random starting points along initial trajectories and run episodes
     StateBatch startStateJunct(StateDim, numOfBranches_);
@@ -179,8 +188,9 @@ class AG_tree {
         nthState.col(i) = junctionTraj_[i].stateTraj[depthID];
       acquisitor_->acquire(task_, policy_, noNoise_, branchTraj_[depthID-1], nthState, timeLimit, true);
       rai::Op::VectorHelper::collectTerminalStates(branchTraj_[depthID-1], terminalStateBra);
-      vfunction_->forward(terminalStateBra, terminalValueBra);
+      terminalStateBraT.copyDataFrom(terminalStateBra);
 
+      vfunction_->forward(terminalStateBraT, terminalValueBra);
       for (int trajID = 0; trajID < numOfBranches_; trajID++) {
         branchTraj_[depthID - 1][trajID].updateValueTrajWithNewTermValue(0.0, dicFtr);
         valueJunction[depthID][trajID] = branchTraj_[depthID - 1][trajID].valueTraj[0];
@@ -201,14 +211,16 @@ class AG_tree {
     ///////////////////////// stage 2: vfunction train //////////////////
     LOG(INFO) << "value function training";
     Utils::timer->startTimer("vfunction Train");
-    StateBatchVtrain_.setZero(StateDim, numOfBranches_ + advTuple_gradient.size());
-    valueBatchVtrain_.setZero(1, numOfBranches_ + advTuple_gradient.size());
-    int colIdx = 0;
+    StateBatchVtrain_.resize(StateDim,1, numOfBranches_ + advTuple_gradient.size());
+    valueBatchVtrain_.resize(1, numOfBranches_ + advTuple_gradient.size());
+    StateBatchVtrain_.setZero();
+    valueBatchVtrain_.setZero();
+    int batIdx = 0;
 
     for (int trajID = 0; trajID < numOfBranches_; trajID++)
       for (int depthID = 0; depthID < noiseDepth_ + 1 ; depthID++) {
-        StateBatchVtrain_.col(colIdx) = junctionTraj_[trajID].stateTraj[depthID];
-        valueBatchVtrain_(colIdx++) = valueJunction[depthID][trajID];
+        StateBatchVtrain_.batch(batIdx) = junctionTraj_[trajID].stateTraj[depthID];
+        valueBatchVtrain_[batIdx++] = valueJunction[depthID][trajID];
       }
 
     for (int i = 0; i < 300; i++) {
@@ -230,10 +242,11 @@ class AG_tree {
 
     /// forward policy in a batch for speed
     costWRTAction_.resize(ActionDim, dataUse);
-    stateBatchPtrain_.resize(StateDim, dataUse);
-    actionBatchPtrain_.resize(ActionDim, dataUse);
+
+    stateBatchPtrain_.resize(StateDim, 1, dataUse);
+    actionBatchPtrain_.resize(ActionDim, 1, dataUse);
     for (int i = 0; i < dataUse; i++)
-      stateBatchPtrain_.col(i) = advTuple_state[i];
+      stateBatchPtrain_.batch(i) = advTuple_state[i];
     policy_->forward(stateBatchPtrain_, actionBatchPtrain_);
 
     cholInv(noise_[0]->getCovariance(), covInv_);
@@ -252,7 +265,7 @@ class AG_tree {
     }
 
     for (int dataID = 0; dataID < dataUse; dataID++) {
-      State state = stateBatchPtrain_.col(dataID);
+      State state = stateBatchPtrain_.batch(dataID);
       JacobianCostResAct jacobianQwrtAction = -advTuple_gradient[dataID];
 
       /// take negative for reducing cost
@@ -347,15 +360,15 @@ class AG_tree {
 
   /////////////////////////// plotting
   int interationNumber_ = 0;
-  ActionBatch costWRTAction_;
-  StateBatch stateBatchPtrain_;
-  ActionBatch actionBatchPtrain_;
-  StateBatch stateAdvantage_;
-  ActionBatch gradAdvantage_;
+  rai::Tensor<Dtype,2> costWRTAction_;
+  rai::Tensor<Dtype,3> stateBatchPtrain_;
+  rai::Tensor<Dtype,3> actionBatchPtrain_;
+  rai::Tensor<Dtype,2> stateAdvantage_;
+  rai::Tensor<Dtype,2> gradAdvantage_;
 
   /////////////////////////// qfunction training
-  StateBatch StateBatchVtrain_;
-  ValueBatch valueBatchVtrain_;
+  rai::Tensor<Dtype,3> StateBatchVtrain_;
+  rai::Tensor<Dtype,2> valueBatchVtrain_;
 
   /////////////////////////// random number generator
   RandomNumberGenerator<Dtype> rn_;

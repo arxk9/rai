@@ -82,18 +82,19 @@ int main(int argc, char *argv[]) {
   rai::Utils::logger->addVariableToLog(1, "process time", "");
 
   constexpr int loggingInterval = 50;
-
+  constexpr int iteration = 100;
   ////////////////////////// Learning /////////////////////////////////
-  for (int iterationNumber = 0; iterationNumber < 101; iterationNumber++) {
-    rai::Utils::logger->appendData("process time", rai::Utils::timer->getGlobalElapsedTimeInMin());
+  for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th loop";
-    if (iterationNumber % loggingInterval == 0) {
+
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
-    algorithm.runOneLoop(5000);
 
-    if (iterationNumber % loggingInterval == 0) {
+    algorithm.runOneLoop(6000);
+
+    if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
 
