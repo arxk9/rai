@@ -98,9 +98,9 @@ int main(int argc, char *argv[]) {
   figurePropertieskl.ylabel = "KlD";
 
   rai::Utils::Graph::FigProp2D figurePropertiesgnorm;
-  figurePropertieskl.title = "Number of Steps Taken vs gradNorm";
-  figurePropertieskl.xlabel = "N. Steps Taken";
-  figurePropertieskl.ylabel = "gradNorm";
+  figurePropertiesgnorm.title = "Number of Steps Taken vs gradNorm";
+  figurePropertiesgnorm.xlabel = "N. Steps Taken";
+  figurePropertiesgnorm.ylabel = "gradNorm";
 
   rai::Utils::Graph::FigPropPieChart propChart;
 

@@ -54,7 +54,7 @@ class LSTMMLP2(bc.GraphStructure):
         LSTMOutput, final_state = tf.nn.dynamic_rnn(cell=cell, inputs=inputconcat, sequence_length=self.seq_length, dtype=dtype, initial_state=init_state_tuple)
 
         # FCN
-        top = tf.reshape(LSTMOutput,shape=[-1, rnnDim[-1]], name='fcIn')
+        top = tf.reshape(LSTMOutput, shape=[-1, rnnDim[-1]], name='fcIn')
 
         layer_n = 0
         for dim in mlpDim[:-1]:

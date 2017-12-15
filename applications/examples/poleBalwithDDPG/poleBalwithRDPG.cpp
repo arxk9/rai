@@ -117,25 +117,31 @@ int main(int argc, char *argv[]) {
                 1,
                 5,
                 5,
-                10,
+                25,
                 50, 1);
   algorithm.setVisualizationLevel(0);
   algorithm.initiallyFillTheMemory();
 
-  policy.setMaxGradientNorm(0.3);
+  policy.setMaxGradientNorm(0.25);
   policy.setLearningRateDecay(0.99,10);
   qfunction.setLearningRateDecay(0.99,10);
-  qfunction.setMaxGradientNorm(0.3);
+  qfunction.setMaxGradientNorm(0.25);
 
   /////////////////////// Plotting properties ////////////////////////
   rai::Utils::Graph::FigProp2D
       figurePropertiesEVP("N. Steps Taken", "Performance", "Number of Steps Taken vs Performance");
+
+  rai::Utils::Graph::FigProp2D figurePropertiesgnorm;
+  figurePropertiesgnorm.title = "Number of Steps Taken vs gradNorm";
+  figurePropertiesgnorm.xlabel = "N. Steps Taken";
+  figurePropertiesgnorm.ylabel = "gradNorm";
+
   rai::Utils::Graph::FigPropPieChart propChart;
 
   constexpr int loggingInterval = 10;
 
   ////////////////////////// Learning /////////////////////////////////
-  for (int iterationNumber = 0; iterationNumber < 51; iterationNumber++) {
+  for (int iterationNumber = 0; iterationNumber < 101; iterationNumber++) {
     LOG(INFO) << iterationNumber << "th Iteration";
     LOG(INFO) << "Learning rate:"<<policy.getLearningRate();
     LOG(INFO) << "Number of updates:"<<policy.getGlobalStep();
@@ -145,7 +151,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
 
-    algorithm.learnForNepisodes(50);
+    algorithm.learnForNepisodes(10);
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
@@ -158,6 +164,16 @@ int main(int argc, char *argv[]) {
                         "performance",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(1);
+
+      graph->figure(2, figurePropertiesgnorm);
+      graph->appendData(2, logger->getData("gradnorm", 0),
+                        logger->getData("gradnorm", 1),
+                        logger->getDataSize("gradnorm"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "gradnorm",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(2, rai::Utils::Graph::OutputFormat::pdf);
+
     }
   }
   policy.dumpParam(RAI_LOG_PATH + "/policy.txt");

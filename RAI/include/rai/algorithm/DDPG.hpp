@@ -66,7 +66,7 @@ class DDPG {
        Acquisitor_ *acquisitor,
        ReplayMemory_ *memory,
        unsigned n_epoch,
-       unsigned n_newSamplePerEpoch,
+       unsigned n_newSamplePerIter,
        unsigned batchSize,
        unsigned testingTrajN,  // how many trajectories to use to test the policy
        Dtype tau = 1e-3) :
@@ -79,7 +79,7 @@ class DDPG {
       memorySARS_(memory),
       batSize_(batchSize),
       n_epoch_(n_epoch),
-      n_newSamplePerEpoch_(n_newSamplePerEpoch),
+      n_newSamplePerIter_(n_newSamplePerIter),
       tau_(tau),
       testingTrajN_(testingTrajN),
       task_(task) {
@@ -120,7 +120,7 @@ class DDPG {
     for (auto &noise : noise_)
       noise->initializeNoise();
     /////////////////////////////////////////////////////////////////////////
-    for (unsigned i = 0; i < numOfSteps / n_newSamplePerEpoch_; i++)
+    for (unsigned i = 0; i < numOfSteps / n_newSamplePerIter_; i++)
         learnForOneCycle();
   }
 
@@ -131,7 +131,7 @@ class DDPG {
   void learnForOneCycle() {
     Utils::timer->startTimer("Simulation");
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
-    acquisitor_->acquire(task_, policy_, noise_, memorySARS_, n_newSamplePerEpoch_);
+    acquisitor_->acquire(task_, policy_, noise_, memorySARS_, n_newSamplePerIter_);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
     Utils::timer->stopTimer("Simulation");
     Utils::timer->startTimer("Qfunction and Policy update");
@@ -188,7 +188,7 @@ class DDPG {
   std::vector<Noise_ *> noise_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
   unsigned n_epoch_;
-  unsigned n_newSamplePerEpoch_;
+  unsigned n_newSamplePerIter_;
   unsigned batSize_;
   Dtype tau_;
 

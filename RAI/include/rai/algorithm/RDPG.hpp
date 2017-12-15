@@ -72,7 +72,7 @@ class RDPG {
        ReplayMemory_ *memory,
        unsigned testingTrajN,
        unsigned n_epoch,
-       unsigned n_newEpisodesPerEpoch,
+       unsigned n_newEpisodesPerIter,
        unsigned batchSize,
        int segLen = 0,
        int stride = 1,
@@ -85,7 +85,7 @@ class RDPG {
       acquisitor_(acquisitor),
       memory(memory),
       n_epoch_(n_epoch),
-      n_newEpisodesPerEpoch_(n_newEpisodesPerEpoch),
+      n_newEpisodesPerIter_(n_newEpisodesPerIter),
       segLen_(segLen),
       stride_(stride),
       batSize_(batchSize),
@@ -93,6 +93,8 @@ class RDPG {
       testingTrajN_(testingTrajN),
       task_(task),
       Dataset_(false,true){
+
+    Utils::logger->addVariableToLog(2, "gradnorm", "");
 
     ///Construct Dataset
     timeLimit = task_[0]->timeLimit();
@@ -141,9 +143,9 @@ class RDPG {
 
     Utils::timer->enable();
     /////////////////////////////////////////////////////////////////////////
-    if(numOfEpisodes > n_newEpisodesPerEpoch_) numOfEpisodes = n_newEpisodesPerEpoch_;
+    if(numOfEpisodes > n_newEpisodesPerIter_) numOfEpisodes = n_newEpisodesPerIter_;
 
-    for (unsigned i = 0; i < numOfEpisodes/n_newEpisodesPerEpoch_; i++)
+    for (unsigned i = 0; i < numOfEpisodes/n_newEpisodesPerIter_; i++)
       learnForOneCycle();
   }
 
@@ -153,8 +155,9 @@ class RDPG {
 
   void learnForOneCycle() {
     if (vis_lv_ > 1) task_[0]->turnOnVisualization("");
-    acquisitor_->acquireNEpisodes(task_, noiseBasePtr_, policy_, n_newEpisodesPerEpoch_);
+    acquisitor_->acquireNEpisodes(task_, noiseBasePtr_, policy_, n_newEpisodesPerIter_);
     if (vis_lv_ > 1) task_[0]->turnOffVisualization();
+
     timer->startTimer("SavingHistory");
     memory->SaveHistory(acquisitor_->traj);
     timer->stopTimer("SavingHistory");
@@ -184,11 +187,15 @@ class RDPG {
 
     for (unsigned batchID = 0; batchID < batSize_; batchID++) {
       if (TerminationType(Dataset_.termtypes[batchID]) == TerminationType::terminalState)
-        Dataset_.values.eMat()(Dataset_.lengths[batchID]-1 , batchID) = termValue; ///last elem for each target batch
+        value_.eMat()(Dataset_.lengths[batchID] - 1, batchID) = termValue; ///value for last state
     }
+
     for (unsigned batchID = 0; batchID < batSize_; batchID++){
       for(unsigned timeID = 0; timeID< Dataset_.lengths[batchID] - 2 ; timeID++)
         Dataset_.values.eMat()(timeID,batchID) = Dataset_.costs.eMat()(timeID,batchID)  + disFtr * value_.eMat()(timeID+1,batchID) ;
+      Dataset_.lengths[batchID] -=1;
+      /// Ignore the last sample
+      /// (i.e. we have no info about the transition after the last state (s_n, a_n, r_n) -> (s_{n+1}))
     }
 
     if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_, stateFull_);
@@ -199,9 +206,12 @@ class RDPG {
     qfunction_->performOneSolverIter(&Dataset_, Dataset_.values);
     Utils::timer->stopTimer("Qfunction update");
 
+    Dtype gradnorm;
     Utils::timer->startTimer("Policy update");
-    policy_->backwardUsingCritic(qfunction_, &Dataset_);
+    gradnorm = policy_->backwardUsingCritic(qfunction_, &Dataset_);
     Utils::timer->stopTimer("Policy update");
+
+    Utils::logger->appendData("gradnorm", policy_->getGlobalStep(), gradnorm);
 
     Utils::timer->startTimer("Target update");
     qfunction_target_->interpolateAPWith(qfunction_, tau_);
@@ -226,7 +236,7 @@ class RDPG {
   Dtype tau_;
   unsigned batSize_;
   unsigned n_epoch_;
-  unsigned n_newEpisodesPerEpoch_;
+  unsigned n_newEpisodesPerIter_;
   int stride_;
   int segLen_;
   bool stateFull_;

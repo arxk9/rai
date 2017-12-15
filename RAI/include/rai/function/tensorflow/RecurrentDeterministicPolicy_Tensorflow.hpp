@@ -100,7 +100,7 @@ class RecurrentDeterministicPolicy_TensorFlow : public virtual DeterministicPoli
 
     this->tf_->run({minibatch->states, minibatch->lengths, hiddenState, gradients}, {"trainUsingCritic/gradnorm"},
                    {"trainUsingCritic/applyGradients"}, dummy);
-    return averageQ;
+    return dummy[0](0);
   }
 };
 } // namespace FuncApprox
