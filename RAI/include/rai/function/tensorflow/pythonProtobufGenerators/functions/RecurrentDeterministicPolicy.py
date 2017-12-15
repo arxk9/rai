@@ -31,6 +31,7 @@ class RecurrentDeterministicPolicy(pc.Policy):
             gradient_from_critic_masked = tf.boolean_mask(gradient_from_critic, mask)
             train_using_critic_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
             grads = tf.gradients(action_masked, gs.l_param_list, gradient_from_critic_masked)
+
             grads, grad_norm = tf.clip_by_global_norm(grads, clip_norm=self.max_grad_norm)
             tf.identity(grad_norm, name="gradnorm")
             manipulated_parameter_gradients_and_parameters = zip(grads, gs.l_param_list)

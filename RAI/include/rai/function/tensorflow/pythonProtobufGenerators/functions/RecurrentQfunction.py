@@ -11,7 +11,6 @@ class RecurrentQfunction(bc.SpecializedFunction):
         super(RecurrentQfunction, self).__init__(dtype, gs)
         # variables
         q_value = tf.squeeze(gs.output, axis=2, name=self.output_names[0])
-
         state = gs.input1
         action = gs.input2
 
@@ -19,8 +18,12 @@ class RecurrentQfunction(bc.SpecializedFunction):
         q_value_target = tf.placeholder(dtype, shape=[None, None], name='targetQValue') #[batch, time, 1]
         mask = tf.sequence_mask(gs.seq_length, name='mask')
         q_value_target_masked = tf.reshape(tf.boolean_mask(q_value_target, mask), [-1, 1])
-        q_value_masked =  tf.reshape(tf.boolean_mask(q_value, mask), [-1, 1])
+        q_value_masked = tf.reshape(tf.boolean_mask(q_value, mask), [-1, 1])
         avg = tf.reduce_mean(q_value_masked, name='average_Q_value')
+
+        test = tf.identity(gs.output, name = 'test')
+        test = tf.identity(q_value, name = 'test2')
+        test = tf.identity(q_value_masked, name = 'test3')
 
         # gradients
         jac_Q_wrt_State = tf.identity(tf.gradients(avg, gs.input1)[0], name='gradient_AvgOf_Q_wrt_State')

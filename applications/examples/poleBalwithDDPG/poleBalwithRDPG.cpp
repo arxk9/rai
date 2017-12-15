@@ -8,8 +8,8 @@
 #include <Eigen/Dense>
 
 // task
-//#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
-#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
+#include "rai/tasks/poleBalancing/PoleBalancing.hpp"
+//#include "rai/tasks/poleBalancing/POPoleBalancing.hpp"
 
 // noise model
 #include "rai/noiseModel/OrnsteinUhlenbeckNoise.hpp"
@@ -35,8 +35,8 @@ using Dtype = float;
 using rai::Task::ActionDim;
 using rai::Task::StateDim;
 using rai::Task::CommandDim;
-//using Task = rai::Task::PoleBalancing<Dtype>;
-using Task = rai::Task::PO_PoleBalancing<Dtype>;
+using Task = rai::Task::PoleBalancing<Dtype>;
+//using Task = rai::Task::PO_PoleBalancing<Dtype>;
 
 using State = Task::State;
 using StateBatch = Task::StateBatch;
@@ -56,8 +56,8 @@ using NormalNoise = rai::Noise::NormalDistributionNoise<Dtype, ActionDim>;
 using NoiseCovariance = Eigen::Matrix<Dtype, ActionDim, ActionDim>;
 
 
-Dtype learningRateQfunction = 0.001;
-Dtype learningRatePolicy = 0.001;
+Dtype learningRateQfunction = 0.0025;
+Dtype learningRatePolicy = 0.0025;
 #define nThread 10
 
 int main(int argc, char *argv[]) {
@@ -94,11 +94,11 @@ int main(int argc, char *argv[]) {
   ReplayMemory Memory(100);
 
   ////////////////////////// Define Function approximations //////////
-  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "relu 1e-3 2 64 / 32 1", learningRatePolicy);
-  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "relu 1e-3 2 64 / 32 1", learningRatePolicy);
+  Policy_TensorFlow policy("gpu,0", "LSTMMLP", "relu 1e-3 3 64 / 64 1", learningRatePolicy);
+  Policy_TensorFlow policy_target("gpu,0", "LSTMMLP", "relu 1e-3 3 64 / 64 1", learningRatePolicy);
 
-  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "relu 1e-3 2 1 64 / 32 1", learningRateQfunction);
-  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "relu 1e-3 2 1 64 / 32 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction("gpu,0", "LSTMMLP2", "relu 1e-3 3 1 64 / 64 1", learningRateQfunction);
+  Qfunction_TensorFlow qfunction_target("gpu,0", "LSTMMLP2", "relu 1e-3 3 1 64 / 64 1", learningRateQfunction);
 
 
   ////////////////////////// Acquisitor
@@ -115,16 +115,15 @@ int main(int argc, char *argv[]) {
                 &acquisitor,
                 &Memory,
                 1,
-                5,
-                5,
-                25,
-                50, 1);
+                1,
+                1,
+                10, 5, 1);
   algorithm.setVisualizationLevel(0);
   algorithm.initiallyFillTheMemory();
 
   policy.setMaxGradientNorm(0.25);
-  policy.setLearningRateDecay(0.99,10);
-  qfunction.setLearningRateDecay(0.99,10);
+  policy.setLearningRateDecay(0.9,10);
+  qfunction.setLearningRateDecay(0.9,10);
   qfunction.setMaxGradientNorm(0.25);
 
   /////////////////////// Plotting properties ////////////////////////
@@ -136,7 +135,34 @@ int main(int argc, char *argv[]) {
   figurePropertiesgnorm.xlabel = "N. Steps Taken";
   figurePropertiesgnorm.ylabel = "gradNorm";
 
+  rai::Utils::Graph::FigProp2D figurePropertiesQloss;
+  figurePropertiesQloss.title = "Number of Steps Taken vs Qloss";
+  figurePropertiesQloss.xlabel = "N. Steps Taken";
+  figurePropertiesQloss.ylabel = "Qloss";
+
+  rai::Utils::Graph::FigProp3D figurePropertiesSVC("angle", "angular velocity", "value", "Q function");
+  figurePropertiesSVC.displayType = rai::Utils::Graph::DisplayType3D::heatMap3D;
+
   rai::Utils::Graph::FigPropPieChart propChart;
+
+  rai::Tensor<Dtype,3> state_plot({3, 1, 2601}, "state");
+  rai::Tensor<Dtype,3> action_plot({1, 1, 2601}, "sampledAction");
+  rai::Tensor<Dtype,2> value_plot({1, 2601}, "value");
+  MatrixXD minimal_X_extended(1, 2601);
+  MatrixXD minimal_Y_extended(1, 2601);
+
+  MatrixXD minimal_X_sampled(1, 2601);
+  MatrixXD minimal_Y_sampled(1, 2601);
+
+  for (int i = 0; i < 51; i++) {
+    for (int j = 0; j < 51; j++) {
+      minimal_X_extended(i * 51 + j) = -M_PI + M_PI * i / 25.0;
+      minimal_Y_extended(i * 51 + j) = -5.0 + j / 25.0 * 5.0;
+      state_plot.eTensor()(0,0, i * 51 + j) = cos(minimal_X_extended(i * 51 + j));
+      state_plot.eTensor()(1,0, i * 51 + j) = sin(minimal_X_extended(i * 51 + j));
+      state_plot.eTensor()(2,0, i * 51 + j) = minimal_Y_extended(i * 51 + j);
+    }
+  }
 
   constexpr int loggingInterval = 10;
 
@@ -151,7 +177,7 @@ int main(int argc, char *argv[]) {
       taskVector[0]->enableVideoRecording();
     }
 
-    algorithm.learnForNepisodes(10);
+    algorithm.learnForNepisodes(50);
     if (iterationNumber % loggingInterval == 0) {
       algorithm.setVisualizationLevel(0);
       taskVector[0]->disableRecording();
@@ -173,6 +199,21 @@ int main(int argc, char *argv[]) {
                         "gradnorm",
                         "lw 2 lc 4 pi 1 pt 5 ps 1");
       graph->drawFigure(2, rai::Utils::Graph::OutputFormat::pdf);
+
+      graph->figure(3, figurePropertiesQloss);
+      graph->appendData(3, logger->getData("Qloss", 0),
+                        logger->getData("Qloss", 1),
+                        logger->getDataSize("Qloss"),
+                        rai::Utils::Graph::PlotMethods2D::linespoints,
+                        "Qloss",
+                        "lw 2 lc 4 pi 1 pt 5 ps 1");
+      graph->drawFigure(3, rai::Utils::Graph::OutputFormat::pdf);
+
+      policy.forward(state_plot, action_plot);
+      qfunction.forward(state_plot, action_plot, value_plot);
+      graph->drawHeatMap(4, figurePropertiesSVC, minimal_X_extended.data(),
+                         minimal_Y_extended.data(), value_plot.data(), 51, 51, "");
+      graph->drawFigure(4);
 
     }
   }

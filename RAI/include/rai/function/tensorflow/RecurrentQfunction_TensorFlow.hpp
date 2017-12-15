@@ -98,7 +98,7 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
     this->tf_->run({minibatch->states, minibatch->actions, minibatch->lengths, values, hiddenState},
                     {"trainUsingTargetQValue/loss"},
                    {"trainUsingTargetQValue/solver"}, vectorOfOutputs);
-
+//    LOG(INFO) << vectorOfOutputs[1];
     return vectorOfOutputs[0](0);
   };
 
@@ -126,10 +126,10 @@ class RecurrentQfunction_TensorFlow : public virtual RecurrentParameterizedFunct
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor2D hiddenState({hdim, minibatch->batchNum}, "h_init");
     hiddenState = minibatch->hiddenStates.col(0);
-
     this->tf_->run({minibatch->states,
                     minibatch->actions, minibatch->lengths, hiddenState},
                    {"gradient_AvgOf_Q_wrt_action", "average_Q_value"}, {}, vectorOfOutputs);
+
     gradients.copyDataFrom(vectorOfOutputs[0]);
     return vectorOfOutputs[1].scalar<Dtype>()();
   }

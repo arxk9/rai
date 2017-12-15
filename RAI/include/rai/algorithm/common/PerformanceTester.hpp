@@ -73,7 +73,7 @@ class PerformanceTester {
     Utils::logger->appendData("PerformanceTester/performance",
                               stepsTaken,
                               averageCost);
-
+    LOG_IF(FATAL, isnan(averageCost)) << "average cost is nan";
     LOG(INFO) << "steps taken " << logger->getData("PerformanceTester/performance")->at(0).back()
               << ", average cost " << logger->getData("PerformanceTester/performance")->at(1).back();
 

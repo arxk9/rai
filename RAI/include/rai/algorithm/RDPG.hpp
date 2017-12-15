@@ -95,6 +95,7 @@ class RDPG {
       Dataset_(false,true){
 
     Utils::logger->addVariableToLog(2, "gradnorm", "");
+    Utils::logger->addVariableToLog(2, "Qloss", "");
 
     ///Construct Dataset
     timeLimit = task_[0]->timeLimit();
@@ -175,7 +176,6 @@ class RDPG {
     timer->startTimer("SamplingHistory");
     memory->sampleRandomHistory(Dataset_, batSize_);
     timer->stopTimer("SamplingHistory");
-
     Utils::timer->startTimer("Data Processing");
     ///Target
     Tensor<Dtype, 2> value_;
@@ -184,14 +184,13 @@ class RDPG {
     value_.resize(Dataset_.maxLen, batSize_);
     policy_target_->forward(Dataset_.states, action_target);
     qfunction_target_->forward(Dataset_.states, action_target, value_);
-
     for (unsigned batchID = 0; batchID < batSize_; batchID++) {
       if (TerminationType(Dataset_.termtypes[batchID]) == TerminationType::terminalState)
         value_.eMat()(Dataset_.lengths[batchID] - 1, batchID) = termValue; ///value for last state
     }
 
     for (unsigned batchID = 0; batchID < batSize_; batchID++){
-      for(unsigned timeID = 0; timeID< Dataset_.lengths[batchID] - 2 ; timeID++)
+      for(unsigned timeID = 0; timeID< Dataset_.lengths[batchID] - 1 ; timeID++)
         Dataset_.values.eMat()(timeID,batchID) = Dataset_.costs.eMat()(timeID,batchID)  + disFtr * value_.eMat()(timeID+1,batchID) ;
       Dataset_.lengths[batchID] -=1;
       /// Ignore the last sample
@@ -199,18 +198,18 @@ class RDPG {
     }
 
     if(segLen_!=0) Dataset_.divideSequences(segLen_, stride_, stateFull_);
-
     Utils::timer->stopTimer("Data Processing");
 
+    Dtype Qloss;
     Utils::timer->startTimer("Qfunction update");
-    qfunction_->performOneSolverIter(&Dataset_, Dataset_.values);
+    Qloss = qfunction_->performOneSolverIter(&Dataset_, Dataset_.values);
     Utils::timer->stopTimer("Qfunction update");
+    Utils::logger->appendData("Qloss", qfunction_->getGlobalStep(), Qloss);
 
     Dtype gradnorm;
     Utils::timer->startTimer("Policy update");
     gradnorm = policy_->backwardUsingCritic(qfunction_, &Dataset_);
     Utils::timer->stopTimer("Policy update");
-
     Utils::logger->appendData("gradnorm", policy_->getGlobalStep(), gradnorm);
 
     Utils::timer->startTimer("Target update");
