@@ -49,6 +49,7 @@ class CommonFunc {
   using Trajectory_ = Memory::Trajectory<Dtype, StateDim, ActionDim>;
   using ReplayMemory_ = rai::Memory::ReplayMemorySARS<Dtype, StateDim, ActionDim>;
 
+
   template<typename NoiseType>
   static Result runEpisode(Task_ *&task,
                            Policy_ *policy,
@@ -58,14 +59,19 @@ class CommonFunc {
                            double timeLimit,
                            ReplayMemory_ *memory = nullptr) {
     TerminationType termType = TerminationType::not_terminated;
-    State state, state_tp1;
-    Action action, noiseFreeAction, actionNoise;
+    State state_tp, state_tp1;
+    rai::Tensor<Dtype,3> state({StateDim, 1, 1}, "state");
+    rai::Tensor<Dtype,3> action({ActionDim, 1, 1}, "sampledAction");
+    Action action_tp, noiseFreeAction, actionNoise;
     Result stat;
     int stepCount = 0;
     Dtype cost, costInThisEpisode = 0.0;
-    state = startingState;
+
+    state.batch(0) = startingState;
+    state_tp = startingState;
+
     noise->initializeNoise();
-    task->setToParticularState(state);
+    task->setToParticularState(state_tp);
 
     if (policy->isRecurrent()) {
       ///start with zero hiddenstate
@@ -77,7 +83,7 @@ class CommonFunc {
     if (task->isTerminalState()) {
       termType = TerminationType::terminalState;
       trajectory.terminateTrajectoryAndUpdateValueTraj(
-          TerminationType::terminalState, state, action,
+          TerminationType::terminalState, state_tp, action_tp,
           task->termValue(), task->discountFtr());
     }
 
@@ -86,19 +92,23 @@ class CommonFunc {
       policy->forward(state, action);
       timer->stopTimer("Policy evaluation");
       actionNoise = noise->sampleNoise();
-      action += actionNoise;
+      action_tp = action.batch(0);
+
+      action_tp += actionNoise;
       timer->startTimer("Dynamics");
-      task->takeOneStep(action, state_tp1, termType, cost);
-      if (memory) memory->saveAnExperienceTuple(state, action, cost, state_tp1, termType);
+      task->takeOneStep(action_tp, state_tp1, termType, cost);
+      if (memory) memory->saveAnExperienceTuple(state_tp, action_tp, cost, state_tp1, termType);
       timer->stopTimer("Dynamics");
       stepCount++;
+
       ///save Hidden States
       if (policy->isRecurrent()) {
         Eigen::Matrix<Dtype, -1, 1> hiddenState_t;
         hiddenState_t = policy->getHiddenState(0);
         trajectory.pushBackHiddenState(hiddenState_t);
       }
-      trajectory.pushBackTrajectory(state, action, actionNoise, cost);
+
+      trajectory.pushBackTrajectory(state_tp, action_tp, actionNoise, cost);
       costInThisEpisode += cost;
 
       if (task->dt() * stepCount + task->dt() * 0.5 >= timeLimit)
@@ -106,20 +116,20 @@ class CommonFunc {
 
       if (termType == TerminationType::terminalState) {
         trajectory.terminateTrajectoryAndUpdateValueTraj(
-            termType, state_tp1, action,
+            termType, state_tp1, action_tp,
             task->termValue(), task->discountFtr());
       } else if (termType == TerminationType::timeout) {
         trajectory.terminateTrajectoryAndUpdateValueTraj(
-            termType, state_tp1, action, Dtype(0.0), task->discountFtr());
+            termType, state_tp1, action_tp, Dtype(0.0), task->discountFtr());
       }
-      state = state_tp1;
 
+      state_tp = state_tp1;
+      state.batch(0) = state_tp1;
     }
     stat[0] = Dtype(costInThisEpisode / (stepCount * task->dt()));
     stat[1] = stepCount;
     return stat;
   }
-
 
   template<typename NoiseType>
   static Result runEpisode(Task_ *&task,
@@ -129,13 +139,18 @@ class CommonFunc {
                            double timeLimit,
                            ReplayMemory_ *memory = nullptr) {
     TerminationType termType = TerminationType::not_terminated;
-    State state, state_tp1;
-    Action action, noiseFreeAction, actionNoise;
+    State state_tp, state_tp1;
+    rai::Tensor<Dtype,3> state({StateDim, 1, 1}, "state");
+    rai::Tensor<Dtype,3> action({ActionDim, 1, 1}, "sampledAction");
+    Action action_tp, noiseFreeAction, actionNoise;
     Result stat;
     int stepCount = 0;
     Dtype cost, costInThisEpisode = 0.0;
+
+
     noise->initializeNoise();
     task->setToInitialState();
+    task->getState(state_tp);
 
     if (policy->isRecurrent()) {
       ///start with zero hiddenstate
@@ -147,7 +162,7 @@ class CommonFunc {
     if (task->isTerminalState()) {
       termType = TerminationType::terminalState;
       trajectory.terminateTrajectoryAndUpdateValueTraj(
-          TerminationType::terminalState, state, action,
+          TerminationType::terminalState, state_tp, action_tp,
           task->termValue(), task->discountFtr());
     }
 
@@ -156,19 +171,23 @@ class CommonFunc {
       policy->forward(state, action);
       timer->stopTimer("Policy evaluation");
       actionNoise = noise->sampleNoise();
-      action += actionNoise;
+      action_tp = action.batch(0);
+
+      action_tp += actionNoise;
       timer->startTimer("Dynamics");
-      task->takeOneStep(action, state_tp1, termType, cost);
-      if (memory) memory->saveAnExperienceTuple(state, action, cost, state_tp1, termType);
+      task->takeOneStep(action_tp, state_tp1, termType, cost);
+      if (memory) memory->saveAnExperienceTuple(state_tp, action_tp, cost, state_tp1, termType);
       timer->stopTimer("Dynamics");
       stepCount++;
+
       ///save Hidden States
       if (policy->isRecurrent()) {
         Eigen::Matrix<Dtype, -1, 1> hiddenState_t;
         hiddenState_t = policy->getHiddenState(0);
         trajectory.pushBackHiddenState(hiddenState_t);
       }
-      trajectory.pushBackTrajectory(state, action, actionNoise, cost);
+
+      trajectory.pushBackTrajectory(state_tp, action_tp, actionNoise, cost);
       costInThisEpisode += cost;
 
       if (task->dt() * stepCount + task->dt() * 0.5 >= timeLimit)
@@ -176,13 +195,14 @@ class CommonFunc {
 
       if (termType == TerminationType::terminalState) {
         trajectory.terminateTrajectoryAndUpdateValueTraj(
-            termType, state_tp1, action,
+            termType, state_tp1, action_tp,
             task->termValue(), task->discountFtr());
       } else if (termType == TerminationType::timeout) {
         trajectory.terminateTrajectoryAndUpdateValueTraj(
-            termType, state_tp1, action, Dtype(0.0), task->discountFtr());
+            termType, state_tp1, action_tp, Dtype(0.0), task->discountFtr());
       }
-      state = state_tp1;
+      state_tp = state_tp1;
+      state.batch(0) = state_tp1;
 
     }
     stat[0] = Dtype(costInThisEpisode / (stepCount * task->dt()));

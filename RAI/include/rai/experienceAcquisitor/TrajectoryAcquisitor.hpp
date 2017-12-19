@@ -60,16 +60,8 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     Utils::timer->startTimer("Simulation");
     double dt = task[0]->dt();
     double timeLimit = task[0]->timeLimit();
-
     traj.resize(numOfEpisodes);
-//
-//    StateBatch startState(StateDim, numOfEpisodes);
-//    sampleBatchOfInitial(startState, task);
 
-    for (auto &noise : noise)
-      noise->initializeNoise();
-    for (auto &task : task)
-      task->setToInitialState();
     for (auto &tra : traj)
       tra.clear();
     if (vis_lv > 1) task[0]->turnOnVisualization("");
@@ -104,13 +96,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     int numOfTra_ = std::ceil(1.1 * numOfSteps * dt / timeLimit);
     traj.resize(numOfTra_);
 
-//    StateBatch startState(StateDim, numOfTra_);
-//    sampleBatchOfInitial(startState, task);
-
-    for (auto &noise : noise)
-      noise->initializeNoise();
-    for (auto &task : task)
-      task->setToInitialState();
     for (auto &tra : traj)
       tra.clear();
     if (vis_lv > 1) task[0]->turnOnVisualization("");
@@ -134,9 +119,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
         for (auto &tra : tempTraj_)
           tra.clear();
 
-        StateBatch startState2(StateDim, numofnewtraj);
-        sampleBatchOfInitial(startState2, task);
-
         for (auto &noise : noise)
           noise->initializeNoise();
 
@@ -145,7 +127,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
                       policy,
                       noise,
                       tempTraj_,
-                      startState2,
                       timeLimit,
                       true);
         if (vis_lv > 1) task[0]->turnOffVisualization();
