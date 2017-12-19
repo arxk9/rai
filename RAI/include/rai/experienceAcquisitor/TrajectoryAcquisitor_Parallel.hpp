@@ -49,6 +49,25 @@ class TrajectoryAcquisitor_Parallel : public TrajectoryAcquisitor<Dtype, StateDi
     return stat[0];
   }
 
+  Dtype acquire(std::vector<Task_ *> &taskset,
+                Policy_ *policy,
+                std::vector<Noise_ *> &noise,
+                std::vector<Trajectory_> &trajectorySet,
+                double timeLimit,
+                bool countStep,
+                ReplayMemory_ *memory = nullptr) {
+    Result stat;
+    stat = CommonFunc<Dtype, StateDim, ActionDim, 0>::runEpisodeInBatchParallel(taskset,
+                                                                                policy,
+                                                                                noise,
+                                                                                trajectorySet,
+                                                                                timeLimit,
+                                                                                memory);
+    if (countStep)
+      this->incrementSteps(stat[1]);
+    return stat[0];
+  }
+
 };
 
 }

@@ -52,6 +52,27 @@ class TrajectoryAcquisitor_Sequential : public TrajectoryAcquisitor<Dtype, State
     return stat[0] / trajectorySet.size();
   }
 
+  virtual Dtype acquire(std::vector<Task_ *> &taskset,
+                        Policy_ *policy,
+                        std::vector<Noise_ *> &noise,
+                        std::vector<Trajectory_> &trajectorySet,
+                        double timeLimit,
+                        bool countStep,
+                        ReplayMemory_ *memory = nullptr) {
+    Result stat = Result::Zero();
+    for(int i=0; i<trajectorySet.size(); i++) {
+      Result statInd = CommonFunc<Dtype, StateDim, ActionDim, 0>::runEpisode(taskset[0],
+                                                                             policy,
+                                                                             noise[0],
+                                                                             trajectorySet[i],
+                                                                             timeLimit,
+                                                                             memory);
+      stat += statInd;
+    }
+
+    if (countStep) this->incrementSteps(stat[1]);
+    return stat[0] / trajectorySet.size();
+  }
 };
 
 }
