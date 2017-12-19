@@ -42,6 +42,13 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
                         bool countStep,
                         ReplayMemory_ *memory = nullptr) = 0;
 
+  virtual Dtype acquire(std::vector<Task_ *> &taskset,
+                        Policy_ *policy,
+                        std::vector<Noise_ *> &noise,
+                        std::vector<Trajectory> &trajectorySet,
+                        double timeLimit,
+                        bool countStep,
+                        ReplayMemory_ *memory = nullptr) = 0;
 
   void acquireNEpisodes(std::vector<Task_ *> &task,
                         std::vector<Noise_ *> &noise,
@@ -55,8 +62,10 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     double timeLimit = task[0]->timeLimit();
 
     traj.resize(numOfEpisodes);
-    StateBatch startState(StateDim, numOfEpisodes);
-    sampleBatchOfInitial(startState, task);
+//
+//    StateBatch startState(StateDim, numOfEpisodes);
+//    sampleBatchOfInitial(startState, task);
+
     for (auto &noise : noise)
       noise->initializeNoise();
     for (auto &task : task)
@@ -69,7 +78,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
                                policy,
                                noise,
                                traj,
-                               startState,
                                timeLimit,
                                true);
     if (vis_lv > 1) task[0]->turnOffVisualization();
@@ -95,8 +103,10 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
 
     int numOfTra_ = std::ceil(1.1 * numOfSteps * dt / timeLimit);
     traj.resize(numOfTra_);
-    StateBatch startState(StateDim, numOfTra_);
-    sampleBatchOfInitial(startState, task);
+
+//    StateBatch startState(StateDim, numOfTra_);
+//    sampleBatchOfInitial(startState, task);
+
     for (auto &noise : noise)
       noise->initializeNoise();
     for (auto &task : task)
@@ -109,7 +119,6 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
                                policy,
                                noise,
                                traj,
-                               startState,
                                timeLimit,
                                true);
     if (vis_lv > 1) task[0]->turnOffVisualization();
