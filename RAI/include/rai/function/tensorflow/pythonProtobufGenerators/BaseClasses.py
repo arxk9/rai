@@ -45,7 +45,7 @@ class ParameterizedFunction:
         # variables for train option
         global_step = tf.Variable(0, name='global_step', trainable=False)
 
-        with tf.variable_scope("trainingOptions", reuse=tf.AUTO_REUSE):
+        with tf.variable_scope("trainingOptions", reuse=True):
             self.max_grad_norm = tf.Variable(tf.constant(100, dtype=dtype), name='max_grad_norm')
             self.initial_lr = tf.Variable(tf.constant(0.001, dtype=dtype), name='InitLR')
             self.decayRate_lr = tf.Variable(tf.constant(1, dtype=dtype), name='DecayRateLR') #default = no decay
