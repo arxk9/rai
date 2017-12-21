@@ -6,7 +6,7 @@
 #define RAI_ADDITIVEPOLICY_HPP
 
 #include "StochasticPolicy.hpp"
-
+#include "rai/function/common/Qfunction.hpp"
 namespace rai {
 namespace FuncApprox {
 
@@ -17,6 +17,8 @@ class AdditiveStochasticPolicy : public virtual StochasticPolicy<Dtype, stateDim
   using Policy_ = StochasticPolicy<Dtype, stateDim, actionDim>;
   using Qfunction_ = Qfunction<Dtype, stateDim, actionDim>;
   using PolicyBase = StochasticPolicy<Dtype, stateDim, actionDim>;
+  typedef Eigen::Matrix<Dtype, -1, -1> MatrixXD;
+  typedef typename PolicyBase::Dataset Dataset;
 
   typedef typename Policy_::State State;
   typedef typename Policy_::StateBatch StateBatch;
@@ -39,94 +41,76 @@ class AdditiveStochasticPolicy : public virtual StochasticPolicy<Dtype, stateDim
       staticPolicy_(staticPolicy), learnablePolicy_(learnablePolicy) {
   }
 
-  virtual void getdistribution(StateBatch &states, ActionBatch &means, Action &stdev) {
-    ActionBatch firstMean(means.rows(), means.cols());
-    staticPolicy_->getdistribution(states, firstMean, stdev);
-    learnablePolicy_->getdistribution(states, means, stdev);
-    means += firstMean;
-  }
-
   ///TRPO
   // singlesample
-  virtual void TRPOpg(Tensor3D &states,
-                      Tensor3D &actions,
-                      Tensor3D &actionNoise,
-                      Advantages &advs,
+  virtual void TRPOpg(Dataset &minibatch,
                       Action &Stdev,
                       VectorXD &grad) {
-    Tensor3D firstAction, secondAction(actions);
-    firstAction.resize(actions.dim());
-    staticPolicy_->forward(states, firstAction);
-    secondAction -= firstAction;
-    learnablePolicy_->TRPOpg(states, secondAction, actionNoise, advs, Stdev, grad);
+    Tensor3D firstAction;
+    firstAction.resize(minibatch.actions.dim());
+    staticPolicy_->forward(minibatch.states, firstAction);
+    minibatch.actions -= firstAction;
+    learnablePolicy_->TRPOpg(minibatch, Stdev, grad);
+    minibatch.actions += firstAction;
   }
 
-  virtual Dtype TRPOcg(Tensor3D &states,
-                       Tensor3D &actions,
-                       Tensor3D &actionNoise,
-                       Advantages &advs,
+  virtual Dtype TRPOcg(Dataset &batch,
                        Action &Stdev,
                        VectorXD &grad,
                        VectorXD &getng)  {
-    Tensor3D firstAction, secondAction(actions);
-    firstAction.resize(actions.dim());
-    staticPolicy_->forward(states, firstAction);
-    secondAction -= firstAction;
-    learnablePolicy_->TRPOcg(states, secondAction, actionNoise, advs, Stdev, grad, getng);
+    Tensor3D firstAction;
+    firstAction.resize(batch.actions.dim());
+    staticPolicy_->forward(batch.states, firstAction);
+    batch.actions -= firstAction;
+    Dtype returnTemp = learnablePolicy_->TRPOcg(batch, Stdev, grad, getng);
+    batch.actions += firstAction;
+    return returnTemp;
   }
 
 
-  virtual Dtype TRPOloss(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Advantages &advs,
+  virtual Dtype TRPOloss(Dataset &batch,
                          Action &Stdev) {
-    Tensor3D firstAction, secondAction(actions);
-    firstAction.resize(actions.dim());
-    staticPolicy_->forward(states, firstAction);
-    secondAction -= firstAction;
-    learnablePolicy_->TRPOloss(states, secondAction, actionNoise, advs, Stdev);
+    Tensor3D firstAction;
+    firstAction.resize(batch.actions.dim());
+    staticPolicy_->forward(batch.states, firstAction);
+    batch.actions -= firstAction;
+    Dtype returnTemp = learnablePolicy_->TRPOloss(batch, Stdev);
+    batch.actions += firstAction;
+    return returnTemp;
   }
 
   ///PPO
-  virtual void PPOpg(Tensor3D &states,
-                     Tensor3D &actions,
-                     Tensor3D &actionNoise,
-                     Advantages &advs,
+  virtual void PPOpg(Dataset *batch,
                      Action &Stdev,
-                     Tensor1D &len,
                      VectorXD &grad) {
-    Tensor3D firstAction, secondAction(actions);
-    firstAction.resize(actions.dim());
-    staticPolicy_->forward(states, firstAction);
-    secondAction -= firstAction;
-    learnablePolicy_->PPOpg(states, secondAction, actionNoise, advs, Stdev, len, grad);
+    Tensor3D firstAction;
+    firstAction.resize(batch->actions.dim());
+    staticPolicy_->forward(batch->states, firstAction);
+    batch->actions -= firstAction;
+    learnablePolicy_->PPOpg(batch, Stdev, grad);
+    batch->actions += firstAction;
   }
 
-  virtual void PPOpg_kladapt(Tensor3D &states,
-                             Tensor3D &action,
-                             Tensor3D &actionNoise,
-                             Advantages &advs,
+  virtual void PPOpg_kladapt(Dataset *batch,
                              Action &Stdev,
-                             Tensor1D &len,
                              VectorXD &grad) {
-    Tensor3D firstAction, secondAction(action);
-    firstAction.resize(action.dim());
-    staticPolicy_->forward(states, firstAction);
-    secondAction -= firstAction;
-    learnablePolicy_->PPOpg_kladapt(states, secondAction, actionNoise, advs, Stdev, len, grad);
+    Tensor3D firstAction;
+    firstAction.resize(batch->actions.dim());
+    staticPolicy_->forward(batch->states, firstAction);
+    batch->actions -= firstAction;
+    learnablePolicy_->PPOpg_kladapt(batch, Stdev, grad);
+    batch->actions += firstAction;
   }
 
-  virtual Dtype PPOgetkl(Tensor3D &states,
-                         Tensor3D &actions,
-                         Tensor3D &actionNoise,
-                         Action &Stdev,
-                         Tensor1D &len) {
-    Tensor3D firstAction, secondAction(actions);
-    firstAction.resize(actions.dim());
-    staticPolicy_->forward(states, firstAction);
-    secondAction -= firstAction;
-    learnablePolicy_->PPOgetkl(states, secondAction, actionNoise, Stdev, len);
+  virtual Dtype PPOgetkl(Dataset *batch,
+                         Action &Stdev) {
+    Tensor3D firstAction;
+    firstAction.resize(batch->actions.dim());
+    staticPolicy_->forward(batch->states, firstAction);
+    batch->actions -= firstAction;
+    Dtype returnTemp = learnablePolicy_->PPOgetkl(batch, Stdev);
+    batch->actions += firstAction;
+    return returnTemp;
   }
 
   virtual void setStdev(const Action &Stdev) {
@@ -160,14 +144,6 @@ class AdditiveStochasticPolicy : public virtual StochasticPolicy<Dtype, stateDim
     actions.setZero();
     actions += firstAction;
     actions += secondAction;
-  }
-
-
-  virtual Dtype performOneSolverIter(StateBatch &states, ActionBatch &actions) {
-    ActionBatch firstAction(actions.rows(), actions.cols()), secondAction(actions.rows(), actions.cols());
-    staticPolicy_->forward(states, firstAction);
-    secondAction = actions - firstAction;
-    learnablePolicy_->performOneSolverIter(states, secondAction);
   }
 
   virtual void trainUsingGrad(const VectorXD &grad) {
