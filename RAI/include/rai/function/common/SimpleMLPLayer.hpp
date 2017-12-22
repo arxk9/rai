@@ -18,16 +18,16 @@ namespace rai {
 
 namespace FuncApprox {
 
-template<int StateDim, int ActionDim>
+template<typename Dtype, int StateDim, int ActionDim>
 class MLP_fullyconnected {
 
  public:
-  using Noise_ = Noise::NormalDistributionNoise<double, ActionDim>;
-  typedef Eigen::Matrix<double, ActionDim, 1> Action;
-  typedef Eigen::Matrix<double, StateDim, 1> State;
+  using Noise_ = Noise::NormalDistributionNoise<Dtype, ActionDim>;
+  typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
+  typedef Eigen::Matrix<Dtype, StateDim, 1> State;
 
   MLP_fullyconnected(std::string fileName, std::string activation, std::vector<int> hiddensizes) :
-  cov(Eigen::Matrix<double, ActionDim, ActionDim>::Identity()), act_(activation), noise_(cov) {
+  cov(Eigen::Matrix<Dtype, ActionDim, ActionDim>::Identity()), act_(activation), noise_(cov) {
     const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
 
     layersizes.push_back(StateDim);
@@ -74,9 +74,9 @@ class MLP_fullyconnected {
         if (paramSize == params[i].size()) break;
       }
       if (i % 2 == 0) ///W copy
-        memcpy(Ws[i / 2].data(), params[i].data(), sizeof(double) * Ws[i / 2].size());
+        memcpy(Ws[i / 2].data(), params[i].data(), sizeof(Dtype) * Ws[i / 2].size());
       if (i % 2 == 1) ///b copy
-        memcpy(bs[(i - 1) / 2].data(), params[i].data(), sizeof(double) * bs[(i - 1) / 2].size());
+        memcpy(bs[(i - 1) / 2].data(), params[i].data(), sizeof(Dtype) * bs[(i - 1) / 2].size());
     }
     int cnt = 0;
 
@@ -117,15 +117,15 @@ class MLP_fullyconnected {
  private:
 
 //Eigen::MatrixXd output_;
-  std::vector<Eigen::VectorXd> params;
-  std::vector<Eigen::MatrixXd> Ws;
-  std::vector<Eigen::VectorXd> bs;
-  std::vector<Eigen::VectorXd> lo;
+  std::vector<Eigen::Matrix<Dtype,-1,1>> params;
+  std::vector<Eigen::Matrix<Dtype,-1,-1>> Ws;
+  std::vector<Eigen::Matrix<Dtype,-1,1>> bs;
+  std::vector<Eigen::Matrix<Dtype,-1,1>> lo;
   Action Stdev;
 
   std::vector<int> layersizes;
   std::string act_;
-  Eigen::Matrix<double, ActionDim, ActionDim> cov;
+  Eigen::Matrix<Dtype, ActionDim, ActionDim> cov;
   Noise_ noise_;
   bool isTanh=false;
 
