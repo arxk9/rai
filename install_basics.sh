@@ -30,12 +30,16 @@ mkdir -p dependencies
 ### adding ppa's
 # compilers
 sudo add-apt-repository $ADD_APT_REPOSITORY_FLAGS ppa:ubuntu-toolchain-r/test
+sudo add-apt-repository ppa:jonathonf/gcc-7.1
 
 #python
 sudo add-apt-repository $ADD_APT_REPOSITORY_FLAGS ppa:fkrull/deadsnakes
 
 ## update
 sudo apt-get update
+
+## gcc-7
+sudo apt-get install gcc-7 g++-7
 
 ### wget and curl
 sudo apt-get install $APT_GET_FLAGS wget curl
@@ -121,7 +125,7 @@ fi
 sudo apt-get install $APT_GET_FLAGS liburdfdom-dev
 
 # RAI_Common
-cd $$RAI_ROOT
+cd $RAI_ROOT
 sudo rm -rf raicommon
 git clone https://bitbucket.org/jhwangbo/raicommon.git
 cd raicommon
