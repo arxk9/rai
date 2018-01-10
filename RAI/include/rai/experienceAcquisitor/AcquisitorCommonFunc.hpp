@@ -210,7 +210,18 @@ class CommonFunc {
     return stat;
   }
 
-
+  void checkStartingState(Task_* task, StateBatch &startingState){
+    for(int i; i<startingState.cols(); i++){
+      State state;
+      state = startingState.col(i);
+      while(task->isTerminalState(state))
+      {
+        task->setToInitialState();
+        task->getState(state);
+        startingState.col(i) = state;
+      }
+    }
+  }
   template<typename NoiseType>
   static Result runEpisodeInBatchParallel(std::vector<Task_ *> &taskset,
                                           Policy_ *policy,
@@ -248,6 +259,17 @@ class CommonFunc {
 
     for (int i = 0; i < ThreadN; i++)
       episodetime[i] = 0;
+
+    for(int i; i<startingState.cols(); i++){
+      State state;
+      state = startingState.col(i);
+      while(taskset[0]->isTerminalState(state))
+      {
+        taskset[0]->setToInitialState();
+        taskset[0]->getState(state);
+        startingState.col(i) = state;
+      }
+    }
 
     for (int i = 0; i < ThreadN; i++) {
       state_t[i] = startingState.col(trajcnt);
@@ -414,6 +436,7 @@ class CommonFunc {
     for (int i = 0; i < ThreadN; i++) {
       State state_init;
       taskset[i]->setToInitialState();
+      while(taskset[i]->isTerminalState()) taskset[i]->setToInitialState(); //In case of start state = terminal
       taskset[i]->getState(state_init);
       state_t[i] = state_init;
 
@@ -455,11 +478,10 @@ class CommonFunc {
           } else {
             State state_init;
             taskset[i]->setToInitialState();
+            while(taskset[i]->isTerminalState()) taskset[i]->setToInitialState(); //In case of start state = terminal
             taskset[i]->getState(state_init);
             state_t[i] = state_init;
-//
-//            state_t[i] = startingState.col(trajcnt);
-//            taskset[i]->setToParticularState(state_t[i]);
+
             trajectoryID[i] = trajcnt++;
             episodetime[i] = 0;
             isTimeout = false;
