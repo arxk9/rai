@@ -48,11 +48,6 @@ class PerformanceTester {
       tra.clear();
     for (auto &noise : noise)
       noise->initializeNoise();
-    for (auto &task : task)
-      task->setToInitialState();
-
-    StateBatch startState(StateDim, testingTrajN);
-    sampleBatchOfInitial(startState, task);
 
     if (vis_lv > 0) {
       task[0]->turnOnVisualization("");
@@ -63,7 +58,6 @@ class PerformanceTester {
                                             policy,
                                             noise,
                                             testTraj_,
-                                            startState,
                                             timeLimit,
                                             false);
     if (vis_lv > 0) task[0]->turnOffVisualization();
@@ -78,7 +72,6 @@ class PerformanceTester {
               << ", average cost " << logger->getData("PerformanceTester/performance")->at(1).back();
 
     timer->enable();
-
   }
 
  private:
