@@ -210,18 +210,18 @@ class CommonFunc {
     return stat;
   }
 
-  void checkStartingState(Task_* task, StateBatch &startingState){
-    for(int i; i<startingState.cols(); i++){
-      State state;
-      state = startingState.col(i);
-      while(task->isTerminalState(state))
-      {
-        task->setToInitialState();
-        task->getState(state);
-        startingState.col(i) = state;
-      }
-    }
-  }
+//  void checkStartingState(Task_* task, StateBatch &startingState){
+//    for(int i; i<startingState.cols(); i++){
+//      State state;
+//      state = startingState.col(i);
+//      while(task->isTerminalState(state))
+//      {
+//        task->setToInitialState();
+//        task->getState(state);
+//        startingState.col(i) = state;
+//      }
+//    }
+//  }
   template<typename NoiseType>
   static Result runEpisodeInBatchParallel(std::vector<Task_ *> &taskset,
                                           Policy_ *policy,
@@ -260,14 +260,15 @@ class CommonFunc {
     for (int i = 0; i < ThreadN; i++)
       episodetime[i] = 0;
 
+    ///Replace useless starting states with arbitrary initial states
     for(int i; i<startingState.cols(); i++){
-      State state;
-      state = startingState.col(i);
-      while(taskset[0]->isTerminalState(state))
+      State state_temp;
+      state_temp = startingState.col(i);
+      while(taskset[0]->isTerminalState(state_temp))
       {
         taskset[0]->setToInitialState();
-        taskset[0]->getState(state);
-        startingState.col(i) = state;
+        taskset[0]->getState(state_temp);
+        startingState.col(i) = state_temp;
       }
     }
 
