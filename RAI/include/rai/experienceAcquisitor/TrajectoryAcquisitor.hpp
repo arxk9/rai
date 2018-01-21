@@ -144,14 +144,19 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
     StateBatch VineStartPosition(StateDim, numofjunct);
     StateBatch rolloutstartState(StateDim, numofjunct * numOfBranchPerJunct);
     trajectories.resize(numofjunct * numOfBranchPerJunct);
-    rolloutstartState.setOnes();
     std::vector<std::pair<int, int> > indx;
     rai::Op::VectorHelper::sampleRandomStates(traj, VineStartPosition, int(0.1 * timeLimit / dt), indx);
 
-    for (int dataID = 0; dataID < numofjunct; dataID++)
-      rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct) =
-          rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct).array().colwise()
-              * VineStartPosition.col(dataID).array();
+//    for (int dataID = 0; dataID < numofjunct; dataID++)
+//      rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct) =
+//          rolloutstartState.block(0, dataID * numOfBranchPerJunct, StateDim, numOfBranchPerJunct).array().colwise()
+//              * VineStartPosition.col(dataID).array();
+
+    for (int junctID = 0; junctID < numofjunct; junctID++)
+      for (int branchID = 0; branchID < numOfBranchPerJunct; branchID++ )
+      rolloutstartState.col(junctID * numOfBranchPerJunct + branchID) =
+          VineStartPosition.col(junctID);
+
 
     for (auto &tra : trajectories)
       tra.clear();
