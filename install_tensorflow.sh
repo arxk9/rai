@@ -16,6 +16,43 @@ ADD_APT_REPOSITORY_FLAGS=-y
 #sudo apt-get update
 #sudo apt-get install python3.5
 
+### Bazel 0.5.4
+sudo apt-get install pkg-config zip g++ zlib1g-dev unzip python
+wget https://github.com/bazelbuild/bazel/releases/download/0.5.4/bazel-0.5.4-installer-linux-x86_64.sh
+chmod +x bazel-0.5.4-installer-linux-x86_64.sh
+sudo ./bazel-0.5.4-installer-linux-x86_64.sh --prefix=/usr
+rm bazel-0.5.4-installer-linux-x86_64.sh
+
+## Swig
+sudo apt-get install $APT_GET_FLAGS swig
+
+## Setting up python and virtualenv
+
+#python
+sudo add-apt-repository $ADD_APT_REPOSITORY_FLAGS ppa:fkrull/deadsnakes
+
+# python 3.5
+sudo apt-get install $APT_GET_FLAGS python3.5-dev
+
+# Installing pip
+sudo apt-get install $APT_GET_FLAGS python-pip
+sudo apt-get install $APT_GET_FLAGS python3-pip
+pip3 install --upgrade pip
+
+# Installing virtualenv
+sudo apt-get install $APT_GET_FLAGS python-virtualenv
+sudo apt-get install $APT_GET_FLAGS python3-setuptools
+
+# Installing virtualenvwrapper
+pip3 install $APT_GET_FLAGS virtualenvwrapper
+sed -i '/WORKON_HOME/d' $HOME/.bashrc
+printf 'export WORKON_HOME=~/.virtualenvs\n' >> $HOME/.bashrc
+sed -i '/VIRTUALENVWRAPPER_PYTHON/d' $HOME/.bashrc
+printf 'export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3\n' >> $HOME/.bashrc
+sed -i '/source virtualenvwrapper.sh/d' $HOME/.bashrc
+printf 'source virtualenvwrapper.sh\n' >> $HOME/.bashrc
+source ~/.bashrc
+
 # Enable 
 source ~/.bashrc
 VIRTUALENVWRAPPER_PYTHON='/usr/bin/python3'

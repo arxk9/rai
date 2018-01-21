@@ -146,6 +146,17 @@ class AdditiveStochasticPolicy : public virtual StochasticPolicy<Dtype, stateDim
     actions += secondAction;
   }
 
+  virtual void forward(Tensor2D &states, Tensor2D &actions) {
+    Tensor2D firstAction, secondAction;
+    firstAction.resize(actions.dim());
+    secondAction.resize(actions.dim());
+    staticPolicy_->forward(states, firstAction);
+    learnablePolicy_->forward(states, secondAction);
+    actions.setZero();
+    actions += firstAction;
+    actions += secondAction;
+  }
+
   virtual void trainUsingGrad(const VectorXD &grad) {
     learnablePolicy_->trainUsingGrad(grad);
   }
