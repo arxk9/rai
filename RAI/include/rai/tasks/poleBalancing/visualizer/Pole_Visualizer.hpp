@@ -27,8 +27,7 @@ class Pole_Visualizer {
  private:
   rai_graphics::RAI_graphics graphics;
   rai_graphics::object::Cylinder Pole;
-  rai_graphics::object::Sphere Dot;
-  rai_graphics::object::Sphere Dot2;
+  rai_graphics::object::Sphere Dot, origin;
 
   rai_graphics::object::Mesh arrow;
   HomogeneousTransform defaultPose_;

@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
   for (int iterationNumber = 0; iterationNumber < iteration; iterationNumber++) {
 
     if (iterationNumber % loggingInterval == 0 || iterationNumber == iteration-1) {
-      algorithm.setVisualizationLevel(0);
+      algorithm.setVisualizationLevel(1);
       taskVector[0]->enableVideoRecording();
     }
 

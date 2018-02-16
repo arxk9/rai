@@ -155,6 +155,7 @@ class PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
   static double normAngle(double x) {
     return pythonModOp(x + M_PI, 2 * M_PI) - M_PI;
   }
+
   static double pythonModOp(double x, double y) {
     double result = fmod(x, y);
     if (result < 0.0) {
@@ -162,13 +163,16 @@ class PoleBalancing : public Task<Dtype, StateDim, ActionDim, CommandDim> {
     }
     return result;
   }
+
   void startRecordingVideo(std::string dir, std::string fileName) {
     mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     visualizer_.getGraphics()->savingSnapshots(dir, fileName);
   }
+
   void endRecordingVideo() {
     visualizer_.getGraphics()->images2Video();
   }
+
  public:
   void setRealTimeFactor(double fctr) {
     realTimeRatio = fctr;
