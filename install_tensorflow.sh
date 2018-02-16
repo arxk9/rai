@@ -89,7 +89,7 @@ echo -n "do you have gpu (y/n)? "
 read answer
 if echo "$answer" | grep -iq "^y" ;then
     sudo bazel build -c opt --config=cuda --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone
-    pip3 install --upgrade tensorflow-gpu
+    pip3 install --upgrade tensorflow-gpu==1.3.0
 else
     sudo bazel build -c opt --copt="-mtune=native" --copt="-O3" tensorflow:libtensorflow_cc.so tensorflow:libtensorflow.so --genrule_strategy=standalone --spawn_strategy=standalone 
     pip3 install --upgrade tensorflow
