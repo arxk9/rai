@@ -39,7 +39,7 @@ class LearningData {
         extraTensor1D(0),
         extraTensor2D(0),
         extraTensor3D(0),
-        hDim(-1) {
+        hDim(-1), isRecurrent(false) {
     states = "state";
     actions = "sampledAction";
     actionNoises = "actionNoise";
