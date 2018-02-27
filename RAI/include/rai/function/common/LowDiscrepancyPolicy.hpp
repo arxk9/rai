@@ -46,7 +46,7 @@ class LowDiscrepancyPolicy : public Policy<Dtype, stateDim, actionDim> {
       stateMetInv_(stateMetricInverse), actionMetInv_(actionMetricInverse),
       threshold_(threshold), buildTreeAt_(buildTreeAt), treeBuilt_(false) {}
 
-  ~LowDiscrepancyPolicy() {
+  virtual ~LowDiscrepancyPolicy() {
     delete kdTree;
   }
 

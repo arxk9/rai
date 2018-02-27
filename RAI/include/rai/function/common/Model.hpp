@@ -16,6 +16,8 @@ class Model {
   typedef Eigen::Matrix<Dtype, stateDim, -1> StateBatch;
   typedef Eigen::Matrix<Dtype, actionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, actionDim, -1> ActionBatch;
+  Model(){};
+  virtual ~Model(){};
 
 };
 

@@ -12,6 +12,8 @@ template <typename Dtype, int StateDim, int ActionDim>
 class Acquisitor {
 
  public:
+  Acquisitor(){};
+  virtual ~Acquisitor(){};
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   double stepsTaken(){
     return double(stepsTaken_);
