@@ -48,7 +48,7 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
       Pfunction_tensorflow::ParameterizedFunction_TensorFlow(
           "StochasticPolicy", computeMode, graphName, graphParam, learningRate) {
   }
-
+  virtual ~StochasticPolicy_TensorFlow(){};
 
   ///TRPO
   //batch

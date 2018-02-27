@@ -23,6 +23,9 @@ class ExperienceTupleAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> 
   using Policy_ = FuncApprox::Policy<Dtype, StateDim, ActionDim>;
 
  public:
+  ExperienceTupleAcquisitor(){};
+  virtual ~ExperienceTupleAcquisitor(){};
+
   virtual void acquire(std::vector<Task_ *> &task,
                        Policy_ *policy,
                        std::vector<Noise_ *> &noise,

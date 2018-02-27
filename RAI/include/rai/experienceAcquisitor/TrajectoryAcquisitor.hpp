@@ -32,6 +32,8 @@ class TrajectoryAcquisitor : public Acquisitor<Dtype, StateDim, ActionDim> {
 
  public:
   std::vector<Trajectory> traj;
+  TrajectoryAcquisitor(){};
+  virtual ~TrajectoryAcquisitor(){};
 
   virtual Dtype acquire(std::vector<Task_ *> &taskset,
                         Policy_ *policy,

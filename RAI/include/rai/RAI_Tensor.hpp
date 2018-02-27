@@ -88,6 +88,8 @@ class TensorBase {
     std::memcpy(namedTensor_.second.flat<Dtype>().data(), emat.data(), sizeof(Dtype) * emat.size());
   }
 
+  virtual ~TensorBase(){};
+
   ////////////////////////////
   /////// casting methods ////
   ////////////////////////////
