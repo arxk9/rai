@@ -135,6 +135,14 @@ class TRPO_gae {
     TRPOUpdater();
   }
 
+  void runOneLoop(std::vector<Trajectory_>& traj){
+    Dataset_.appendTrajsWithAdvantage(traj, task_[0], false, vfunction_, lambda_, true);
+    LOG(INFO) << "Vfunction update";
+    VFupdate();
+    LOG(INFO) << "Policy update";
+    TRPOUpdater();
+  }
+
   void set_cg_daming(Dtype cgd) { cg_damping = cgd; }
   void set_kl_thres(Dtype thres) { klD_threshold = thres; }
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }

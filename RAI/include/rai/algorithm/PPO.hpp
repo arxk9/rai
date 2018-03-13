@@ -137,18 +137,39 @@ class PPO {
                                               numOfBranchPerJunct_,
                                               vfunction_,
                                               vis_lv_);
+    Utils::timer->startTimer("data processing");
+    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], false, vfunction_, lambda_, true);
+    Utils::timer->stopTimer("data processing");
     PPOUpdater();
+
+    ///Logging
+    LOG(INFO) << "KL divergence = " << KL_;
+    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KLCoeff_;
+    Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policyGradNorm_);
+    Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL_);
   }
+
+  void runOneLoop(std::vector<Trajectory_>& traj){
+    Utils::timer->startTimer("data processing");
+    Dataset_.appendTrajsWithAdvantage(traj, task_[0], false, vfunction_, lambda_, true);
+    Utils::timer->stopTimer("data processing");
+    PPOUpdater();
+
+    ///Logging
+    LOG(INFO) << "KL divergence = " << KL_;
+    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KLCoeff_;
+    Utils::logger->appendData("Stdev", 0, policyGradNorm_);
+    Utils::logger->appendData("klD", 0, KL_);
+  }
+
+
   void setVisualizationLevel(int vis_lv) { vis_lv_ = vis_lv; }
  private:
   void PPOUpdater() {
     Utils::timer->startTimer("policy Training");
-    Utils::timer->startTimer("data processing");
-    Dataset_.appendTrajsWithAdvantage(acquisitor_->traj, task_[0], false, vfunction_, lambda_, true);
-    Utils::timer->stopTimer("data processing");
+
     /// Update Policy & Value
     Parameter policy_grad = Parameter::Zero(policy_->getLPSize());
-    Dtype KL = 0;
     Dtype loss;
     /// Append predicted value to Dataset_ for trust region update
     Dataset_.extraTensor2D[0].resize(Dataset_.maxLen, Dataset_.batchNum);
@@ -173,24 +194,19 @@ class PPO {
         policy_->trainUsingGrad(policy_grad);
         Utils::timer->stopTimer("SGD");
 
-        KL = policy_->PPOgetkl(Dataset_.miniBatch, stdev_t);
-        LOG_IF(FATAL, isnan(KL)) << "KL is nan!" << KL;
+        KL_ = policy_->PPOgetkl(Dataset_.miniBatch, stdev_t);
+        LOG_IF(FATAL, isnan(KL_)) << "KL is nan!" << KL_;
       }
       if (KL_adapt_) {
-        if (KL > KLThres_ * 1.5) KLCoeff_ *= 2;
-        if (KL < KLThres_ / 1.5) KLCoeff_ *= 0.5;
+        if (KL_ > KLThres_ * 1.5) KLCoeff_ *= 2;
+        if (KL_ < KLThres_ / 1.5) KLCoeff_ *= 0.5;
         algoParams[0] = KLCoeff_;
         policy_->setParams(algoParams);
       }
     }
     updatePolicyVar();/// save stdev & Update Noise Covariance
     Utils::timer->stopTimer("policy Training");
-
-///Logging
-    LOG(INFO) << "KL divergence = " << KL;
-    if (KL_adapt_) LOG(INFO) << "KL coefficient = " << KLCoeff_;
-    Utils::logger->appendData("Stdev", acquisitor_->stepsTaken(), policy_grad.norm());
-    Utils::logger->appendData("klD", acquisitor_->stepsTaken(), KL);
+    policyGradNorm_ = policy_grad.norm();
   }
 
   void updatePolicyVar() {
@@ -213,6 +229,8 @@ class PPO {
   Dtype lambda_;
   PerformanceTester<Dtype, StateDim, ActionDim> tester_;
   Dataset Dataset_;
+  Dtype KL_ = 0;
+  Dtype policyGradNorm_;
 
   /////////////////////////// Algorithmic parameter ///////////////////
   int numOfJunct_;
