@@ -43,6 +43,9 @@ class RecurrentParameterizedFunction_TensorFlow : public ParameterizedFunction_T
     hdim = this->getHiddenStatesize();
     h.resize(hdim, 0);
   }
+  virtual ~RecurrentParameterizedFunction_TensorFlow(){
+
+  };
 
   virtual bool isRecurrent() {return true;}
 

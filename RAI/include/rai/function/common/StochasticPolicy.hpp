@@ -30,6 +30,9 @@ class StochasticPolicy : public virtual Policy<Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename PolicyBase::Dataset Dataset;
 
+  StochasticPolicy(){};
+  virtual ~StochasticPolicy(){};
+
   ///TRPO
   virtual void TRPOpg(Dataset &minibatch,
                       Action &Stdev,

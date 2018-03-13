@@ -15,7 +15,7 @@ class Noise {
 
 public:
   Noise(){};
-  ~Noise(){};
+  virtual~Noise(){};
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, 1> NoiseVector;
   typedef Eigen::Matrix<Dtype, noiseVectorDimension, noiseVectorDimension> CovarianceMatrix;

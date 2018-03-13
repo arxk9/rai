@@ -18,7 +18,8 @@ class DeterministicModel : public virtual Model<Dtype, stateDim, actionDim> {
   typedef Eigen::Matrix<Dtype, stateDim, -1> InputBatch;
   typedef Eigen::Matrix<Dtype, actionDim, 1> Output;
   typedef Eigen::Matrix<Dtype, actionDim, -1> OutputBatch;
-
+  DeterministicModel(){};
+  virtual ~DeterministicModel(){};
 };
 
 }

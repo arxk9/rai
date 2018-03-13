@@ -37,6 +37,9 @@ class DeterministicPolicy : public virtual Policy <Dtype, stateDim, actionDim> {
   typedef typename PolicyBase::Tensor3D Tensor3D;
   typedef typename PolicyBase::Dataset Dataset;
 
+  DeterministicPolicy(){};
+  virtual ~DeterministicPolicy(){};
+
   virtual Dtype performOneSolverIter(Dataset *minibatch, Tensor3D &actions){
     LOG(FATAL) << "NOT IMPLEMENTED";
     return 0;

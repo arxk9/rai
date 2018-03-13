@@ -57,7 +57,8 @@ class Task {
   typedef Eigen::Matrix<Dtype, -1, 1> VectorXD;
 
   ////////////// normal constructor
-  void task() {};
+  Task() {};
+  virtual ~Task(){};
 
   /// Core Methods!! Must be implemented///////////////////////////////////
   void takeOneStep(const Action &action_t,
