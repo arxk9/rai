@@ -58,6 +58,11 @@ class StochasticPolicy(pc.Policy):
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
+        action_target = tf.placeholder(dtype, shape=[None, None, action_dim], name='targetAction')
+        action_target = tf.reshape(action_target, shape = [-1, action_dim])
+        with tf.name_scope('trainUsingTarget'):
+            core.square_loss_opt(dtype, action_target, action, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=self.max_grad_norm)
+
         with tf.name_scope('trainUsingGrad'):
             gradient_from_critic = tf.placeholder(dtype, shape=[1, None], name='Inputgradient')
             train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)

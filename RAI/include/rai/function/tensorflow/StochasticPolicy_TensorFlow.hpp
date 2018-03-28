@@ -250,6 +250,15 @@ class StochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dtype, state
     this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions) {
+    std::vector<MatrixXD> loss;
+    this->tf_->run({states,
+                    actions},
+                   {"trainUsingTarget/loss"},
+                   {"trainUsingTarget/solver"}, loss);
+    return loss[0](0);
+  }
+
 };
 }//namespace FuncApprox
 }//namespace rai
