@@ -208,9 +208,9 @@ class LearningData {
       return false;
     }
 
-    Utils::timer->startTimer("fillminiBatch");
+//    Utils::timer->startTimer("fillminiBatch");
     fillminiBatch(cur_batch_size);
-    Utils::timer->stopTimer("fillminiBatch");
+//    Utils::timer->stopTimer("fillminiBatch");
 
     batchID += cur_batch_size;
     return true;
