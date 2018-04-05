@@ -64,6 +64,8 @@ class LearningData {
         extraTensor3D(0),
         hDim(-1), isRecurrent(recurrent) {
     if(useminibatch) miniBatch = new LearningData<Dtype, StateDim, ActionDim>;
+    if(isRecurrent && useminibatch) miniBatch->isRecurrent = true;
+
     states = "state";
     actions = "sampledAction";
     actionNoises = "actionNoise";
@@ -205,7 +207,11 @@ class LearningData {
       batchID = 0;
       return false;
     }
+
+//    Utils::timer->startTimer("fillminiBatch");
     fillminiBatch(cur_batch_size);
+//    Utils::timer->stopTimer("fillminiBatch");
+
     batchID += cur_batch_size;
     return true;
   }

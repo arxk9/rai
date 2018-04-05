@@ -49,7 +49,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                                        std::string graphName,
                                        std::string graphParam,
                                        Dtype learningRate = 1e-3) :
-      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("testfunction", computeMode, graphName, graphParam, learningRate) {
+      Pfunction_tensorflow::RecurrentParameterizedFunction_TensorFlow("RecurrentStochasticPolicy", computeMode, graphName, graphParam, learningRate) {
 
   }
   virtual void forward(Tensor3D &states, Tensor3D &actions) {
@@ -80,7 +80,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                      VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(), minibatch->states.batches()}, 0, "h_init");
+    Tensor2D hiddenState({hdim, minibatch->states.batches()}, 0, "h_init");
 
     this->tf_->run({minibatch->states,
                     minibatch->actions,
@@ -98,7 +98,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                              VectorXD &grad) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(), minibatch->states.batches()},0, "h_init");
+    Tensor2D hiddenState({hdim, minibatch->states.batches()},0, "h_init");
 
     this->tf_->run({minibatch->states,
                     minibatch->actions,
@@ -115,7 +115,7 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
                          Action &Stdev) {
     std::vector<tensorflow::Tensor> vectorOfOutputs;
     Tensor1D StdevT(Stdev, {Stdev.rows()}, "stdv_o");
-    Tensor2D hiddenState({hiddenStateDim(),  minibatch->states.batches()},0, "h_init");
+    Tensor2D hiddenState({hdim,  minibatch->states.batches()},0, "h_init");
 
     this->tf_->run({minibatch->states,
                     minibatch->actions,
@@ -144,14 +144,24 @@ class RecurrentStochasticPolicy_TensorFlow : public virtual StochasticPolicy<Dty
     this->tf_->run({{"PPO_params_placeholder", params}}, {}, {"PPO_param_assign_ops"}, dummy);
   }
 
-  virtual void trainUsingGrad(const VectorXD &grad, const Dtype learningrate) {
+  virtual void trainUsingGrad(const VectorXD &grad) {
     std::vector<MatrixXD> dummy;
-    VectorXD inputrate(1);
-    inputrate(0) = learningrate;
-    this->tf_->run({{"trainUsingGrad/Inputgradient", grad},
-                    {"trainUsingGrad/learningRate", inputrate}}, {},
+    this->tf_->run({{"trainUsingGrad/Inputgradient", grad}}, {},
                    {"trainUsingGrad/applyGradients"}, dummy);
   }
+  virtual Dtype performOneSolverIter(Tensor3D &states, Tensor3D &actions, Tensor1D & lengths) {
+    std::vector<MatrixXD> loss;
+    Tensor2D hiddenState({hdim, states.batches()},0, "h_init");
+    actions.setName("targetAction");
+    this->tf_->run({states,
+                    actions,
+                    lengths,
+                    hiddenState},
+                   {"trainUsingTarget/loss"},
+                   {"trainUsingTarget/solver"}, loss);
+    return loss[0](0);
+  }
+
 };
 }//namespace FuncApprox
 }//namespace rai

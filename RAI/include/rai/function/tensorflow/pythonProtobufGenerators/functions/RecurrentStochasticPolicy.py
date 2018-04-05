@@ -53,6 +53,15 @@ class RecurrentStochasticPolicy(pc.Policy):
 
         PPO_param_assign_ops = tf.group(*param_assign_op_list, name='PPO_param_assign_ops')
 
+        mask = tf.sequence_mask(gs.seq_length, maxlen=tf.shape(gs.input)[1], name='mask')
+        action_target = tf.placeholder(dtype, shape=[None, None, None], name='targetAction')
+
+        action_masked = tf.boolean_mask(action, mask)
+        action_target_masked = tf.boolean_mask(action_target, mask)
+
+        with tf.name_scope('trainUsingTarget'):
+            core.square_loss_opt(dtype, action_target_masked, action_masked, tf.train.AdamOptimizer(learning_rate=self.learningRate), maxnorm=self.max_grad_norm)
+
         with tf.name_scope('trainUsingGrad'):
             gradient_from_critic = tf.placeholder(dtype, shape=[1, None], name='Inputgradient')
             train_using_grad_optimizer = tf.train.AdamOptimizer(learning_rate=self.learningRate)
@@ -71,7 +80,6 @@ class RecurrentStochasticPolicy(pc.Policy):
         util = Utils.Utils(dtype)
 
         with tf.name_scope('Algo'):
-            mask = tf.sequence_mask(gs.seq_length, maxlen=tf.shape(gs.input)[1], name='mask')
             logp_n = tf.boolean_mask(util.log_likelihood(action, action_stdev, old_action_sampled), mask)
             logp_old = tf.boolean_mask(util.log_likelihood(old_action_noise, old_stdv), mask)
             advantage = tf.boolean_mask(advantage_in, mask)

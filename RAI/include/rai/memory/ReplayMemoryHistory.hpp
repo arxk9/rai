@@ -38,7 +38,7 @@ class ReplayMemoryHistory {
  public:
 
   ReplayMemoryHistory(unsigned capacity, bool distInfo = false)
-      : size_(0), batchIdx_(0), maxlen_(0), distInfo_(distInfo) {
+      : size_(0), batchIdx_(0), maxlen_(0), distInfo_(distInfo),hiddenStateInfo_(true) {
     stateTensor_ = new Tensor3D;
     actionTensor_ = new Tensor3D;
     costTensor_ = new Tensor2D;
@@ -177,14 +177,16 @@ class ReplayMemoryHistory {
       dataN_ += tra.size();
       if (maxlen < tra.stateTraj.size() - 1) maxlen = unsigned(tra.stateTraj.size());
     }
-    if(hdim_ == 0) hdim_ = trajectorySet[0].hiddenStateTraj[0].rows();
+    if(trajectorySet[0].hiddenStateTraj.empty()) hiddenStateInfo_ = false;
+
+    if(hdim_ == 0 && hiddenStateInfo_) hdim_ = trajectorySet[0].hiddenStateTraj[0].rows();
 
     if (maxlen > maxlen_) {
       maxlen_ = maxlen;
       stateTensor_->conservativeResize(stateDimension, maxlen_, capacity_);
       actionTensor_->conservativeResize(actionDimension, maxlen_, capacity_);
       costTensor_->conservativeResize(maxlen_, capacity_);
-      hiddenStateTensor_->conservativeResize(hdim_,maxlen_,capacity_);
+      if (hiddenStateInfo_) hiddenStateTensor_->conservativeResize(hdim_,maxlen_,capacity_);
       if (distInfo_) actionNoiseTensor_->conservativeResize(actionDimension, maxlen_, capacity_);
     }
 
@@ -194,7 +196,7 @@ class ReplayMemoryHistory {
       stateTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].stateTraj);
       actionTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionTraj);
       if (distInfo_) actionNoiseTensor_->partiallyFillBatch(batchIdx_, trajectorySet[i].actionNoiseTraj);
-      hiddenStateTensor_->partiallyFillBatch(i, trajectorySet[i].hiddenStateTraj);
+      if (hiddenStateInfo_) hiddenStateTensor_->partiallyFillBatch(i, trajectorySet[i].hiddenStateTraj);
 
       for (int timeID = 0; timeID < len; timeID++) {
           costTensor_->eMat()(timeID, i) = trajectorySet[i].costTraj[timeID];
@@ -216,7 +218,7 @@ class ReplayMemoryHistory {
       stateTensor_->conservativeResize(stateDimension, maxlen_, capacity_);
       actionTensor_->conservativeResize(actionDimension, maxlen_, capacity_);
       if (distInfo_) actionNoiseTensor_->conservativeResize(actionDimension, maxlen_, capacity_);
-      hiddenStateTensor_->conservativeResize(hdim_,maxlen_,capacity_);
+      if (hiddenStateInfo_) hiddenStateTensor_->conservativeResize(hdim_,maxlen_,capacity_);
       costTensor_->conservativeResize(maxlen_, capacity_);
     }
   }
@@ -243,7 +245,7 @@ class ReplayMemoryHistory {
     for (unsigned i = 0; i < batchSize; i++) {
       DataOut.states.batch(i) = stateTensor_->batch(memoryIdx[i]);
       DataOut.actions.batch(i) = actionTensor_->batch(memoryIdx[i]);
-      DataOut.hiddenStates.batch(i) = hiddenStateTensor_->batch(memoryIdx[i]);
+      if (hiddenStateInfo_) DataOut.hiddenStates.batch(i) = hiddenStateTensor_->batch(memoryIdx[i]);
       DataOut.costs.col(i) = costTensor_->col(memoryIdx[i]);
       DataOut.lengths[i] = len_->at(i);
       DataOut.termtypes[i] = termtypes_->at(i);
@@ -305,6 +307,8 @@ class ReplayMemoryHistory {
   Tensor1D *termtypes_;
 
   bool distInfo_;
+  bool hiddenStateInfo_;
+
   unsigned size_;
   unsigned maxlen_;
   unsigned batchIdx_;
