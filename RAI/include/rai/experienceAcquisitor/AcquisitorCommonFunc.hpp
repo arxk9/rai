@@ -440,6 +440,7 @@ class CommonFunc {
       while(taskset[i]->isTerminalState()) taskset[i]->setToInitialState(); //In case of start state = terminal
       taskset[i]->getState(state_init);
       state_t[i] = state_init;
+      state_t2[i] = state_init; /////////
 
       trajectoryID[i] = trajcnt++;
       active[i] = true;
