@@ -272,11 +272,13 @@ class CommonFunc {
       }
     }
 
+    int map[ThreadN];
     for (int i = 0; i < ThreadN; i++) {
       state_t[i] = startingState.col(trajcnt);
       taskset[i]->setToParticularState(state_t[i]);
       trajectoryID[i] = trajcnt++;
       active[i] = true;
+      map[i] = i;
 
       if (policy->isRecurrent()) {
         ///start with zero hiddenstate
@@ -287,6 +289,7 @@ class CommonFunc {
       policy->reset(i);
 
     }
+
 
     while (true) {
       for (int i = 0; i < ThreadN; i++) {
@@ -310,7 +313,8 @@ class CommonFunc {
           if (trajcnt == numOfTraj) {
             activeThreads--;
             active[i] = false;
-            policy->terminate(i);
+            policy->terminate(map[i]);
+            for(int j = i; j<ThreadN; j++) map[j]--;
             break;
           } else {
             state_t[i] = startingState.col(trajcnt);
@@ -437,6 +441,7 @@ class CommonFunc {
     for (int i = 0; i < ThreadN; i++)
       episodetime[i] = 0;
 
+    int map[ThreadN];
     for (int i = 0; i < ThreadN; i++) {
       State state_init;
       taskset[i]->setToInitialState();
@@ -447,6 +452,7 @@ class CommonFunc {
 
       trajectoryID[i] = trajcnt++;
       active[i] = true;
+      map[i] = i;
 
       if (policy->isRecurrent()) {
         ///start with zero hiddenstate
@@ -459,8 +465,8 @@ class CommonFunc {
     }
 
     while (true) {
-      for (int i = 0; i < ThreadN; i++) {
-        if (!active[i]) continue;
+      for (int i = 0; i< ThreadN; i++ ) {
+          if (!active[i]) continue;
 
         bool isTimeout = episodetime[i] + taskset[i]->dt() * 0.5 >= timeLimit;
         bool isTerminal = taskset[i]->isTerminalState();
@@ -480,7 +486,8 @@ class CommonFunc {
           if (trajcnt == numOfTraj) {
             activeThreads--;
             active[i] = false;
-            policy->terminate(i);
+            policy->terminate(map[i]);
+            for(int j = i; j<ThreadN; j++) map[j]--;
             break;
           } else {
             State state_init;
