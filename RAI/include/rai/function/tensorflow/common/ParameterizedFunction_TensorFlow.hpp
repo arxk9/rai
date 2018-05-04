@@ -181,7 +181,7 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
 
   virtual void setLearningRate(Dtype learningRate) {
     Tensor1D lr({1}, learningRate, "trainingOptions/param_assign_placeholder");
-    tf_->run({lr}, {}, {"InitLR_assign"});
+    tf_->run({lr}, {}, {"InitLR_assign", "reset_global_step"});
   }
 
   virtual void setLearningRateDecay(Dtype decayRate, int decaySteps) {
@@ -200,9 +200,17 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
     tf_->run({}, {"trainingOptions/LR"}, {}, vectorOfOutputs);
     return vectorOfOutputs[0].scalar<Dtype>()();
   }
+
+  int incrementGlobalStep(){
+    std::vector<tensorflow::Tensor> globalStep;
+    tf_->run({}, {"global_step"}, {"increment_global_step"}, globalStep);
+    return globalStep[0].scalar<int>()();
+
+  }
   int getGlobalStep() {
     return tf_->getGlobalStep();
   }
+
   virtual void setCheckNumerics(bool checkNumerics) {
     tf_->setCheckNumerics(checkNumerics);
   }
@@ -237,7 +245,9 @@ class ParameterizedFunction_TensorFlow : public virtual ParameterizedFunction<Dt
     LOG_IF(FATAL, getAPSize() != paramSize) << "Parameter sizes don't match";
     this->tf_->setAP(param);
   }
+
  protected:
+
   using MatrixXD = typename TensorFlowNeuralNetwork<Dtype>::MatrixXD;
   using VectorXD = Eigen::Matrix<Dtype, Eigen::Dynamic, 1>;
 

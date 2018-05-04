@@ -39,10 +39,10 @@ class StochasticPolicy(pc.Policy):
         advantage = tf.reshape(advantage_in, shape=[-1], name='test')
 
         # Algorithm params
-        kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff')
-        ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff')
-        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
-        clip_param_decay_rate = tf.Variable(tf.constant(1, dtype=dtype), name='clip_param_decay_rate')
+        kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff', trainable=False)
+        ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff', trainable=False)
+        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param', trainable=False)
+        clip_param_decay_rate = tf.Variable(tf.constant(1, dtype=dtype), name='clip_param_decay_rate', trainable=False)
 
         PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 4], name='PPO_params_placeholder')
 

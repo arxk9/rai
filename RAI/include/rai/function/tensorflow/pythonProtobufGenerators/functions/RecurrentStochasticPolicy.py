@@ -37,9 +37,9 @@ class RecurrentStochasticPolicy(pc.Policy):
         advantage_in = tf.placeholder(dtype, shape=[None, None], name='advantage')
 
         # Algorithm params
-        kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff')
-        ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff')
-        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
+        kl_coeff = tf.Variable(tf.constant(1.0, dtype=dtype), name='kl_coeff', trainable=False)
+        ent_coeff = tf.Variable(tf.constant(0.01, dtype=dtype), name='ent_coeff', trainable=False)
+        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param', trainable=False)
 
         PPO_params_placeholder = tf.placeholder(dtype, shape=[1, 3], name='PPO_params_placeholder')
 

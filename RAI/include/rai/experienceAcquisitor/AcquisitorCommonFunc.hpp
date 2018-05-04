@@ -284,6 +284,7 @@ class CommonFunc {
         hiddenState_t.setZero();
         trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
       }
+      policy->reset(i);
 
     }
 
@@ -309,6 +310,7 @@ class CommonFunc {
           if (trajcnt == numOfTraj) {
             activeThreads--;
             active[i] = false;
+            policy->terminate(i);
             break;
           } else {
             state_t[i] = startingState.col(trajcnt);
@@ -324,6 +326,7 @@ class CommonFunc {
               hiddenState_t.setZero();
               trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
             }
+            policy->reset(i);
 
           }
         }
@@ -337,9 +340,9 @@ class CommonFunc {
       for (int i = 0; i < ThreadN; i++)
         if (active[i]) states.batch(colId++) = state_t[i];
 
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("Policy execution");
       policy->forward(states, actions);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("Policy execution");
 
       ///save Hidden States
       if (policy->isRecurrent()) {
@@ -451,6 +454,7 @@ class CommonFunc {
         hiddenState_t.setZero();
         trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
       }
+      policy->reset(i);
 
     }
 
@@ -476,6 +480,7 @@ class CommonFunc {
           if (trajcnt == numOfTraj) {
             activeThreads--;
             active[i] = false;
+            policy->terminate(i);
             break;
           } else {
             State state_init;
@@ -495,6 +500,7 @@ class CommonFunc {
               hiddenState_t.setZero();
               trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
             }
+            policy->reset(i);
 
           }
         }

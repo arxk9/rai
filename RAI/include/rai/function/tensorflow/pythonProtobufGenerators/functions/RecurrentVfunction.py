@@ -14,8 +14,8 @@ class RecurrentVfunction(bc.SpecializedFunction):
 
         state = gs.input
 
-        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param')
-        clip_param_decay_rate = tf.Variable(tf.constant(1, dtype=dtype), name='clip_param_decay_rate')
+        clip_param = tf.Variable(tf.constant(0.2, dtype=dtype), name='clip_param', trainable=False)
+        clip_param_decay_rate = tf.Variable(tf.constant(1, dtype=dtype), name='clip_param_decay_rate', trainable=False)
         clip_range = tf.train.exponential_decay(clip_param,
                                                 tf.train.get_global_step(),
                                                 self.decayStep_lr,
