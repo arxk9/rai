@@ -88,9 +88,9 @@ class CommonFunc {
     }
 
     while (termType == TerminationType::not_terminated) {
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("policy execution");
       policy->forward(state, action);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("policy execution");
       actionNoise = noise->sampleNoise();
       action_tp = action.batch(0);
 
@@ -167,9 +167,9 @@ class CommonFunc {
     }
 
     while (termType == TerminationType::not_terminated) {
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("policy execution");
       policy->forward(state, action);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("policy execution");
       actionNoise = noise->sampleNoise();
       action_tp = action.batch(0);
 
@@ -521,9 +521,9 @@ class CommonFunc {
       for (int i = 0; i < ThreadN; i++)
         if (active[i]) states.batch(colId++) = state_t[i];
 
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("policy execution");
       policy->forward(states, actions);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("policy execution");
 
       ///save Hidden States
       if (policy->isRecurrent()) {
