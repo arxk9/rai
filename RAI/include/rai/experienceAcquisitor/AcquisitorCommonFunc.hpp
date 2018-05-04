@@ -88,9 +88,9 @@ class CommonFunc {
     }
 
     while (termType == TerminationType::not_terminated) {
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("policy execution");
       policy->forward(state, action);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("policy execution");
       actionNoise = noise->sampleNoise();
       action_tp = action.batch(0);
 
@@ -167,9 +167,9 @@ class CommonFunc {
     }
 
     while (termType == TerminationType::not_terminated) {
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("policy execution");
       policy->forward(state, action);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("policy execution");
       actionNoise = noise->sampleNoise();
       action_tp = action.batch(0);
 
@@ -272,11 +272,13 @@ class CommonFunc {
       }
     }
 
+    int map[ThreadN];
     for (int i = 0; i < ThreadN; i++) {
       state_t[i] = startingState.col(trajcnt);
       taskset[i]->setToParticularState(state_t[i]);
       trajectoryID[i] = trajcnt++;
       active[i] = true;
+      map[i] = i;
 
       if (policy->isRecurrent()) {
         ///start with zero hiddenstate
@@ -284,8 +286,10 @@ class CommonFunc {
         hiddenState_t.setZero();
         trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
       }
+      policy->reset(i);
 
     }
+
 
     while (true) {
       for (int i = 0; i < ThreadN; i++) {
@@ -309,6 +313,8 @@ class CommonFunc {
           if (trajcnt == numOfTraj) {
             activeThreads--;
             active[i] = false;
+            policy->terminate(map[i]);
+            for(int j = i; j<ThreadN; j++) map[j]--;
             break;
           } else {
             state_t[i] = startingState.col(trajcnt);
@@ -324,6 +330,7 @@ class CommonFunc {
               hiddenState_t.setZero();
               trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
             }
+            policy->reset(i);
 
           }
         }
@@ -337,9 +344,9 @@ class CommonFunc {
       for (int i = 0; i < ThreadN; i++)
         if (active[i]) states.batch(colId++) = state_t[i];
 
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("Policy execution");
       policy->forward(states, actions);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("Policy execution");
 
       ///save Hidden States
       if (policy->isRecurrent()) {
@@ -434,6 +441,7 @@ class CommonFunc {
     for (int i = 0; i < ThreadN; i++)
       episodetime[i] = 0;
 
+    int map[ThreadN];
     for (int i = 0; i < ThreadN; i++) {
       State state_init;
       taskset[i]->setToInitialState();
@@ -444,6 +452,7 @@ class CommonFunc {
 
       trajectoryID[i] = trajcnt++;
       active[i] = true;
+      map[i] = i;
 
       if (policy->isRecurrent()) {
         ///start with zero hiddenstate
@@ -451,12 +460,13 @@ class CommonFunc {
         hiddenState_t.setZero();
         trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
       }
+      policy->reset(i);
 
     }
 
     while (true) {
-      for (int i = 0; i < ThreadN; i++) {
-        if (!active[i]) continue;
+      for (int i = 0; i< ThreadN; i++ ) {
+          if (!active[i]) continue;
 
         bool isTimeout = episodetime[i] + taskset[i]->dt() * 0.5 >= timeLimit;
         bool isTerminal = taskset[i]->isTerminalState();
@@ -476,6 +486,8 @@ class CommonFunc {
           if (trajcnt == numOfTraj) {
             activeThreads--;
             active[i] = false;
+            policy->terminate(map[i]);
+            for(int j = i; j<ThreadN; j++) map[j]--;
             break;
           } else {
             State state_init;
@@ -495,6 +507,7 @@ class CommonFunc {
               hiddenState_t.setZero();
               trajectorySet[trajectoryID[i]].pushBackHiddenState(hiddenState_t);
             }
+            policy->reset(i);
 
           }
         }
@@ -508,9 +521,9 @@ class CommonFunc {
       for (int i = 0; i < ThreadN; i++)
         if (active[i]) states.batch(colId++) = state_t[i];
 
-      timer->startTimer("Policy evaluation");
+      timer->startTimer("policy execution");
       policy->forward(states, actions);
-      timer->stopTimer("Policy evaluation");
+      timer->stopTimer("policy execution");
 
       ///save Hidden States
       if (policy->isRecurrent()) {

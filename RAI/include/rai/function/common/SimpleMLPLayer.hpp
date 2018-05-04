@@ -41,7 +41,6 @@ class MLP_fullyconnected {
     params.resize(2 * (layersizes.size() - 1));
     Ws.resize(layersizes.size() - 1);
     bs.resize(layersizes.size() - 1);
-    lo.resize(layersizes.size());
     Stdev.resize(ActionDim);
 
     std::stringstream parameterFileName;
@@ -93,22 +92,20 @@ class MLP_fullyconnected {
   }
 
   Action forward(State &state) {
-    lo[0] = state;
+    Eigen::Matrix<Dtype,-1,1> temp= state;
     for (int cnt = 0; cnt < Ws.size() - 1; cnt++) {
-      lo[cnt + 1] = Ws[cnt] * lo[cnt] + bs[cnt];
+      temp = Ws[cnt] * temp + bs[cnt];
 
-      for (int i = 0; i < lo[cnt + 1].size(); i++) {
-        if (isTanh)
-          lo[cnt + 1][i] = std::tanh(lo[cnt + 1][i]);
-        else
-          if (lo[cnt + 1][i] < 0) lo[cnt + 1][i] = 0;
-      }
+      if (isTanh)
+      temp = temp.array().tanh();
+      else temp = temp.cwiseMax(0.0);
     }
-
-    lo[lo.size() - 1] = Ws[Ws.size() - 1] * lo[lo.size() - 2] + bs[bs.size() - 1]; /// output layer
-
-    return lo.back();
+    temp = Ws.back() * temp + bs.back(); /// output layer
+    return temp;
   }
+
+
+
 
   Action noisify(Action actionMean) {
     return noise_.noisify(actionMean);
@@ -120,7 +117,6 @@ class MLP_fullyconnected {
   std::vector<Eigen::Matrix<Dtype,-1,1>> params;
   std::vector<Eigen::Matrix<Dtype,-1,-1>> Ws;
   std::vector<Eigen::Matrix<Dtype,-1,1>> bs;
-  std::vector<Eigen::Matrix<Dtype,-1,1>> lo;
   Action Stdev;
 
   std::vector<int> layersizes;

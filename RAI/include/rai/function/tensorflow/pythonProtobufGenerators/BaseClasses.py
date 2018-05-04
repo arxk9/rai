@@ -46,10 +46,10 @@ class ParameterizedFunction:
         global_step = tf.Variable(0, name='global_step', trainable=False)
 
         with tf.variable_scope("trainingOptions", reuse=True):
-            self.max_grad_norm = tf.Variable(tf.constant(100, dtype=dtype), name='max_grad_norm')
-            self.initial_lr = tf.Variable(tf.constant(0.001, dtype=dtype), name='InitLR')
-            self.decayRate_lr = tf.Variable(tf.constant(1, dtype=dtype), name='DecayRateLR') #default = no decay
-            self.decayStep_lr = tf.Variable(tf.constant(1, dtype=tf.int32), name='DecayStepLR')
+            self.max_grad_norm = tf.Variable(tf.constant(100, dtype=dtype), name='max_grad_norm', trainable=False)
+            self.initial_lr = tf.Variable(tf.constant(0.001, dtype=dtype), name='InitLR', trainable=False)
+            self.decayRate_lr = tf.Variable(tf.constant(1, dtype=dtype), name='DecayRateLR', trainable=False) #default = no decay
+            self.decayStep_lr = tf.Variable(tf.constant(1, dtype=tf.int32), name='DecayStepLR', trainable=False)
             self.learningRate = tf.train.exponential_decay(self.initial_lr,
                                                            tf.train.get_global_step(),
                                                            self.decayStep_lr,
@@ -62,6 +62,9 @@ class ParameterizedFunction:
         tf.assign(self.decayRate_lr, tf.reshape(param_assign_placeholder, []), name='DecayRateLR_assign')
         tf.assign(self.decayStep_lr, tf.reshape(param_assign_placeholder_int, []), name='DecayStepLR_assign')
         tf.assign(self.max_grad_norm, tf.reshape(param_assign_placeholder, []), name='max_norm_assign')
+        tf.assign(global_step, 0, name = 'reset_global_step')
+        tf.assign(global_step, global_step + 1, name = 'increment_global_step')
+
 
 # this class contains various methods used for learning
 class SpecializedFunction(ParameterizedFunction):
