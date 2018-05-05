@@ -18,7 +18,42 @@ namespace rai {
 
 namespace FuncApprox {
 
-template<typename Dtype, int StateDim, int ActionDim>
+enum class ActivationType {
+  linear,
+  relu,
+  tanh,
+  softsign
+};
+
+template<typename Dtype, ActivationType activationType>
+struct Activation {
+  inline void nonlinearity(Eigen::Matrix<Dtype, -1, 1> &output) {}
+};
+
+template<typename Dtype>
+struct Activation<Dtype, ActivationType::relu> {
+  inline void nonlinearity(Eigen::Matrix<Dtype, -1, 1> &output) {
+    output = output.cwiseMax(0.0);
+  }
+};
+
+template<typename Dtype>
+struct Activation<Dtype, ActivationType::tanh> {
+  inline void nonlinearity(Eigen::Matrix<Dtype, -1, 1> &output) {
+    output = output.array().tanh();
+  }
+};
+
+template<typename Dtype>
+struct Activation<Dtype, ActivationType::softsign> {
+  inline void nonlinearity(Eigen::Matrix<Dtype, -1, 1> &output) {
+    for (int i = 0; i < output.size(); i++) {
+      output[i] = output[i] / (std::abs(output[i]) + 1.0);
+    }
+  }
+};
+
+template<typename Dtype, int StateDim, int ActionDim, ActivationType activationType>
 class MLP_fullyconnected {
 
  public:
@@ -26,8 +61,8 @@ class MLP_fullyconnected {
   typedef Eigen::Matrix<Dtype, ActionDim, 1> Action;
   typedef Eigen::Matrix<Dtype, StateDim, 1> State;
 
-  MLP_fullyconnected(std::string fileName, std::string activation, std::vector<int> hiddensizes) :
-  cov(Eigen::Matrix<Dtype, ActionDim, ActionDim>::Identity()), act_(activation), noise_(cov) {
+  MLP_fullyconnected(std::string fileName, std::vector<int> hiddensizes) :
+      cov(Eigen::Matrix<Dtype, ActionDim, ActionDim>::Identity()), noise_(cov) {
     const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
 
     layersizes.push_back(StateDim);
@@ -35,8 +70,6 @@ class MLP_fullyconnected {
     layersizes.insert(layersizes.end(), hiddensizes.begin(), hiddensizes.end());
     layersizes.push_back(ActionDim);
     ///[input hidden output]
-
-    if(activation == "tanh") isTanh=true;
 
     params.resize(2 * (layersizes.size() - 1));
     Ws.resize(layersizes.size() - 1);
@@ -92,39 +125,31 @@ class MLP_fullyconnected {
   }
 
   Action forward(State &state) {
-    Eigen::Matrix<Dtype,-1,1> temp= state;
+    Eigen::Matrix<Dtype, -1, 1> temp;
+    temp = state;
     for (int cnt = 0; cnt < Ws.size() - 1; cnt++) {
       temp = Ws[cnt] * temp + bs[cnt];
-
-      if (isTanh)
-      temp = temp.array().tanh();
-      else temp = temp.cwiseMax(0.0);
+      activation_.nonlinearity(temp);
     }
     temp = Ws.back() * temp + bs.back(); /// output layer
     return temp;
   }
-
-
-
 
   Action noisify(Action actionMean) {
     return noise_.noisify(actionMean);
   }
 
  private:
-
-//Eigen::MatrixXd output_;
-  std::vector<Eigen::Matrix<Dtype,-1,1>> params;
-  std::vector<Eigen::Matrix<Dtype,-1,-1>> Ws;
-  std::vector<Eigen::Matrix<Dtype,-1,1>> bs;
+  std::vector<Eigen::Matrix<Dtype, -1, 1>> params;
+  std::vector<Eigen::Matrix<Dtype, -1, -1>> Ws;
+  std::vector<Eigen::Matrix<Dtype, -1, 1>> bs;
+  Activation<Dtype, activationType> activation_;
   Action Stdev;
 
   std::vector<int> layersizes;
-  std::string act_;
   Eigen::Matrix<Dtype, ActionDim, ActionDim> cov;
   Noise_ noise_;
-  bool isTanh=false;
-
+  bool isTanh = false;
 };
 
 }
