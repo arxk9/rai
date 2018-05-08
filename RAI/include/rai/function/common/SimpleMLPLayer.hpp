@@ -74,6 +74,7 @@ class MLP_fullyconnected {
     params.resize(2 * (layersizes.size() - 1));
     Ws.resize(layersizes.size() - 1);
     bs.resize(layersizes.size() - 1);
+    lo.resize(layersizes.size());
     Stdev.resize(ActionDim);
 
     std::stringstream parameterFileName;
@@ -124,15 +125,17 @@ class MLP_fullyconnected {
     noise_.updateCovariance(temp.asDiagonal());
   }
 
-  Action forward(State &state) {
-    Eigen::Matrix<Dtype, -1, 1> temp;
-    temp = state;
+  inline Action forward(State &state) {
+
+    lo[0] = state;
+
     for (int cnt = 0; cnt < Ws.size() - 1; cnt++) {
-      temp = Ws[cnt] * temp + bs[cnt];
-      activation_.nonlinearity(temp);
+      lo[cnt + 1] = Ws[cnt] * lo[cnt] + bs[cnt];
+      activation_.nonlinearity(lo[cnt + 1]);
     }
-    temp = Ws.back() * temp + bs.back(); /// output layer
-    return temp;
+
+    lo[lo.size() - 1] = Ws[Ws.size() - 1] * lo[lo.size() - 2] + bs[bs.size() - 1]; /// output layer
+    return lo.back();
   }
 
   Action noisify(Action actionMean) {
@@ -143,6 +146,8 @@ class MLP_fullyconnected {
   std::vector<Eigen::Matrix<Dtype, -1, 1>> params;
   std::vector<Eigen::Matrix<Dtype, -1, -1>> Ws;
   std::vector<Eigen::Matrix<Dtype, -1, 1>> bs;
+  std::vector<Eigen::Matrix<Dtype,-1,1>> lo;
+
   Activation<Dtype, activationType> activation_;
   Action Stdev;
 
